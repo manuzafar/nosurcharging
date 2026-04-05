@@ -20,23 +20,33 @@ interface DisclaimerConsentProps {
 export function DisclaimerConsent({ onAccept }: DisclaimerConsentProps) {
   const [checked, setChecked] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [consentError, setConsentError] = useState(false);
 
   const handleStart = async () => {
     if (!checked) return;
     setLoading(true);
+    setConsentError(false);
 
     try {
       const sessionId = await createSession();
-      await recordConsent({
+      const result = await recordConsent({
         consentType: 'disclaimer',
         consentText: DISCLAIMER_TEXT,
         consentVersion: DISCLAIMER_VERSION,
         consented: true,
         sessionId,
       });
+
+      if (!result.success) {
+        setConsentError(true);
+        setLoading(false);
+        return;
+      }
+
       onAccept();
     } catch (err) {
       console.error('[disclaimer] Failed:', err);
+      setConsentError(true);
       setLoading(false);
     }
   };
@@ -64,6 +74,12 @@ export function DisclaimerConsent({ onAccept }: DisclaimerConsentProps) {
           {DISCLAIMER_TEXT}
         </span>
       </label>
+
+      {consentError && (
+        <p className="mt-4 text-center text-body-sm text-red-700 bg-red-50 rounded-lg px-4 py-3">
+          We could not record your consent. Please try again or contact us.
+        </p>
+      )}
 
       <div className="mt-6 flex justify-center">
         <AmberButton onClick={handleStart} disabled={!checked || loading}>

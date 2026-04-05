@@ -6,7 +6,10 @@ let callOrder: string[] = [];
 
 // ── Mocks ────────────────────────────────────────────────────────
 
-const mockInsert = vi.fn().mockResolvedValue({ error: null });
+const INSERTED_ID = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+const mockSingle = vi.fn().mockResolvedValue({ data: { id: INSERTED_ID }, error: null });
+const mockInsertSelect = vi.fn(() => ({ single: mockSingle }));
+const mockInsert = vi.fn(() => ({ select: mockInsertSelect }));
 const mockSelectLimit = vi.fn().mockResolvedValue({ data: [], error: null });
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -228,5 +231,14 @@ describe('submitAssessment', () => {
     expect(insertPayload.country_code).toBe('AU');
     expect(insertPayload.inputs).toBeDefined();
     expect(insertPayload.outputs).toBeDefined();
+  });
+
+  it('returns assessmentId that is present and non-null', async () => {
+    const result = await submitAssessment(CAT4_FORM, TEST_IDEMPOTENCY_KEY);
+
+    expect(result.success).toBe(true);
+    expect(result.assessmentId).toBeDefined();
+    expect(result.assessmentId).not.toBeNull();
+    expect(result.assessmentId).toBe(INSERTED_ID);
   });
 });

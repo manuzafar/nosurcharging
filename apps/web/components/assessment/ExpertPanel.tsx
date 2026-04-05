@@ -103,13 +103,22 @@ export function ExpertPanel({ expertRates, onChange }: ExpertPanelProps) {
             Scheme fees default to RBA averages. Unregulated. Unchanged by reform.
           </p>
 
-          {/* Confidence badge — updates live */}
+          {/* Confidence badge — updates live. Exact colours from CB-02 spec. */}
           <div
-            className={`mt-3 inline-flex items-center rounded-lg px-3 py-1.5 text-caption font-medium ${
+            className="mt-3 inline-flex items-center rounded-lg px-3 py-1.5 text-caption font-medium"
+            style={
               hasAnyInput
-                ? 'bg-green-50 text-green-800 border border-green-200'
-                : 'bg-amber-50 text-amber-800 border border-amber-200'
-            }`}
+                ? {
+                    background: 'var(--color-background-success)',
+                    color: 'var(--color-text-success)',
+                    border: '0.5px solid var(--color-border-success)',
+                  }
+                : {
+                    background: 'var(--color-background-warning)',
+                    color: 'var(--color-text-warning)',
+                    border: '0.5px solid var(--color-border-warning)',
+                  }
+            }
           >
             {hasAnyInput
               ? 'Calculated from your exact rates'

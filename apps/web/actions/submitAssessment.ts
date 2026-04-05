@@ -48,6 +48,7 @@ export interface AssessmentFormData {
 
 export interface AssessmentResult {
   success: boolean;
+  assessmentId?: string;
   outputs?: AssessmentOutputs;
   actions?: ActionItem[];
   error?: string;
@@ -71,13 +72,14 @@ export async function submitAssessment(
   // 3. Check if this exact submission was already processed
   const { data: existing } = await supabaseAdmin
     .from('assessments')
-    .select('outputs')
+    .select('id, outputs')
     .eq('idempotency_key', idempotencyKey)
     .limit(1);
 
   if (existing && existing.length > 0) {
-    const prev = existing[0]!.outputs as { actions?: ActionItem[] } & AssessmentOutputs;
-    return { success: true, outputs: prev, actions: prev.actions ?? [] };
+    const row = existing[0]!;
+    const prev = row.outputs as { actions?: ActionItem[] } & AssessmentOutputs;
+    return { success: true, assessmentId: row.id, outputs: prev, actions: prev.actions ?? [] };
   }
 
   // 4. Rate limit check — SR-09: 100 per IP per 24 hours
@@ -120,37 +122,42 @@ export async function submitAssessment(
   // 7. Build action list
   const actions = buildActions(outputs.category, formData.psp, formData.industry);
 
-  // 9. INSERT with idempotency key
-  const { error: insertError } = await supabaseAdmin.from('assessments').insert({
-    session_id: sessionId,
-    idempotency_key: idempotencyKey,
-    country_code: 'AU',
-    category: outputs.category,
-    inputs: {
-      ...raw,
-      merchantInput: formData.merchantInput,
-      resolvedCardMix: resolved.cardMix,
-      confidence: resolved.confidence,
-    },
-    outputs: {
-      ...outputs,
-      actions,
-    },
-    ip_hash: ipHash,
-  });
+  // 9. INSERT with idempotency key — use .select() to get generated ID
+  const { data: inserted, error: insertError } = await supabaseAdmin
+    .from('assessments')
+    .insert({
+      session_id: sessionId,
+      idempotency_key: idempotencyKey,
+      country_code: 'AU',
+      category: outputs.category,
+      inputs: {
+        ...raw,
+        merchantInput: formData.merchantInput,
+        resolvedCardMix: resolved.cardMix,
+        confidence: resolved.confidence,
+      },
+      outputs: {
+        ...outputs,
+        actions,
+      },
+      ip_hash: ipHash,
+    })
+    .select('id')
+    .single();
 
   if (insertError) {
     // Unique constraint violation = another request won the race — return that result
     if (insertError.code === '23505') {
       const { data: raceWinner } = await supabaseAdmin
         .from('assessments')
-        .select('outputs')
+        .select('id, outputs')
         .eq('idempotency_key', idempotencyKey)
         .limit(1);
 
       if (raceWinner && raceWinner.length > 0) {
-        const prev = raceWinner[0]!.outputs as { actions?: ActionItem[] } & AssessmentOutputs;
-        return { success: true, outputs: prev, actions: prev.actions ?? [] };
+        const row = raceWinner[0]!;
+        const prev = row.outputs as { actions?: ActionItem[] } & AssessmentOutputs;
+        return { success: true, assessmentId: row.id, outputs: prev, actions: prev.actions ?? [] };
       }
     }
 
@@ -158,5 +165,5 @@ export async function submitAssessment(
     return { success: false, error: 'Failed to save assessment. Please try again.' };
   }
 
-  return { success: true, outputs, actions };
+  return { success: true, assessmentId: inserted.id, outputs, actions };
 }

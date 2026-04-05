@@ -5,7 +5,7 @@
 // Network calls: (1) createSession on disclaimer, (2) recordConsent, (3) submitAssessment on reveal.
 // Step transitions: opacity only, no slide animations. 200ms ease-out.
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { StepCounter } from '@/components/ui/StepCounter';
@@ -36,6 +36,27 @@ export default function AssessmentPage() {
   const [surchargeNetworks, setSurchargeNetworks] = useState<string[]>([]);
   const [industry, setIndustry] = useState<string | null>(null);
 
+  // Tracking flags — fire once per session, not on every keystroke
+  const expertModeTracked = useRef(false);
+  const cardMixTracked = useRef(false);
+
+  // FIX 5: Assessment abandoned event — fires on tab close/navigate away
+  const currentStepRef = useRef(0);
+  useEffect(() => {
+    const stepMap: Record<string, number> = { step1: 1, step2: 2, step3: 3, step4: 4 };
+    currentStepRef.current = stepMap[phase] ?? 0;
+  }, [phase]);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (currentStepRef.current > 0) {
+        trackEvent('Assessment abandoned', { at_step: String(currentStepRef.current) });
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
   const goToStep = (next: Phase) => {
     if (phase !== 'disclaimer' && phase !== 'reveal' && phase !== 'error') {
       const stepNum = { step1: '1', step2: '2', step3: '3', step4: '4' }[phase];
@@ -59,10 +80,9 @@ export default function AssessmentPage() {
   });
 
   const handleRevealComplete = (result: AssessmentResult) => {
-    // Store result in sessionStorage for the results page
-    sessionStorage.setItem('ns_assessment_result', JSON.stringify(result));
-    sessionStorage.setItem('ns_assessment_form', JSON.stringify(buildFormData()));
-    router.push('/results');
+    // Navigate to results with assessmentId as search param
+    // Results page fetches full data from server via assessmentId
+    router.push(`/results?id=${result.assessmentId}`);
   };
 
   const handleRevealError = (err: string) => {
@@ -156,7 +176,32 @@ export default function AssessmentPage() {
                   setPsp(name);
                   trackEvent('PSP selected', { psp: name });
                 }}
-                onMerchantInputChange={setMerchantInput}
+                onMerchantInputChange={(input) => {
+                  // FIX 5: Expert mode activated — fire once when expert rates first provided
+                  if (
+                    !expertModeTracked.current &&
+                    input.expertRates &&
+                    (input.expertRates.debitCents !== undefined ||
+                      input.expertRates.creditPct !== undefined ||
+                      input.expertRates.marginPct !== undefined)
+                  ) {
+                    trackEvent('Expert mode activated');
+                    expertModeTracked.current = true;
+                  }
+
+                  // FIX 5: Card mix entered — fire once when any card mix field filled
+                  if (!cardMixTracked.current && input.cardMix) {
+                    const filled = Object.values(input.cardMix).filter(
+                      (v) => v !== undefined && v !== null && v > 0,
+                    ).length;
+                    if (filled > 0) {
+                      trackEvent('Card mix entered', { fields_filled: filled });
+                      cardMixTracked.current = true;
+                    }
+                  }
+
+                  setMerchantInput(input);
+                }}
                 onNext={() => goToStep('step3')}
                 onBack={() => goToStep('step1')}
               />
