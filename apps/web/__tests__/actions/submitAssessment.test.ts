@@ -9,7 +9,8 @@ let callOrder: string[] = [];
 const INSERTED_ID = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
 const mockSingle = vi.fn().mockResolvedValue({ data: { id: INSERTED_ID }, error: null });
 const mockInsertSelect = vi.fn(() => ({ single: mockSingle }));
-const mockInsert = vi.fn(() => ({ select: mockInsertSelect }));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockInsert: ReturnType<typeof vi.fn<any>> = vi.fn((..._args: any[]) => ({ select: mockInsertSelect }));
 const mockSelectLimit = vi.fn().mockResolvedValue({ data: [], error: null });
 
 vi.mock('@/lib/supabase/server', () => ({
