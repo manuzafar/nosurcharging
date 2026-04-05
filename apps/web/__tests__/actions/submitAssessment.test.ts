@@ -38,6 +38,7 @@ vi.mock('next/headers', () => ({
 vi.mock('@/lib/security', () => ({
   hashIP: vi.fn((ip: string) => `sha256_${ip}`),
   getClientIP: vi.fn(() => '10.0.0.1'),
+  sanitiseForHTML: vi.fn((s: string) => s),
 }));
 
 vi.mock('@/lib/rateLimit', () => ({
@@ -246,5 +247,14 @@ describe('submitAssessment', () => {
     expect(result.assessmentId).toBeDefined();
     expect(result.assessmentId).not.toBeNull();
     expect(result.assessmentId).toBe(INSERTED_ID);
+  });
+
+  it('rejects submission when PSP is missing', async () => {
+    const noPspForm = { ...CAT4_FORM, psp: '' };
+    const result = await submitAssessment(noPspForm, TEST_IDEMPOTENCY_KEY);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('PSP is required');
+    expect(mockInsert).not.toHaveBeenCalled();
   });
 });
