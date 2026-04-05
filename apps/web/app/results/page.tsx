@@ -18,6 +18,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { getAssessment } from '@/actions/getAssessment';
 import type { StoredAssessment } from '@/actions/getAssessment';
 import type { AssessmentOutputs, RawAssessmentData, ResolutionContext, ActionItem } from '@nosurcharging/calculations/types';
+import { sanitiseForHTML } from '@/lib/sanitise';
 
 import { VerdictSection } from '@/components/results/VerdictSection';
 import { MetricCards } from '@/components/results/MetricCards';
@@ -90,11 +91,9 @@ function ResultsContent() {
   const actions = (outputs as unknown as { actions?: ActionItem[] }).actions ?? [];
   const category = outputs.category;
   const volume = (storedInputs.volume as number) ?? 0;
-  const pspName = (storedInputs.psp as string) ?? 'your provider';
+  const pspName = sanitiseForHTML((storedInputs.psp as string) ?? 'Unknown');
   const planType = (storedInputs.planType as 'flat' | 'costplus') ?? 'flat';
-  const resolutionTrace = (storedInputs as { resolvedCardMix?: unknown }).resolvedCardMix
-    ? {}
-    : {};
+  const resolutionTrace = (storedInputs.resolutionTrace as Record<string, { source: string; value: number; label: string }>) ?? {};
 
   // Build raw and context for slider recalculation
   const originalRaw: RawAssessmentData = {
@@ -198,7 +197,7 @@ function ResultsContent() {
           <AssumptionsPanel
             outputs={outputs}
             passThrough={passThrough}
-            resolutionTrace={outputs.confidence === 'low' ? {} : {}}
+            resolutionTrace={resolutionTrace}
           />
         </div>
 

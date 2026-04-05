@@ -25,6 +25,7 @@ import { getSessionId } from './createSession';
 import { resolveAssessmentInputs } from '@nosurcharging/calculations/rules/resolver';
 import { calculateMetrics } from '@nosurcharging/calculations/calculations';
 import { buildActions } from '@nosurcharging/calculations/actions';
+import { sanitiseForHTML } from '@/lib/security';
 import type {
   RawAssessmentData,
   ResolutionContext,
@@ -92,7 +93,12 @@ export async function submitAssessment(
     return { success: false, error: 'Rate limit exceeded. Please try again later.' };
   }
 
-  // 5. Build raw assessment data
+  // 5. Validate required fields
+  if (!formData.psp) {
+    return { success: false, error: 'PSP is required — assessment cannot be submitted without PSP selection.' };
+  }
+
+  // 6. Build raw assessment data
   const raw: RawAssessmentData = {
     volume: formData.volume,
     planType: formData.planType,
@@ -119,8 +125,9 @@ export async function submitAssessment(
   const resolved = resolveAssessmentInputs(raw, ctx);
   const outputs = calculateMetrics(resolved);
 
-  // 7. Build action list
-  const actions = buildActions(outputs.category, formData.psp, formData.industry);
+  // 7. Build action list — sanitise PSP name before embedding in text (SR-08)
+  const safePsp = sanitiseForHTML(formData.psp);
+  const actions = buildActions(outputs.category, safePsp, formData.industry);
 
   // 9. INSERT with idempotency key — use .select() to get generated ID
   const { data: inserted, error: insertError } = await supabaseAdmin
@@ -134,6 +141,7 @@ export async function submitAssessment(
         ...raw,
         merchantInput: formData.merchantInput,
         resolvedCardMix: resolved.cardMix,
+        resolutionTrace: resolved.resolutionTrace,
         confidence: resolved.confidence,
       },
       outputs: {
