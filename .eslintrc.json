@@ -1,0 +1,30 @@
+{
+  "root": true,
+  "extends": ["next/core-web-vitals"],
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["*/lib/supabase/server*"],
+            "message": "SR-03: supabase/server.ts uses the service role key and must NEVER be imported from client components. Use lib/supabase/client.ts instead."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "apps/web/actions/**/*.ts",
+        "apps/web/app/api/**/*.ts",
+        "apps/web/lib/supabase/server.ts",
+        "apps/web/lib/rateLimit.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ]
+}

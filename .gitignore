@@ -1,0 +1,46 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# next.js
+.next/
+out/
+
+# build
+dist/
+build/
+*.tsbuildinfo
+
+# env
+.env
+.env.local
+.env.staging
+.env.production
+.env*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# testing
+coverage/
+playwright-report/
+test-results/
+
+# turbo
+.turbo/
+
+# sentry
+.sentryclirc
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
