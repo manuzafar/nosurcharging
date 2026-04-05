@@ -72,6 +72,7 @@ export function EmailCapture({ assessmentId }: EmailCaptureProps) {
           style={{
             border: '0.5px solid var(--color-border-secondary)',
             background: 'var(--color-background-primary)',
+            color: 'var(--color-text-primary)',
           }}
         />
         <button
