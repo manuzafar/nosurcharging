@@ -23,6 +23,9 @@ const CAT4_OUTPUTS: AssessmentOutputs = {
   creditSaving: 2310.0,
   grossCOA: 0, // not used for flat rate
   annualMSF: 42000.0,
+  todayInterchange: 5000.0,
+  todayMargin: 1500.0,
+  surchargeRevenue: 36000.0,
   netToday: 6000.0,
   octNet: 40835.89,
   plSwing: -34835.89,
@@ -46,6 +49,9 @@ const CAT1_OUTPUTS: AssessmentOutputs = {
   creditSaving: 1540.0,
   grossCOA: 9401.54,
   annualMSF: 28000.0, // not used for cost-plus pivot
+  todayInterchange: 5301.54,
+  todayMargin: 2000.0,
+  surchargeRevenue: 0,
   netToday: 9401.54,
   octNet: 7676.92,
   plSwing: 1724.62,
