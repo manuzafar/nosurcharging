@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Staggered results reveal animation — referenced by inline styles */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 :root {
   /* Animation delays for staggered results reveal */
   --delay-block-1: 0ms;

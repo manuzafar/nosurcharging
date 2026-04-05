@@ -120,6 +120,11 @@ export interface AssessmentOutputs {
   icSaving: number;
   debitSaving: number;
   creditSaving: number;
+  todayInterchange: number;
+  todayMargin: number;
+  grossCOA: number;
+  annualMSF: number;
+  surchargeRevenue: number;
   netToday: number;
   octNet: number;
   plSwing: number;

@@ -62,7 +62,7 @@ function buildCat2Actions(psp: string): ActionItem[] {
     {
       priority: 'monitor',
       timeAnchor: '30 January 2027',
-      text: 'Review the RBA pass-through report. If your PSP absorbed the saving, switch.',
+      text: `Review the RBA pass-through report. If ${psp} absorbed the saving, switch.`,
     },
   ];
 }

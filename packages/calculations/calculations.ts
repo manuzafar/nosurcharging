@@ -56,27 +56,22 @@ export function calculateMetrics(
   const todayScheme = round2(volume * AU_SCHEME_FEES.domesticPct);
   const oct2026Scheme = todayScheme; // INVARIANT: scheme fees are unregulated, unchanged
 
+  // ── Intermediate values (always computed, returned in outputs) ──
+  const debitIC = round2(debitTxns * currentDebitCentsPerTxn);
+  const creditIC = round2(volume * cardMix.consumerCreditShare * currentCreditPct);
+  const pspMargin = round2(volume * marginPct);
+  const grossCOA = round2(debitIC + creditIC + todayScheme + pspMargin);
+  const annualMSF = round2(volume * msfRate);
+  const surchargeRevenue = round2(volume * surchargeRate);
+
   // ── P&L calculation by plan type ───────────────────────────────
   let netToday: number;
   let octNet: number;
 
   if (planType === 'costplus') {
-    // Cost-plus: merchant pays actual wholesale cost + margin
-    // grossCOA = debitIC + creditIC + schemeFees + pspMargin
-    const debitIC = round2(debitTxns * currentDebitCentsPerTxn);
-    const creditIC = round2(volume * cardMix.consumerCreditShare * currentCreditPct);
-    const pspMargin = round2(volume * marginPct);
-    const grossCOA = round2(debitIC + creditIC + todayScheme + pspMargin);
-
-    const surchargeRevenue = round2(volume * surchargeRate);
-
     netToday = round2(grossCOA - surchargeRevenue);
     octNet = round2(grossCOA - icSaving);
   } else {
-    // Flat rate: merchant pays blended MSF percentage
-    const annualMSF = round2(volume * msfRate);
-    const surchargeRevenue = round2(volume * surchargeRate);
-
     netToday = round2(annualMSF - surchargeRevenue);
     octNet = round2(annualMSF - round2(icSaving * passThrough));
   }
@@ -88,6 +83,11 @@ export function calculateMetrics(
     icSaving,
     debitSaving,
     creditSaving,
+    todayInterchange: round2(debitIC + creditIC),
+    todayMargin: pspMargin,
+    grossCOA,
+    annualMSF,
+    surchargeRevenue,
     netToday,
     octNet,
     plSwing,
