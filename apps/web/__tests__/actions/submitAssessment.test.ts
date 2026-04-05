@@ -169,6 +169,8 @@ describe('submitAssessment', () => {
       icSaving: 1724.62,
       debitSaving: 184.62,
       creditSaving: 1540.0,
+      grossCOA: 9401.54,
+      annualMSF: 28000.0,
       netToday: 9401.54,
       octNet: 7676.92,
       plSwing: 1724.62,
