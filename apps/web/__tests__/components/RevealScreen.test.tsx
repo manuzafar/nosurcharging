@@ -90,7 +90,9 @@ describe('RevealScreen', () => {
 
     // Called at t=0, before any timer advances
     expect(mockSubmitAssessment).toHaveBeenCalledTimes(1);
-    expect(mockSubmitAssessment).toHaveBeenCalledWith(MOCK_FORM_DATA);
+    // First arg is form data, second is idempotency key (UUID)
+    expect(mockSubmitAssessment.mock.calls[0]![0]).toEqual(MOCK_FORM_DATA);
+    expect(mockSubmitAssessment.mock.calls[0]![1]).toMatch(/^[0-9a-f-]{36}$/);
   });
 
   it('category label not visible at t=0', () => {

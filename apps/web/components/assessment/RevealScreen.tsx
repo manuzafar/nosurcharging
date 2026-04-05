@@ -8,10 +8,9 @@
 // If action takes >1.1s, hold on reveal until resolved.
 // Error: replace reveal with error, never navigate with incomplete data.
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { submitAssessment } from '@/actions/submitAssessment';
 import type { AssessmentFormData, AssessmentResult } from '@/actions/submitAssessment';
-import { CATEGORY_VERDICTS } from '@nosurcharging/calculations/categories';
 import { trackEvent } from '@/lib/analytics';
 
 interface RevealScreenProps {
@@ -23,23 +22,26 @@ interface RevealScreenProps {
 export function RevealScreen({ formData, onComplete, onError }: RevealScreenProps) {
   const [showCategory, setShowCategory] = useState(false);
   const [categoryLabel, setCategoryLabel] = useState('');
-  const resultRef = useRef<AssessmentResult | null>(null);
-  const timerDone = useRef(false);
-  const actionDone = useRef(false);
+
+  // Generate idempotency key once per mount — stable across StrictMode re-runs
+  const idempotencyKey = useMemo(() => crypto.randomUUID(), []);
 
   useEffect(() => {
-    // Server action fires at t=0 — immediately
-    submitAssessment(formData).then((result) => {
-      actionDone.current = true;
-      resultRef.current = result;
+    let cancelled = false;
+    let timerDone = false;
+    let result: AssessmentResult | null = null;
 
-      if (!result.success) {
-        onError(result.error ?? 'Assessment failed');
+    // Server action fires at t=0 — immediately
+    submitAssessment(formData, idempotencyKey).then((r) => {
+      if (cancelled) return;
+      result = r;
+
+      if (!r.success) {
+        onError(r.error ?? 'Assessment failed');
         return;
       }
 
-      // Show category label
-      const cat = result.outputs!.category;
+      const cat = r.outputs!.category;
       const verdicts: Record<number, string> = {
         1: 'Category 1 — your costs fall automatically',
         2: 'Category 2 — conditional saving',
@@ -47,28 +49,28 @@ export function RevealScreen({ formData, onComplete, onError }: RevealScreenProp
         4: 'Category 4 — act immediately',
       };
       setCategoryLabel(verdicts[cat] ?? '');
-
       trackEvent('Results viewed', { category: String(cat) });
 
-      // If timer already done, navigate immediately
-      if (timerDone.current) {
-        onComplete(result);
+      if (timerDone) {
+        onComplete(r);
       }
     });
 
     // Category label fades in at 600ms
-    const categoryTimer = setTimeout(() => setShowCategory(true), 600);
+    const categoryTimer = setTimeout(() => {
+      if (!cancelled) setShowCategory(true);
+    }, 600);
 
     // Auto-advance at 1100ms (if action is done)
     const advanceTimer = setTimeout(() => {
-      timerDone.current = true;
-      if (actionDone.current && resultRef.current?.success) {
-        onComplete(resultRef.current);
+      timerDone = true;
+      if (result?.success && !cancelled) {
+        onComplete(result);
       }
-      // If action not done yet, hold — onComplete will fire when action resolves
     }, 1100);
 
     return () => {
+      cancelled = true;
       clearTimeout(categoryTimer);
       clearTimeout(advanceTimer);
     };
@@ -76,15 +78,12 @@ export function RevealScreen({ formData, onComplete, onError }: RevealScreenProp
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-gray-900">
-      {/* "Calculating your position..." label */}
       <p className="text-caption tracking-widest text-white/35">
         Calculating your position...
       </p>
 
-      {/* Pulsing amber dot */}
       <div className="h-3 w-3 rounded-full bg-amber-200 animate-pulse-amber" />
 
-      {/* Category label — fades in at 600ms */}
       <p
         className={`font-serif text-body-lg text-white/60 transition-opacity duration-400 ease-out ${
           showCategory && categoryLabel ? 'opacity-100' : 'opacity-0'

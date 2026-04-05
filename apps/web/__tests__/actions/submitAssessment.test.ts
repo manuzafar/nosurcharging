@@ -6,11 +6,23 @@ let callOrder: string[] = [];
 
 // ── Mocks ────────────────────────────────────────────────────────
 
-const mockInsert = vi.fn().mockResolvedValue({ error: null });
+const INSERTED_ID = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+const mockSingle = vi.fn().mockResolvedValue({ data: { id: INSERTED_ID }, error: null });
+const mockInsertSelect = vi.fn(() => ({ single: mockSingle }));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockInsert: ReturnType<typeof vi.fn<any>> = vi.fn((..._args: any[]) => ({ select: mockInsertSelect }));
+const mockSelectLimit = vi.fn().mockResolvedValue({ data: [], error: null });
 
 vi.mock('@/lib/supabase/server', () => ({
   supabaseAdmin: {
-    from: vi.fn(() => ({ insert: mockInsert })),
+    from: vi.fn(() => ({
+      insert: mockInsert,
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          limit: mockSelectLimit,
+        })),
+      })),
+    })),
   },
 }));
 
@@ -119,6 +131,8 @@ const CAT1_FORM: AssessmentFormData = {
   passThrough: 0,
 };
 
+const TEST_IDEMPOTENCY_KEY = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+
 // ── Tests ────────────────────────────────────────────────────────
 
 describe('submitAssessment', () => {
@@ -126,10 +140,11 @@ describe('submitAssessment', () => {
     vi.clearAllMocks();
     callOrder = [];
     mockCookieGet.mockReturnValue({ value: 'session-abc-123' });
+    mockSelectLimit.mockResolvedValue({ data: [], error: null });
   });
 
   it('calls resolveAssessmentInputs() BEFORE calculateMetrics()', async () => {
-    await submitAssessment(CAT4_FORM);
+    await submitAssessment(CAT4_FORM, TEST_IDEMPOTENCY_KEY);
 
     expect(callOrder[0]).toBe('resolveAssessmentInputs');
     expect(callOrder[1]).toBe('calculateMetrics');
@@ -139,7 +154,7 @@ describe('submitAssessment', () => {
   });
 
   it('Category 4 flat+surcharging produces negative plSwing in stored output', async () => {
-    const result = await submitAssessment(CAT4_FORM);
+    const result = await submitAssessment(CAT4_FORM, TEST_IDEMPOTENCY_KEY);
 
     expect(result.success).toBe(true);
     expect(result.outputs!.category).toBe(4);
@@ -163,7 +178,7 @@ describe('submitAssessment', () => {
       period: 'pre_reform',
     });
 
-    const result = await submitAssessment(CAT1_FORM);
+    const result = await submitAssessment(CAT1_FORM, TEST_IDEMPOTENCY_KEY);
 
     expect(result.success).toBe(true);
     expect(result.outputs!.category).toBe(1);
@@ -172,7 +187,7 @@ describe('submitAssessment', () => {
   });
 
   it('ip_hash stored is hashed (never raw IP)', async () => {
-    await submitAssessment(CAT4_FORM);
+    await submitAssessment(CAT4_FORM, TEST_IDEMPOTENCY_KEY);
 
     const insertPayload = mockInsert.mock.calls[0]![0];
     expect(insertPayload.ip_hash).toBe('sha256_10.0.0.1');
@@ -190,7 +205,7 @@ describe('submitAssessment', () => {
       limit: 100,
     });
 
-    const result = await submitAssessment(CAT4_FORM);
+    const result = await submitAssessment(CAT4_FORM, TEST_IDEMPOTENCY_KEY);
 
     expect(result.success).toBe(false);
     expect(result.error).toContain('Rate limit');
@@ -200,7 +215,7 @@ describe('submitAssessment', () => {
   it('missing session cookie returns error', async () => {
     mockCookieGet.mockReturnValue(undefined);
 
-    const result = await submitAssessment(CAT4_FORM);
+    const result = await submitAssessment(CAT4_FORM, TEST_IDEMPOTENCY_KEY);
 
     expect(result.success).toBe(false);
     expect(result.error).toContain('No active session');
@@ -208,7 +223,7 @@ describe('submitAssessment', () => {
   });
 
   it('stores category and outputs in assessments table', async () => {
-    await submitAssessment(CAT4_FORM);
+    await submitAssessment(CAT4_FORM, TEST_IDEMPOTENCY_KEY);
 
     expect(mockInsert).toHaveBeenCalledTimes(1);
     const insertPayload = mockInsert.mock.calls[0]![0];
@@ -217,5 +232,14 @@ describe('submitAssessment', () => {
     expect(insertPayload.country_code).toBe('AU');
     expect(insertPayload.inputs).toBeDefined();
     expect(insertPayload.outputs).toBeDefined();
+  });
+
+  it('returns assessmentId that is present and non-null', async () => {
+    const result = await submitAssessment(CAT4_FORM, TEST_IDEMPOTENCY_KEY);
+
+    expect(result.success).toBe(true);
+    expect(result.assessmentId).toBeDefined();
+    expect(result.assessmentId).not.toBeNull();
+    expect(result.assessmentId).toBe(INSERTED_ID);
   });
 });

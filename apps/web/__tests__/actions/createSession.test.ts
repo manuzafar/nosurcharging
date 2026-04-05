@@ -46,12 +46,11 @@ describe('createSession', () => {
   });
 
   it('sets cookie with Secure flag in production', async () => {
-    const origEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
+    vi.stubEnv('NODE_ENV', 'production');
     await createSession();
     const [, , options] = mockCookieSet.mock.calls[0]!;
     expect(options.secure).toBe(true);
-    process.env.NODE_ENV = origEnv;
+    vi.unstubAllEnvs();
   });
 
   it('sets cookie with SameSite=strict', async () => {

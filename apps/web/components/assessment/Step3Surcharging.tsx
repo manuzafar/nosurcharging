@@ -72,22 +72,26 @@ export function Step3Surcharging({
         Adding a fee on top of the purchase price for card payments.
       </p>
 
-      {/* CB-04: Yes/No buttons */}
+      {/* CB-04: Yes/No buttons — semantic colours from CSS variables */}
       <div className="mt-6 grid grid-cols-2 gap-3">
         <button
           type="button"
           onClick={() => onSurchargingChange(true)}
-          className={`rounded-xl p-5 text-left transition-all duration-150 ${
+          className="rounded-xl p-5 text-left transition-all duration-150"
+          style={
             surcharging === true
-              ? 'border border-amber-600 bg-amber-50'
-              : 'border border-gray-200'
-          }`}
-          style={{ borderWidth: surcharging === true ? '1px' : '0.5px' }}
+              ? {
+                  borderWidth: '1px',
+                  borderStyle: 'solid',
+                  borderColor: 'var(--color-border-warning)',
+                  background: 'var(--color-background-warning)',
+                }
+              : { borderWidth: '0.5px', borderStyle: 'solid', borderColor: 'var(--color-border-secondary)' }
+          }
         >
           <span
-            className={`font-serif text-heading-md ${
-              surcharging === true ? 'text-amber-800' : 'text-gray-700'
-            }`}
+            className="font-serif text-heading-md"
+            style={{ color: surcharging === true ? 'var(--color-text-warning)' : undefined }}
           >
             Yes
           </span>
@@ -99,17 +103,21 @@ export function Step3Surcharging({
         <button
           type="button"
           onClick={handleNo}
-          className={`rounded-xl p-5 text-left transition-all duration-150 ${
+          className="rounded-xl p-5 text-left transition-all duration-150"
+          style={
             surcharging === false
-              ? 'border border-green-600 bg-green-50'
-              : 'border border-gray-200'
-          }`}
-          style={{ borderWidth: surcharging === false ? '1px' : '0.5px' }}
+              ? {
+                  borderWidth: '1px',
+                  borderStyle: 'solid',
+                  borderColor: 'var(--color-border-success)',
+                  background: 'var(--color-background-success)',
+                }
+              : { borderWidth: '0.5px', borderStyle: 'solid', borderColor: 'var(--color-border-secondary)' }
+          }
         >
           <span
-            className={`font-serif text-heading-md ${
-              surcharging === false ? 'text-green-800' : 'text-gray-700'
-            }`}
+            className="font-serif text-heading-md"
+            style={{ color: surcharging === false ? 'var(--color-text-success)' : undefined }}
           >
             No
           </span>
@@ -159,10 +167,16 @@ export function Step3Surcharging({
             ))}
           </div>
 
-          {/* Amex/BNPL-only note */}
+          {/* Amex/BNPL-only note — CB-05: 12px, semantic success colours */}
           {onlyExemptNetworks && (
-            <div className="mt-3 rounded-lg bg-green-50 border border-green-200 p-3">
-              <p className="text-caption text-green-800">
+            <div
+              className="mt-3 rounded-lg p-3"
+              style={{
+                background: 'var(--color-background-success)',
+                border: '0.5px solid var(--color-border-success)',
+              }}
+            >
+              <p className="text-caption" style={{ color: 'var(--color-text-success)', fontSize: '12px' }}>
                 The October ban doesn&apos;t cover Amex, BNPL or PayPal — these remain
                 surchargeable. If you only surcharge these networks, this reform may
                 not directly affect your surcharge revenue.

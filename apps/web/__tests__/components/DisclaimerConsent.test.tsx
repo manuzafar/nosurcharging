@@ -77,6 +77,7 @@ describe('DisclaimerConsent', () => {
       ),
       consentVersion: 'v1.0',
       consented: true,
+      sessionId: 'test-session-id',
     });
   });
 
@@ -94,5 +95,19 @@ describe('DisclaimerConsent', () => {
     expect(
       screen.getByText(/illustrative estimates only/),
     ).toBeInTheDocument();
+  });
+
+  it('blocks progression when recordConsent returns success: false', async () => {
+    mockRecordConsent.mockResolvedValueOnce({ success: false, error: 'DB error' });
+    render(<DisclaimerConsent onAccept={onAccept} />);
+
+    await user.click(screen.getByRole('checkbox'));
+    await user.click(screen.getByRole('button', { name: /start assessment/i }));
+
+    // onAccept must NOT be called
+    expect(onAccept).not.toHaveBeenCalled();
+
+    // Error message displayed
+    expect(screen.getByText(/could not record your consent/i)).toBeInTheDocument();
   });
 });
