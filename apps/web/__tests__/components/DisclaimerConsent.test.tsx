@@ -77,6 +77,7 @@ describe('DisclaimerConsent', () => {
       ),
       consentVersion: 'v1.0',
       consented: true,
+      sessionId: 'test-session-id',
     });
   });
 

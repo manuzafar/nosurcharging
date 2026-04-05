@@ -1,12 +1,18 @@
 'use server';
 
 // Assessment submission pipeline:
-//   1. Validate session
-//   2. Check rate limit (SR-09: 100 per IP per 24 hours)
-//   3. Hash IP (SR-02: never store raw IP)
-//   4. resolveAssessmentInputs() → build fully resolved inputs
-//   5. calculateMetrics() → produce outputs
-//   6. INSERT into assessments table
+//   1. Validate session + idempotency key
+//   2. Check if this exact submission was already processed (by idempotency key)
+//   3. Check rate limit (SR-09: 100 per IP per 24 hours)
+//   4. Hash IP (SR-02: never store raw IP)
+//   5. resolveAssessmentInputs() → build fully resolved inputs
+//   6. calculateMetrics() → produce outputs
+//   7. INSERT with idempotency key (unique constraint prevents duplicates)
+//
+// Idempotency: client generates a UUID per submission attempt.
+// DB unique constraint on idempotency_key prevents duplicates from
+// StrictMode, double-clicks, or network retries.
+// Multiple assessments per session ARE allowed (new tab = new key).
 //
 // calculateMetrics() NEVER receives raw form data directly.
 // The resolver builds ResolvedAssessmentInputs first.
@@ -49,6 +55,7 @@ export interface AssessmentResult {
 
 export async function submitAssessment(
   formData: AssessmentFormData,
+  idempotencyKey: string,
 ): Promise<AssessmentResult> {
   // 1. Validate session
   const sessionId = await getSessionId();
@@ -56,7 +63,24 @@ export async function submitAssessment(
     return { success: false, error: 'No active session. Please refresh and try again.' };
   }
 
-  // 2. Rate limit check — SR-09: 100 per IP per 24 hours
+  // 2. Validate idempotency key format
+  if (!idempotencyKey || !/^[0-9a-f-]{36}$/.test(idempotencyKey)) {
+    return { success: false, error: 'Invalid request. Please try again.' };
+  }
+
+  // 3. Check if this exact submission was already processed
+  const { data: existing } = await supabaseAdmin
+    .from('assessments')
+    .select('outputs')
+    .eq('idempotency_key', idempotencyKey)
+    .limit(1);
+
+  if (existing && existing.length > 0) {
+    const prev = existing[0]!.outputs as { actions?: ActionItem[] } & AssessmentOutputs;
+    return { success: true, outputs: prev, actions: prev.actions ?? [] };
+  }
+
+  // 4. Rate limit check — SR-09: 100 per IP per 24 hours
   const reqHeaders = headers();
   const clientIP = getClientIP(reqHeaders);
   const ipHash = hashIP(clientIP);
@@ -66,7 +90,7 @@ export async function submitAssessment(
     return { success: false, error: 'Rate limit exceeded. Please try again later.' };
   }
 
-  // 3. Build raw assessment data
+  // 5. Build raw assessment data
   const raw: RawAssessmentData = {
     volume: formData.volume,
     planType: formData.planType,
@@ -87,18 +111,19 @@ export async function submitAssessment(
     merchantInput: formData.merchantInput,
   };
 
-  // 5. resolveAssessmentInputs() → calculateMetrics()
+  // 6. resolveAssessmentInputs() → calculateMetrics()
   //    The resolver builds fully resolved inputs.
   //    The engine receives resolved inputs only — never raw form data.
   const resolved = resolveAssessmentInputs(raw, ctx);
   const outputs = calculateMetrics(resolved);
 
-  // 6. Build action list
+  // 7. Build action list
   const actions = buildActions(outputs.category, formData.psp, formData.industry);
 
-  // 7. INSERT into assessments table
+  // 9. INSERT with idempotency key
   const { error: insertError } = await supabaseAdmin.from('assessments').insert({
     session_id: sessionId,
+    idempotency_key: idempotencyKey,
     country_code: 'AU',
     category: outputs.category,
     inputs: {
@@ -115,6 +140,20 @@ export async function submitAssessment(
   });
 
   if (insertError) {
+    // Unique constraint violation = another request won the race — return that result
+    if (insertError.code === '23505') {
+      const { data: raceWinner } = await supabaseAdmin
+        .from('assessments')
+        .select('outputs')
+        .eq('idempotency_key', idempotencyKey)
+        .limit(1);
+
+      if (raceWinner && raceWinner.length > 0) {
+        const prev = raceWinner[0]!.outputs as { actions?: ActionItem[] } & AssessmentOutputs;
+        return { success: true, outputs: prev, actions: prev.actions ?? [] };
+      }
+    }
+
     console.error('[assessment] Insert failed:', insertError.message);
     return { success: false, error: 'Failed to save assessment. Please try again.' };
   }

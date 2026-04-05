@@ -26,15 +26,17 @@ export function DisclaimerConsent({ onAccept }: DisclaimerConsentProps) {
     setLoading(true);
 
     try {
-      await createSession();
+      const sessionId = await createSession();
       await recordConsent({
         consentType: 'disclaimer',
         consentText: DISCLAIMER_TEXT,
         consentVersion: DISCLAIMER_VERSION,
         consented: true,
+        sessionId,
       });
       onAccept();
-    } catch {
+    } catch (err) {
+      console.error('[disclaimer] Failed:', err);
       setLoading(false);
     }
   };

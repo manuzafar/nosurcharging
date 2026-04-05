@@ -13,10 +13,12 @@ interface ConsentInput {
   consentText: string;
   consentVersion: string;
   consented: boolean;
+  sessionId?: string;
 }
 
 export async function recordConsent(input: ConsentInput): Promise<{ success: boolean; error?: string }> {
-  const sessionId = await getSessionId();
+  // Use provided sessionId (from createSession) or fall back to cookie
+  const sessionId = input.sessionId ?? (await getSessionId());
   if (!sessionId) {
     return { success: false, error: 'No active session' };
   }
