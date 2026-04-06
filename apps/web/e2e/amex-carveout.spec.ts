@@ -18,7 +18,7 @@ test.describe('Amex carve-out', () => {
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 3 — Yes surcharging
-    await page.getByText('Yes').click();
+    await page.getByRole('button', { name: /Yes.*surcharge/i }).click();
 
     // Check only Amex
     await page.getByRole('checkbox', { name: /amex/i }).check();

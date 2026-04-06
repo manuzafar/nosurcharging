@@ -18,7 +18,7 @@ test.describe('Layman journey → Category 2', () => {
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 3 — not surcharging
-    await page.getByText('No').click();
+    await page.getByRole('button', { name: /No.*customers/i }).click();
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 4 — select industry
@@ -45,7 +45,7 @@ test.describe('Layman journey → Category 2', () => {
     await page.getByRole('radio', { name: /flat rate/i }).click();
     await page.getByRole('button', { name: 'Square' }).click();
     await page.getByRole('button', { name: /next/i }).click();
-    await page.getByText('No').click();
+    await page.getByRole('button', { name: /No.*customers/i }).click();
     await page.getByRole('button', { name: /next/i }).click();
     await page.getByText('Cafe / Restaurant').click();
     await page.getByRole('button', { name: /see my results/i }).click();
