@@ -40,7 +40,9 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  if (!configValidated) {
+  // Skip validation during build (NEXT_PHASE=phase-production-build).
+  // Only validate at runtime when env vars are fully available.
+  if (!configValidated && process.env.NEXT_PHASE !== 'phase-production-build') {
     validateConfig();
     configValidated = true;
   }

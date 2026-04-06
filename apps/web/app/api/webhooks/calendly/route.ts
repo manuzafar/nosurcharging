@@ -7,7 +7,11 @@ import { createHmac } from 'crypto';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy-init: Resend throws if API key is missing at construction.
+// In CI, RESEND_API_KEY is not set during build (only at runtime).
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 export async function POST(request: NextRequest) {
   // 1. Verify webhook signature
@@ -76,7 +80,7 @@ export async function POST(request: NextRequest) {
   // 5. Send prep email to merchant
   if (invitee.email) {
     try {
-      await resend.emails.send({
+      await getResend().emails.send({
         from: process.env.RESEND_FROM ?? 'hello@nosurcharging.com.au',
         to: invitee.email,
         subject: 'Your payments discovery call — a few things to have ready',
@@ -111,7 +115,7 @@ export async function POST(request: NextRequest) {
       .join('\n');
 
     try {
-      await resend.emails.send({
+      await getResend().emails.send({
         from: process.env.RESEND_FROM ?? 'hello@nosurcharging.com.au',
         to: notificationEmail,
         subject: `New discovery call booked — ${invitee.name ?? 'Unknown'}`,
