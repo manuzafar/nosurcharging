@@ -30,9 +30,26 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'nosurcharging.com.au — Merchant Payments Intelligence',
+  title: {
+    default: 'nosurcharging.com.au — Merchant Payments Intelligence',
+    template: '%s — nosurcharging.com.au',
+  },
   description:
     'Free, independent merchant payments intelligence. Understand what card acceptance costs you and what the RBA October 2026 surcharge reform means for your business.',
+  metadataBase: new URL('https://nosurcharging.com.au'),
+  openGraph: {
+    title: 'nosurcharging.com.au — What does the RBA surcharge ban mean for your P&L?',
+    description:
+      'Four questions. Under five minutes. A personalised action plan with your PSP name, exact dates, and dollar impact.',
+    url: 'https://nosurcharging.com.au',
+    siteName: 'nosurcharging.com.au',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'nosurcharging.com.au — Merchant Payments Intelligence',
+    description: 'Free tool: understand the RBA October 2026 surcharge reform impact on your business.',
+  },
 };
 
 export default function RootLayout({
