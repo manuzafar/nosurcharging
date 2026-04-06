@@ -13,8 +13,10 @@
 // Performance: <16ms per calculateMetrics call.
 // Console.warn if exceeded in development.
 
+import { useRef } from 'react';
 import { resolveAssessmentInputs } from '@nosurcharging/calculations/rules/resolver';
 import { calculateMetrics } from '@nosurcharging/calculations/calculations';
+import { trackEvent } from '@/lib/analytics';
 import type {
   AssessmentOutputs,
   RawAssessmentData,
@@ -40,6 +42,9 @@ export function PassThroughSlider({
   pspName,
   onOutputsChange,
 }: PassThroughSliderProps) {
+  // Fire Slider used event once per mount — not per input event
+  const sliderUsedTracked = useRef(false);
+
   // Only visible for categories 2 and 4
   if (category !== 2 && category !== 4) return null;
 
@@ -70,6 +75,12 @@ export function PassThroughSlider({
     }
 
     onOutputsChange(newOutputs, pt);
+
+    // Fire once per mount — not per input event
+    if (!sliderUsedTracked.current) {
+      trackEvent('Slider used');
+      sliderUsedTracked.current = true;
+    }
   };
 
   return (

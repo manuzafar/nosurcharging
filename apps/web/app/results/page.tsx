@@ -17,7 +17,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getAssessment } from '@/actions/getAssessment';
 import type { StoredAssessment } from '@/actions/getAssessment';
-import type { AssessmentOutputs, RawAssessmentData, ResolutionContext, ActionItem } from '@nosurcharging/calculations/types';
+import type { AssessmentOutputs, RawAssessmentData, ResolutionContext, ResolutionTrace, ActionItem } from '@nosurcharging/calculations/types';
 import { sanitiseForHTML } from '@/lib/sanitise';
 
 import { VerdictSection } from '@/components/results/VerdictSection';
@@ -93,7 +93,7 @@ function ResultsContent() {
   const volume = (storedInputs.volume as number) ?? 0;
   const pspName = sanitiseForHTML((storedInputs.psp as string) ?? 'Unknown');
   const planType = (storedInputs.planType as 'flat' | 'costplus') ?? 'flat';
-  const resolutionTrace = (storedInputs.resolutionTrace as Record<string, { source: string; value: number; label: string }>) ?? {};
+  const resolutionTrace = (storedInputs.resolutionTrace as ResolutionTrace) ?? {};
 
   // Build raw and context for slider recalculation
   const originalRaw: RawAssessmentData = {

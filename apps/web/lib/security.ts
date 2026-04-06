@@ -39,47 +39,5 @@ export function sanitiseForHTML(input: string): string {
     .replace(/'/g, '&#x27;');
 }
 
-// Validates Tier 2 CALC_* env vars at startup.
-// Throws if card mix env vars are set but don't sum to ~1.0.
-// Called from server-side startup (layout.tsx or instrumentation).
-
-export function validateConfig(): void {
-  const cardMixKeys = [
-    'CALC_CARD_MIX_VISA_DEBIT',
-    'CALC_CARD_MIX_VISA_CREDIT',
-    'CALC_CARD_MIX_MC_DEBIT',
-    'CALC_CARD_MIX_MC_CREDIT',
-    'CALC_CARD_MIX_EFTPOS',
-    'CALC_CARD_MIX_AMEX',
-    'CALC_CARD_MIX_FOREIGN',
-  ];
-
-  const values = cardMixKeys.map((key) => {
-    const raw = process.env[key];
-    if (raw === undefined || raw === '') return null;
-    const parsed = parseFloat(raw);
-    if (isNaN(parsed)) {
-      throw new Error(`Invalid CALC_CARD_MIX env var: ${key}="${raw}" is not a valid number`);
-    }
-    return parsed;
-  });
-
-  // Only validate sum if at least one env var is set
-  const setValues = values.filter((v): v is number => v !== null);
-  if (setValues.length === 0) return;
-
-  // If any are set, all should be set
-  if (setValues.length !== cardMixKeys.length) {
-    const missing = cardMixKeys.filter((_, i) => values[i] === null);
-    throw new Error(
-      `Partial CALC_CARD_MIX env vars: ${missing.join(', ')} not set. Set all 7 or none.`,
-    );
-  }
-
-  const sum = setValues.reduce((s, v) => s + v, 0);
-  if (Math.abs(sum - 1.0) > 0.001) {
-    throw new Error(
-      `CALC_CARD_MIX env vars sum to ${sum.toFixed(4)}, expected 1.0 (tolerance 0.001)`,
-    );
-  }
-}
+// validateConfig() moved to lib/validateConfig.ts — full implementation with
+// card mix sum, IP_HASH_SECRET, DATABASE_URL port, EMAIL_ENCRYPTION_KEY checks.

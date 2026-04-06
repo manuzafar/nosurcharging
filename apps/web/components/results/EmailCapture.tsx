@@ -6,6 +6,7 @@
 // States: default, loading, success, rate-limit, error.
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { captureEmail } from '@/actions/captureEmail';
 import { trackEvent } from '@/lib/analytics';
 
@@ -88,7 +89,10 @@ export function EmailCapture({ assessmentId }: EmailCaptureProps) {
 
       {/* Privacy note — contractual, do not change */}
       <p className="mt-2 text-caption" style={{ color: 'var(--color-text-secondary)' }}>
-        One email on 30 October. Not shared with any payment provider.
+        One email on 30 October. Not shared with any payment provider.{' '}
+        <Link href="/privacy" className="underline">
+          Privacy policy
+        </Link>
       </p>
 
       {/* Error states */}
