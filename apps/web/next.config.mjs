@@ -1,3 +1,5 @@
+import { withSentryConfig } from '@sentry/nextjs';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
@@ -32,12 +34,13 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              // unsafe-eval required by Next.js 14 runtime; unsafe-inline for styled-jsx
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://plausible.io",
+              // unsafe-eval required by Next.js dev mode (React Fast Refresh).
+              // NOT included in production — process.env.NODE_ENV gates it.
+              `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''} https://plausible.io`,
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob:",
               "font-src 'self'",
-              "connect-src 'self' https://plausible.io https://*.supabase.co",
+              "connect-src 'self' https://plausible.io https://*.supabase.co https://*.sentry.io",
               "frame-ancestors 'none'",
             ].join('; '),
           },
@@ -47,4 +50,11 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  widenClientFileUpload: true,
+  hideSourceMaps: true,
+  // Disable source map upload when no auth token (CI/local)
+  disableServerWebpackPlugin: !process.env.SENTRY_AUTH_TOKEN,
+  disableClientWebpackPlugin: !process.env.SENTRY_AUTH_TOKEN,
+});

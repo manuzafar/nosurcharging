@@ -5,6 +5,7 @@
 // Exact wording from docs/legal/disclaimer-text.md — do not change.
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { AmberButton } from '@/components/ui/AmberButton';
 import { createSession } from '@/actions/createSession';
 import { recordConsent } from '@/actions/recordConsent';
@@ -74,6 +75,11 @@ export function DisclaimerConsent({ onAccept }: DisclaimerConsentProps) {
           {DISCLAIMER_TEXT}
         </span>
       </label>
+      <p className="mt-2 text-center">
+        <Link href="/privacy" className="text-caption underline" style={{ color: 'var(--color-text-secondary)' }}>
+          Read our privacy policy
+        </Link>
+      </p>
 
       {consentError && (
         <p className="mt-4 text-center text-body-sm text-red-700 bg-red-50 rounded-lg px-4 py-3">

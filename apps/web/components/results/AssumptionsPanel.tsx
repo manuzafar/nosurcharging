@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { CostBreakdownChart } from '@/components/charts/CostBreakdownChart';
+import { trackEvent } from '@/lib/analytics';
 import type { AssessmentOutputs, ResolutionTrace } from '@nosurcharging/calculations/types';
 
 interface AssumptionsPanelProps {
@@ -43,7 +44,12 @@ export function AssumptionsPanel({
       {/* Toggle */}
       <button
         type="button"
-        onClick={() => setExpanded(!expanded)}
+        onClick={() => {
+          if (!expanded) {
+            trackEvent('Assumptions opened');
+          }
+          setExpanded(!expanded);
+        }}
         className="text-caption cursor-pointer"
         style={{ color: 'var(--color-text-secondary)', background: 'none', border: 'none', padding: 0 }}
       >

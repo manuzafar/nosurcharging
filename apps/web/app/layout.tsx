@@ -1,6 +1,12 @@
 import type { Metadata } from 'next';
 import { DM_Sans, DM_Serif_Display, JetBrains_Mono } from 'next/font/google';
+import { validateConfig } from '@/lib/validateConfig';
 import './globals.css';
+
+// Validate environment variables once on first render.
+// Runs inside the component function, not at module scope,
+// so env vars from .env.local are available.
+let configValidated = false;
 
 const sans = DM_Sans({
   subsets: ['latin'],
@@ -34,19 +40,28 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Skip validation during build (NEXT_PHASE=phase-production-build).
+  // Only validate at runtime when env vars are fully available.
+  if (!configValidated && process.env.NEXT_PHASE !== 'phase-production-build') {
+    validateConfig();
+    configValidated = true;
+  }
+
   return (
     <html
       lang="en"
       className={`${sans.variable} ${serif.variable} ${mono.variable}`}
     >
       <head>
-        {process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN && (
-          <script
-            defer
-            data-domain={process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN}
-            src="https://plausible.io/js/script.tagged-events.js"
-          />
-        )}
+        <script
+          async
+          src="https://plausible.io/js/pa-8DBVtuLndaE6PXL0VuXcj.js"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()`,
+          }}
+        />
       </head>
       <body className="font-sans antialiased">{children}</body>
     </html>
