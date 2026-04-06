@@ -4,10 +4,13 @@ on:
   push:
     branches: [main]
 
+env:
+  PRODUCTION_URL: https://nosurcharging-staging.up.railway.app  # Update to production URL when custom domain is live
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: production
+    environment: production  # Requires manual approval in GitHub Settings → Environments
     env:
       IP_HASH_SECRET: ci-test-secret
     steps:
@@ -30,11 +33,31 @@ jobs:
     runs-on: ubuntu-latest
     needs: deploy
     steps:
-      - name: Wait for production deploy
-        run: sleep 90
-      - name: Health check
+      # Poll health check instead of blind sleep
+      - name: Wait for production deployment
         run: |
-          curl -sf https://nosurcharging.com.au/api/health || exit 1
+          echo "Waiting for production to be healthy..."
+          for i in $(seq 1 30); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ env.PRODUCTION_URL }}/api/health || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "Production is healthy (attempt $i)"
+              exit 0
+            fi
+            echo "Attempt $i: status $STATUS, retrying in 10s..."
+            sleep 10
+          done
+          echo "Production did not become healthy in 5 minutes"
+          exit 1
+
+      - name: Health check response valid
+        run: |
+          BODY=$(curl -sf ${{ env.PRODUCTION_URL }}/api/health)
+          echo "$BODY" | grep -q '"status":"ok"' || (echo "Health check returned unexpected body: $BODY" && exit 1)
+
       - name: Homepage loads
         run: |
-          curl -sf https://nosurcharging.com.au/ | grep -q "nosurcharging" || exit 1
+          curl -sf ${{ env.PRODUCTION_URL }}/ | grep -q "nosurcharging" || exit 1
+
+      - name: Privacy policy loads
+        run: |
+          curl -sf ${{ env.PRODUCTION_URL }}/privacy | grep -q "What we collect" || exit 1
