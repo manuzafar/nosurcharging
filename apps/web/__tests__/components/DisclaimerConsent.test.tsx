@@ -41,14 +41,14 @@ describe('DisclaimerConsent', () => {
 
   it('continue button is disabled until checkbox is checked', () => {
     render(<DisclaimerConsent onAccept={onAccept} />);
-    const button = screen.getByRole('button', { name: /start assessment/i });
+    const button = screen.getByRole('button', { name: /start my assessment/i });
     expect(button).toBeDisabled();
   });
 
   it('continue button becomes enabled after checking the checkbox', async () => {
     render(<DisclaimerConsent onAccept={onAccept} />);
     const checkbox = screen.getByRole('checkbox');
-    const button = screen.getByRole('button', { name: /start assessment/i });
+    const button = screen.getByRole('button', { name: /start my assessment/i });
 
     await user.click(checkbox);
     expect(button).toBeEnabled();
@@ -58,7 +58,7 @@ describe('DisclaimerConsent', () => {
     render(<DisclaimerConsent onAccept={onAccept} />);
 
     await user.click(screen.getByRole('checkbox'));
-    await user.click(screen.getByRole('button', { name: /start assessment/i }));
+    await user.click(screen.getByRole('button', { name: /start my assessment/i }));
 
     expect(mockCreateSession).toHaveBeenCalledTimes(1);
   });
@@ -67,7 +67,7 @@ describe('DisclaimerConsent', () => {
     render(<DisclaimerConsent onAccept={onAccept} />);
 
     await user.click(screen.getByRole('checkbox'));
-    await user.click(screen.getByRole('button', { name: /start assessment/i }));
+    await user.click(screen.getByRole('button', { name: /start my assessment/i }));
 
     expect(mockRecordConsent).toHaveBeenCalledTimes(1);
     expect(mockRecordConsent).toHaveBeenCalledWith({
@@ -85,7 +85,7 @@ describe('DisclaimerConsent', () => {
     render(<DisclaimerConsent onAccept={onAccept} />);
 
     await user.click(screen.getByRole('checkbox'));
-    await user.click(screen.getByRole('button', { name: /start assessment/i }));
+    await user.click(screen.getByRole('button', { name: /start my assessment/i }));
 
     expect(onAccept).toHaveBeenCalledTimes(1);
   });
@@ -97,12 +97,39 @@ describe('DisclaimerConsent', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders the eyebrow tag and headline', () => {
+    render(<DisclaimerConsent onAccept={onAccept} />);
+    expect(screen.getByText('Before we start')).toBeInTheDocument();
+    expect(
+      screen.getByText('A few things to know about this report'),
+    ).toBeInTheDocument();
+  });
+
+  it('renders all four commitment titles in order', () => {
+    render(<DisclaimerConsent onAccept={onAccept} />);
+    expect(
+      screen.getByText('This is an estimate, not a guarantee.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('We explain everything.')).toBeInTheDocument();
+    expect(screen.getByText('We are independent.')).toBeInTheDocument();
+    expect(
+      screen.getByText('This is not financial advice.'),
+    ).toBeInTheDocument();
+  });
+
+  it('uses "payment provider" wording in the commitment items', () => {
+    render(<DisclaimerConsent onAccept={onAccept} />);
+    const text = document.body.textContent ?? '';
+    expect(text).toMatch(/what your payment provider does after October/);
+    expect(text).toMatch(/Stripe, Square, Tyro, or any payment provider/);
+  });
+
   it('blocks progression when recordConsent returns success: false', async () => {
     mockRecordConsent.mockResolvedValueOnce({ success: false, error: 'DB error' });
     render(<DisclaimerConsent onAccept={onAccept} />);
 
     await user.click(screen.getByRole('checkbox'));
-    await user.click(screen.getByRole('button', { name: /start assessment/i }));
+    await user.click(screen.getByRole('button', { name: /start my assessment/i }));
 
     // onAccept must NOT be called
     expect(onAccept).not.toHaveBeenCalled();
