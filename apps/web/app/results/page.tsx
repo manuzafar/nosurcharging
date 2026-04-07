@@ -223,6 +223,12 @@ function ResultsContent() {
                 outputs={outputs}
                 passThrough={passThrough}
                 resolutionTrace={resolutionTrace}
+                volume={volume}
+                pspName={pspName}
+                planType={planType}
+                msfRate={originalRaw.msfRate}
+                surcharging={originalRaw.surcharging}
+                surchargeRate={originalRaw.surchargeRate}
               />
             </div>
           </DepthToggle>
