@@ -22,6 +22,7 @@ import { sanitiseForHTML } from '@/lib/sanitise';
 
 import { VerdictSection } from '@/components/results/VerdictSection';
 import { MetricCards } from '@/components/results/MetricCards';
+import { ProblemsBlock } from '@/components/results/ProblemsBlock';
 import { PassThroughSlider } from '@/components/results/PassThroughSlider';
 import { EscapeScenarioCard } from '@/components/results/EscapeScenarioCard';
 import { ActionList } from '@/components/results/ActionList';
@@ -156,7 +157,15 @@ function ResultsContent() {
           <MetricCards outputs={outputs} />
         </div>
 
-        {/* 3. ProblemsBlock — added in commit 4f */}
+        {/* 3. ProblemsBlock — explains why the verdict number looks the way it does */}
+        <div className="mt-6" style={revealStyle(180)}>
+          <ProblemsBlock
+            category={category}
+            pspName={pspName}
+            surchargeRevenue={outputs.surchargeRevenue}
+            icSaving={outputs.icSaving}
+          />
+        </div>
 
         {/* 4. ActionList — moved up from the bottom of the page */}
         <div className="mt-6" style={revealStyle(240)}>
