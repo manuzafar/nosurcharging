@@ -1,79 +1,93 @@
-// Three numbered features. Bordered row, not cards with icons.
-// Each: accent mono number left, text right.
-// Mobile: single column stack.
+// Homepage "How it works" — restructured per ux-spec §1.6.
+// Was: three numbered features describing the product.
+// Now: four numbered questions matching the actual assessment steps,
+// each with a one-line hint explaining why the question matters.
+// Bordered container, left number column, right question + hint rows.
 
-const FEATURES = [
+interface Step {
+  number: string;
+  question: string;
+  hint: string;
+}
+
+const STEPS: Step[] = [
   {
     number: '01',
-    title: 'Answer four questions',
-    description:
-      'Your card volume, plan type, surcharging status, and industry. Under five minutes. No account required.',
+    question: 'How much do you process in card payments?',
+    hint: 'We calculate your actual dollar impact — not a percentage, a number.',
   },
   {
     number: '02',
-    title: 'See your P&L impact',
-    description:
-      'A personalised calculation of how the October 2026 interchange cuts and surcharge ban affect your bottom line — in dollars.',
+    question: 'Does your statement show one rate, or a breakdown?',
+    hint: 'This determines whether the cost saving reaches you automatically or depends on a rate review.',
   },
   {
     number: '03',
-    title: 'Get your action plan',
-    description:
-      'Specific actions with your PSP name, exact dates, and urgency tiers. Not generic advice — personalised to your situation.',
+    question: 'Do you add a surcharge to card payments?',
+    hint: 'The ban is the biggest variable. If you surcharge, you need to act before October.',
+  },
+  {
+    number: '04',
+    question: 'What industry are you in?',
+    hint: 'For average transaction size, which affects the calculation.',
   },
 ];
 
 export function FeaturesSection() {
   return (
-    <section className="py-12 px-5">
-      <div className="mx-auto max-w-results">
-        <h2
-          className="text-center font-serif font-medium"
-          style={{ fontSize: '18px', color: 'var(--color-text-primary)' }}
-        >
-          How it works
-        </h2>
+    <section className="border-b border-rule bg-paper px-5 py-12">
+      {/* Eyebrow label */}
+      <p className="text-center text-[10px] font-medium uppercase tracking-[3px] text-ink-faint">
+        Four questions. Your report.
+      </p>
 
-        <div
-          className="mt-6 rounded-xl overflow-hidden"
-          style={{ border: '1px solid var(--color-border-secondary)' }}
-        >
-          {FEATURES.map((feature, i) => (
+      {/* Steps container */}
+      <div className="mx-auto mt-7 max-w-[480px] border border-rule bg-paper-white">
+        {STEPS.map((step, i) => (
+          <div
+            key={step.number}
+            className="flex items-start"
+            style={
+              i < STEPS.length - 1
+                ? { borderBottom: '1px solid rgba(221, 213, 200, 0.6)' }
+                : undefined
+            }
+          >
+            {/* Step number — fixed-width left column */}
             <div
-              key={feature.number}
-              className="flex gap-4 p-5 max-[500px]:flex-col"
-              style={
-                i < FEATURES.length - 1
-                  ? { borderBottom: '1px solid var(--color-border-secondary)' }
-                  : undefined
-              }
+              className="shrink-0"
+              style={{
+                width: '52px',
+                padding: '18px 0',
+                textAlign: 'center',
+                borderRight: '1px solid rgba(221, 213, 200, 0.6)',
+              }}
             >
-              {/* Number */}
               <span
-                className="font-mono font-medium shrink-0"
-                style={{ fontSize: '14px', color: '#1A6B5A' }}
+                className="font-mono font-medium text-accent"
+                style={{ fontSize: '11px', letterSpacing: '0.5px' }}
               >
-                {feature.number}
+                {step.number}
               </span>
-
-              {/* Text */}
-              <div>
-                <p
-                  className="font-medium"
-                  style={{ fontSize: '14px', color: 'var(--color-text-primary)' }}
-                >
-                  {feature.title}
-                </p>
-                <p
-                  className="mt-1 text-body-sm"
-                  style={{ color: 'var(--color-text-secondary)', lineHeight: '1.65' }}
-                >
-                  {feature.description}
-                </p>
-              </div>
             </div>
-          ))}
-        </div>
+
+            {/* Question + hint */}
+            <div className="flex-1 px-5 py-4">
+              <p
+                className="font-serif text-ink"
+                style={{ fontSize: '15px', lineHeight: '1.35' }}
+              >
+                {step.question}
+              </p>
+              <p
+                className="mt-1 text-ink-faint"
+                style={{ fontSize: '12px', lineHeight: '1.55' }}
+              >
+                {step.hint}
+              </p>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );
