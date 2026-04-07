@@ -27,17 +27,12 @@
 
   /* Chart colours (hardcoded — consistent across themes) */
   --chart-interchange: #E24B4A;
-  --chart-scheme: #BA7517;
+  --chart-scheme: #1A6B5A;
   --chart-margin: #888780;
   --chart-surcharge: #3B6D11;
 
-  /* Brand amber (hardcoded for themed sections) */
-  --amber-50: #FAEEDA;
-  --amber-200: #EF9F27;
-  --amber-400: #BA7517;
-  --amber-800: #633806;
-
-  /* Semantic colours — light mode */
+  /* Semantic colours — light mode.
+     Warning stays amber/orange (semantic) — accent green is brand, not warning. */
   --color-background-success: #EAF3DE;
   --color-text-success: #27500A;
   --color-border-success: #C0DD97;

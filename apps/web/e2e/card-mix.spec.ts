@@ -18,7 +18,7 @@ test.describe('Card mix → confidence badge', () => {
     // Open card mix input
     await page.getByText(/know your card mix/i).click();
 
-    // Default confidence badge should show "RBA averages" (amber)
+    // Default confidence badge should show "RBA averages" (grey/neutral)
     await expect(page.getByText(/will use rba averages/i)).toBeVisible();
 
     // Fill in expert rates to change confidence
