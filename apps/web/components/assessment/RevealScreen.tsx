@@ -82,7 +82,7 @@ export function RevealScreen({ formData, onComplete, onError }: RevealScreenProp
         Calculating your position...
       </p>
 
-      <div className="h-3 w-3 rounded-full bg-accent-border animate-pulse-amber" />
+      <div className="h-3 w-3 rounded-full bg-accent-border animate-pulse-accent" />
 
       <p
         className={`font-serif text-body-lg text-white/60 transition-opacity duration-400 ease-out ${

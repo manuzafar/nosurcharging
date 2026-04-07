@@ -10,15 +10,7 @@ const config: Config = {
         mono: ['var(--font-mono)', 'Courier New', 'monospace'],
       },
       colors: {
-        // ── Legacy amber palette — scheduled for removal in Phase 1 final commit ──
-        amber: {
-          50: '#FAEEDA',
-          200: '#EF9F27',
-          400: '#BA7517',
-          800: '#633806',
-        },
-
-        // ── Revamp accent system (approval LED green) ──
+        // ── Accent system (approval LED green) ──
         accent: {
           DEFAULT: '#1A6B5A',
           light: '#EBF6F3',
@@ -86,11 +78,11 @@ const config: Config = {
         content: '480px',
       },
       animation: {
-        'pulse-amber': 'pulseAmber 1.2s ease-in-out infinite',
+        'pulse-accent': 'pulseAccent 1.2s ease-in-out infinite',
         'fade-up': 'fadeUp 0.4s ease forwards',
       },
       keyframes: {
-        pulseAmber: {
+        pulseAccent: {
           '0%, 100%': { transform: 'scale(1)', opacity: '1' },
           '50%': { transform: 'scale(1.6)', opacity: '0.4' },
         },
