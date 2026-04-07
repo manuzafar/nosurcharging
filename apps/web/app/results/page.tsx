@@ -33,18 +33,11 @@ import { EmailCapture } from '@/components/results/EmailCapture';
 import { ConsultingCTA } from '@/components/results/ConsultingCTA';
 import { PSPRateRegistry } from '@/components/results/PSPRateRegistry';
 import { ResultsDisclaimer } from '@/components/results/ResultsDisclaimer';
+import { SkeletonLoader } from '@/components/results/SkeletonLoader';
 
 export default function ResultsPage() {
   return (
-    <Suspense
-      fallback={
-        <main className="flex min-h-screen items-center justify-center">
-          <p className="text-body" style={{ color: 'var(--color-text-secondary)' }}>
-            Loading results...
-          </p>
-        </main>
-      }
-    >
+    <Suspense fallback={<SkeletonLoader />}>
       <ResultsContent />
     </Suspense>
   );
@@ -78,13 +71,7 @@ function ResultsContent() {
   }, [assessmentId, router]);
 
   if (loading || !assessment || !outputs) {
-    return (
-      <main className="flex min-h-screen items-center justify-center">
-        <p className="text-body" style={{ color: 'var(--color-text-secondary)' }}>
-          Loading results...
-        </p>
-      </main>
-    );
+    return <SkeletonLoader />;
   }
 
   // ── Extract data from stored assessment ────────────────────────
