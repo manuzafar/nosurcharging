@@ -1,14 +1,14 @@
 'use client';
 
-// CB-18: Urgency-tiered action list.
+// ActionList — per ux-spec §3.4.
+// Each action renders as a card with four parts:
+//   1. Header row    — tier chip + monospace date
+//   2. What text     — the instruction itself (13px, 500, primary)
+//   3. Script block  — italic, paper background, accent border-left
+//   4. Why text      — small, tertiary
+//
 // Actions come from buildActions() in @nosurcharging/calculations.
 // PSP name is inline in the action text. Never "your PSP".
-// This component does NOT derive urgency — it reads priority from each action.
-//
-// Three tiers with group headers:
-//   URGENT — DO THIS WEEK
-//   PLAN — BEFORE AUGUST
-//   MONITOR — AFTER OCTOBER
 
 import type { ActionItem, ActionPriority } from '@nosurcharging/calculations/types';
 
@@ -18,115 +18,137 @@ interface ActionListProps {
 
 const TIER_CONFIG: Record<
   ActionPriority,
-  { header: string; pillBg: string; pillColor: string }
+  { label: string; pillBg: string; pillColor: string }
 > = {
   urgent: {
-    header: 'URGENT — DO THIS WEEK',
+    label: 'URGENT',
     pillBg: 'var(--color-background-danger)',
     pillColor: 'var(--color-text-danger)',
   },
   plan: {
-    header: 'PLAN — BEFORE AUGUST',
-    pillBg: 'var(--color-background-warning)',
-    pillColor: 'var(--color-text-warning)',
+    label: 'PLAN',
+    // accent-light bg + accent text (no CSS var; matches DepthToggle / ProblemsBlock)
+    pillBg: '#EBF6F3',
+    pillColor: '#1A6B5A',
   },
   monitor: {
-    header: 'MONITOR — AFTER OCTOBER',
+    label: 'MONITOR',
     pillBg: 'var(--color-background-secondary)',
-    pillColor: 'var(--color-text-secondary)',
+    pillColor: 'var(--color-text-tertiary)',
   },
 };
 
 const TIER_ORDER: ActionPriority[] = ['urgent', 'plan', 'monitor'];
 
+function sortByTier(actions: ActionItem[]): ActionItem[] {
+  return [...actions].sort(
+    (a, b) => TIER_ORDER.indexOf(a.priority) - TIER_ORDER.indexOf(b.priority),
+  );
+}
+
 export function ActionList({ actions }: ActionListProps) {
-  // Group actions by priority — read from action, not derived
-  const grouped = TIER_ORDER.map((tier) => ({
-    tier,
-    config: TIER_CONFIG[tier],
-    items: actions.filter((a) => a.priority === tier),
-  })).filter((g) => g.items.length > 0);
+  const sorted = sortByTier(actions);
 
   return (
-    <div>
-      <h3
-        className="font-serif font-medium"
-        style={{ fontSize: '17px', color: 'var(--color-text-primary)' }}
+    <section className="py-6">
+      {/* Section eyebrow */}
+      <p
+        className="font-medium uppercase"
+        style={{
+          fontSize: '9px',
+          letterSpacing: '2.5px',
+          color: 'var(--color-text-tertiary)',
+          marginBottom: '16px',
+        }}
       >
-        Your action plan
-      </h3>
+        What to do, in order
+      </p>
 
-      <div className="mt-4 space-y-5">
-        {grouped.map((group) => (
-          <div key={group.tier}>
-            {/* Tier group header */}
-            <p
-              className="font-medium"
+      <div className="space-y-2">
+        {sorted.map((action, i) => {
+          const config = TIER_CONFIG[action.priority];
+          return (
+            <article
+              key={i}
               style={{
-                fontSize: '10px',
-                letterSpacing: '1.2px',
-                color: 'var(--color-text-tertiary)',
+                background: 'var(--color-background-primary)',
+                border: '1px solid var(--color-border-secondary)',
+                padding: '16px',
               }}
             >
-              {group.config.header}
-            </p>
-
-            <div className="mt-2">
-              {group.items.map((action, i) => (
-                <div
-                  key={i}
-                  className="flex gap-3 py-3"
-                  style={
-                    i < group.items.length - 1
-                      ? { borderBottom: '0.5px solid var(--color-border-tertiary)' }
-                      : undefined
-                  }
+              {/* Header row — tier chip + date */}
+              <div className="flex items-center gap-2" style={{ marginBottom: '8px' }}>
+                <span
+                  className="font-medium uppercase"
+                  style={{
+                    fontSize: '9px',
+                    letterSpacing: '0.8px',
+                    padding: '3px 8px',
+                    background: config.pillBg,
+                    color: config.pillColor,
+                  }}
                 >
-                  {/* Date chip */}
-                  <span
-                    className="font-mono shrink-0"
-                    style={{
-                      fontSize: '10px',
-                      fontWeight: 500,
-                      color: '#1A6B5A',
-                      letterSpacing: '0.8px',
-                      minWidth: '80px',
-                      paddingTop: '2px',
-                      lineHeight: '1.4',
-                    }}
-                  >
-                    {action.timeAnchor}
-                  </span>
+                  {config.label}
+                </span>
+                <span
+                  className="font-mono"
+                  style={{
+                    fontSize: '10px',
+                    color: '#1A6B5A',
+                    letterSpacing: '0.3px',
+                  }}
+                >
+                  {action.timeAnchor}
+                </span>
+              </div>
 
-                  {/* Action text with urgency pill */}
-                  <div className="flex-1">
-                    {/* Urgency pill */}
-                    <span
-                      className="inline-block mr-1.5 align-middle"
-                      style={{
-                        fontSize: '10px',
-                        padding: '1px 7px',
-                        borderRadius: '20px',
-                        background: group.config.pillBg,
-                        color: group.config.pillColor,
-                      }}
-                    >
-                      {group.tier}
-                    </span>
+              {/* What — the instruction */}
+              <p
+                className="font-medium"
+                style={{
+                  fontSize: '13px',
+                  color: 'var(--color-text-primary)',
+                  lineHeight: 1.5,
+                  marginBottom: action.script || action.why ? '8px' : 0,
+                }}
+              >
+                {action.text}
+              </p>
 
-                    <span
-                      className="text-body-sm"
-                      style={{ color: 'var(--color-text-secondary)', lineHeight: '1.65' }}
-                    >
-                      {action.text}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
+              {/* Script — only when present */}
+              {action.script && (
+                <p
+                  style={{
+                    background: '#FAF7F2',
+                    borderLeft: '2px solid #72C4B0',
+                    padding: '10px 12px',
+                    fontSize: '12px',
+                    color: 'var(--color-text-secondary)',
+                    fontStyle: 'italic',
+                    lineHeight: 1.7,
+                    marginBottom: action.why ? '8px' : 0,
+                  }}
+                >
+                  {action.script}
+                </p>
+              )}
+
+              {/* Why — only when present */}
+              {action.why && (
+                <p
+                  style={{
+                    fontSize: '11px',
+                    color: 'var(--color-text-tertiary)',
+                    lineHeight: 1.65,
+                  }}
+                >
+                  {action.why}
+                </p>
+              )}
+            </article>
+          );
+        })}
       </div>
-    </div>
+    </section>
   );
 }
