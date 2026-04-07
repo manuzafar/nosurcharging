@@ -140,7 +140,15 @@ function ResultsContent() {
 
         {/* 1. Verdict */}
         <div style={revealStyle(0)}>
-          <VerdictSection outputs={outputs} volume={volume} pspName={pspName} />
+          <VerdictSection
+            outputs={outputs}
+            volume={volume}
+            pspName={pspName}
+            planType={planType}
+            msfRate={originalRaw.msfRate}
+            surcharging={originalRaw.surcharging}
+            surchargeRate={originalRaw.surchargeRate}
+          />
         </div>
 
         {/* 2. Metric cards */}
