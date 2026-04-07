@@ -8,7 +8,7 @@
 
 import { Card } from '@/components/ui/Card';
 import { PillBadge } from '@/components/ui/PillBadge';
-import { AmberButton } from '@/components/ui/AmberButton';
+import { AccentButton } from '@/components/ui/AccentButton';
 import { TextButton } from '@/components/ui/TextButton';
 import { ExpertPanel } from './ExpertPanel';
 import { CardMixInput } from './CardMixInput';
@@ -160,9 +160,9 @@ export function Step2PlanType({
 
       <div className="mt-8 flex items-center justify-between">
         <TextButton onClick={onBack}>Back</TextButton>
-        <AmberButton onClick={onNext} disabled={!canProceed}>
+        <AccentButton onClick={onNext} disabled={!canProceed}>
           Next
-        </AmberButton>
+        </AccentButton>
       </div>
     </div>
   );

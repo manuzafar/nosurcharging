@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { AmberButton } from '@/components/ui/AmberButton';
+import { AccentButton } from '@/components/ui/AccentButton';
 import { createSession } from '@/actions/createSession';
 import { recordConsent } from '@/actions/recordConsent';
 
@@ -88,9 +88,9 @@ export function DisclaimerConsent({ onAccept }: DisclaimerConsentProps) {
       )}
 
       <div className="mt-6 flex justify-center">
-        <AmberButton onClick={handleStart} disabled={!checked || loading}>
+        <AccentButton onClick={handleStart} disabled={!checked || loading}>
           {loading ? 'Starting...' : 'Start assessment'}
-        </AmberButton>
+        </AccentButton>
       </div>
     </div>
   );

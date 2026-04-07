@@ -4,7 +4,7 @@
 // CB-06: 3 columns (2 below 500px). SVG icons, not emoji.
 // Selected: 1px accent border, #EBF6F3 bg, #0D4A3C text, #1A6B5A icon.
 
-import { AmberButton } from '@/components/ui/AmberButton';
+import { AccentButton } from '@/components/ui/AccentButton';
 import { TextButton } from '@/components/ui/TextButton';
 
 const INDUSTRIES = [
