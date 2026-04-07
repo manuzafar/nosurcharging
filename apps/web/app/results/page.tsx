@@ -22,9 +22,7 @@ import { sanitiseForHTML } from '@/lib/sanitise';
 
 import { VerdictSection } from '@/components/results/VerdictSection';
 import { MetricCards } from '@/components/results/MetricCards';
-import { ReformTimeline } from '@/components/results/ReformTimeline';
 import { PassThroughSlider } from '@/components/results/PassThroughSlider';
-import { WaterfallChart } from '@/components/charts/WaterfallChart';
 import { EscapeScenarioCard } from '@/components/results/EscapeScenarioCard';
 import { ActionList } from '@/components/results/ActionList';
 import { AssumptionsPanel } from '@/components/results/AssumptionsPanel';
@@ -129,36 +127,43 @@ function ResultsContent() {
   });
 
   return (
-    <main className="min-h-screen" style={{ background: 'var(--color-background-primary)' }}>
-      {/* Site-wide disclaimer */}
-      <div
-        className="py-2 text-center"
-        style={{ borderBottom: '0.5px solid var(--color-border-tertiary)' }}
-      >
-        <p className="text-micro" style={{ color: 'var(--color-text-tertiary)' }}>
-          nosurcharging.com.au provides general guidance only. Not financial advice.
-          Verify with your PSP before making business decisions.
-        </p>
-      </div>
+    <main className="min-h-screen bg-paper">
+      {/* Site-wide FR-02 disclaimer banner removed from results page (Q5):
+          the dedicated <ResultsDisclaimer/> at the bottom + verdict copy
+          carry the legal weight. Keeping the top banner duplicates messaging. */}
 
       <div className="mx-auto max-w-results px-5 pb-12">
-        {/* 1. Verdict — delay 0ms */}
+        {/* ───────────────────────────── PRIMARY ZONE ─────────────────────────────
+            Always visible. Carries the verdict, the metrics, and the action plan.
+            Per ux-spec §3.1 the action plan is moved up out of the depth zone so
+            merchants see what to DO before they see how the numbers were derived. */}
+
+        {/* 1. Verdict */}
         <div style={revealStyle(0)}>
           <VerdictSection outputs={outputs} volume={volume} pspName={pspName} />
         </div>
 
-        {/* 2. Metrics — delay 120ms */}
+        {/* 2. Metric cards */}
         <div style={revealStyle(120)}>
           <MetricCards outputs={outputs} />
         </div>
 
-        {/* 3. Reform Timeline — delay 180ms */}
-        <div className="mt-4" style={revealStyle(180)}>
-          <ReformTimeline />
+        {/* 3. ProblemsBlock — added in commit 4f */}
+
+        {/* 4. ActionList — moved up from the bottom of the page */}
+        <div className="mt-6" style={revealStyle(240)}>
+          <ActionList actions={actions} />
         </div>
 
-        {/* 4. Pass-through Slider — delay 240ms (Cat 2/4 only) */}
-        <div className="mt-4" style={revealStyle(240)}>
+        {/* ───────────────────────────── DEPTH ZONE ───────────────────────────────
+            Reserved for the merchant who wants to understand the numbers.
+            DepthToggle wrapper added in commit 4g — until then everything below
+            renders inline so the page remains fully functional. */}
+
+        {/* 5. DepthToggle — added in commit 4g */}
+
+        {/* 6. PassThroughSlider (Cat 2 / 4 only — internally gates) */}
+        <div className="mt-8" style={revealStyle(360)}>
           <PassThroughSlider
             category={category}
             passThrough={passThrough}
@@ -170,13 +175,8 @@ function ResultsContent() {
           />
         </div>
 
-        {/* 5. Waterfall Chart — delay 240ms */}
-        <div className="mt-4" style={revealStyle(240)}>
-          <WaterfallChart outputs={outputs} />
-        </div>
-
-        {/* 6. Escape Scenario Card — no delay (Cat 2/4 only) */}
-        <div className="mt-4" style={revealStyle(300)}>
+        {/* 7. EscapeScenarioCard (Cat 2 / 4 only — internally gates) */}
+        <div className="mt-4" style={revealStyle(420)}>
           <EscapeScenarioCard
             category={category}
             outputs={outputs}
@@ -187,13 +187,10 @@ function ResultsContent() {
           />
         </div>
 
-        {/* 7. Action List — delay 360ms */}
-        <div className="mt-6" style={revealStyle(360)}>
-          <ActionList actions={actions} />
-        </div>
+        {/* 8. CostCompositionChart — added in commit 4i */}
 
-        {/* 8. Assumptions Panel — delay 360ms */}
-        <div className="mt-6" style={revealStyle(360)}>
+        {/* 9. AssumptionsPanel */}
+        <div className="mt-6" style={revealStyle(480)}>
           <AssumptionsPanel
             outputs={outputs}
             passThrough={passThrough}
@@ -201,18 +198,22 @@ function ResultsContent() {
           />
         </div>
 
-        {/* 9. Email Capture — delay 480ms */}
-        <div className="mt-8" style={revealStyle(480)}>
-          <EmailCapture assessmentId={assessmentId ?? undefined} />
-        </div>
+        {/* ─────────────────────────── ALWAYS VISIBLE ─────────────────────────────
+            Below the depth zone but above the legal disclaimer.
+            ConsultingCTA now precedes EmailCapture per spec §3.1. */}
 
-        {/* 10. Consulting CTA — delay 480ms */}
-        <div className="mt-6" style={revealStyle(480)}>
+        {/* 10. ConsultingCTA */}
+        <div className="mt-8" style={revealStyle(540)}>
           <ConsultingCTA category={category} pspName={pspName} />
         </div>
 
-        {/* 11. PSP Rate Registry */}
-        <div className="mt-8" style={revealStyle(540)}>
+        {/* 11. EmailCapture */}
+        <div className="mt-6" style={revealStyle(600)}>
+          <EmailCapture assessmentId={assessmentId ?? undefined} />
+        </div>
+
+        {/* 12. PSPRateRegistry */}
+        <div className="mt-8" style={revealStyle(660)}>
           <PSPRateRegistry
             assessmentId={assessmentId ?? ''}
             pspName={pspName}
@@ -221,8 +222,8 @@ function ResultsContent() {
           />
         </div>
 
-        {/* 12. Results Disclaimer */}
-        <div className="mt-8 mb-4" style={revealStyle(600)}>
+        {/* 13. ResultsDisclaimer */}
+        <div className="mt-8 mb-4" style={revealStyle(720)}>
           <ResultsDisclaimer />
         </div>
       </div>
