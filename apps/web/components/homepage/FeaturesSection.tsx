@@ -1,5 +1,5 @@
 // Three numbered features. Bordered row, not cards with icons.
-// Each: amber mono number left, text right.
+// Each: accent mono number left, text right.
 // Mobile: single column stack.
 
 const FEATURES = [
@@ -51,7 +51,7 @@ export function FeaturesSection() {
               {/* Number */}
               <span
                 className="font-mono font-medium shrink-0"
-                style={{ fontSize: '14px', color: '#BA7517' }}
+                style={{ fontSize: '14px', color: '#1A6B5A' }}
               >
                 {feature.number}
               </span>

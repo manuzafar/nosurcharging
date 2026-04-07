@@ -1,7 +1,8 @@
 'use client';
 
-// Primary CTA button. Amber filled: bg #BA7517, text #FAEEDA.
+// Primary CTA button. Accent filled: bg #1A6B5A, text #EBF6F3.
 // Disabled state: 30% opacity.
+// NOTE: File will be renamed to AccentButton.tsx in Commit 1c.
 
 interface AmberButtonProps {
   children: React.ReactNode;
@@ -23,7 +24,7 @@ export function AmberButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-lg bg-amber-400 px-8 py-3 text-body font-medium text-amber-50
+      className={`rounded-lg bg-accent px-8 py-3 text-body font-medium text-accent-light
         transition-opacity duration-150 hover:opacity-90
         disabled:opacity-30 disabled:cursor-not-allowed ${className}`}
     >

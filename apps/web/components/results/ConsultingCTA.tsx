@@ -66,7 +66,7 @@ export function ConsultingCTA({ category, pspName }: ConsultingCTAProps) {
         onClick={handleClick}
         className="mt-4 inline-block rounded-lg px-7 py-3 text-body-sm font-medium
           transition-opacity duration-150 hover:opacity-90"
-        style={{ background: '#BA7517', color: '#FAEEDA' }}
+        style={{ background: '#1A6B5A', color: '#EBF6F3' }}
       >
         Book a free discovery call
       </a>

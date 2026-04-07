@@ -1,6 +1,6 @@
 'use client';
 
-// Step counter: "01 / 04" — current number in amber mono.
+// Step counter: "01 / 04" — current number in accent mono.
 // Font: var(--font-mono), 13px.
 
 interface StepCounterProps {
@@ -13,7 +13,7 @@ export function StepCounter({ current, total = 4 }: StepCounterProps) {
 
   return (
     <span className="font-mono text-body-sm text-gray-400 whitespace-nowrap">
-      <span className="text-amber-400">{pad(current)}</span>
+      <span className="text-accent">{pad(current)}</span>
       {' / '}
       {pad(total)}
     </span>

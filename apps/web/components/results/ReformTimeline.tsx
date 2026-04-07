@@ -2,7 +2,7 @@
 
 // CB-17: Reform Timeline — non-interactive, purely informational.
 // Horizontal line with 6 event dots.
-// Progress bar: amber, 0% to ~12% (April 2026 position).
+// Progress bar: accent, 0% to ~12% (April 2026 position).
 // Below 500px: hide sub-labels, show dates only.
 
 const EVENTS = [
@@ -11,8 +11,8 @@ const EVENTS = [
     label: 'Today',
     sublabel: 'You are here',
     dotStyle: {
-      background: '#BA7517',
-      boxShadow: '0 0 0 3px rgba(186,117,23,0.2)',
+      background: '#1A6B5A',
+      boxShadow: '0 0 0 3px rgba(26,107,90,0.2)',
     } as React.CSSProperties,
     isToday: true,
   },
@@ -20,7 +20,7 @@ const EVENTS = [
     date: 'Aug 2026',
     label: 'Aug 2026',
     sublabel: 'Negotiate window',
-    dotStyle: { background: '#BA7517' } as React.CSSProperties,
+    dotStyle: { background: '#1A6B5A' } as React.CSSProperties,
     isToday: false,
   },
   {
@@ -67,10 +67,10 @@ export function ReformTimeline() {
           style={{ background: 'var(--color-border-tertiary)' }}
         />
 
-        {/* Progress line — amber, ~12% width */}
+        {/* Progress line — accent, ~12% width */}
         <div
           className="absolute top-2 left-0 h-px"
-          style={{ width: '12%', background: '#BA7517' }}
+          style={{ width: '12%', background: '#1A6B5A' }}
         />
 
         {/* Events */}
@@ -89,7 +89,7 @@ export function ReformTimeline() {
                 style={{
                   fontSize: '9px',
                   letterSpacing: '0.5px',
-                  color: event.isToday ? '#BA7517' : 'var(--color-text-secondary)',
+                  color: event.isToday ? '#1A6B5A' : 'var(--color-text-secondary)',
                   fontWeight: event.isToday ? 500 : 400,
                 }}
               >

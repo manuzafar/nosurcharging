@@ -88,7 +88,7 @@ export function ActionList({ actions }: ActionListProps) {
                     style={{
                       fontSize: '10px',
                       fontWeight: 500,
-                      color: '#BA7517',
+                      color: '#1A6B5A',
                       letterSpacing: '0.8px',
                       minWidth: '80px',
                       paddingTop: '2px',

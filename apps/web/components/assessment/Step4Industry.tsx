@@ -2,7 +2,7 @@
 
 // Step 4: Industry selection.
 // CB-06: 3 columns (2 below 500px). SVG icons, not emoji.
-// Selected: 1px amber border, #FAEEDA bg, #633806 text, #BA7517 icon.
+// Selected: 1px accent border, #EBF6F3 bg, #0D4A3C text, #1A6B5A icon.
 
 import { AmberButton } from '@/components/ui/AmberButton';
 import { TextButton } from '@/components/ui/TextButton';
@@ -84,7 +84,7 @@ export function Step4Industry({
 }: Step4IndustryProps) {
   return (
     <div>
-      <p className="text-label tracking-widest text-amber-400">Step 4</p>
+      <p className="text-label tracking-widest text-accent">Step 4</p>
       <h2 className="mt-2 font-serif text-heading-lg">What industry are you in?</h2>
       <p className="mt-2 text-body-sm text-gray-500">
         This personalises your action list and average transaction value.
@@ -101,12 +101,12 @@ export function Step4Industry({
               className={`flex flex-col items-center gap-2 rounded-lg p-3.5 text-center
                 transition-all duration-150 ${
                   selected
-                    ? 'border border-amber-400 bg-amber-50 text-amber-800'
+                    ? 'border border-accent bg-accent-light text-accent-dark'
                     : 'border border-gray-200 text-gray-600 hover:border-gray-300'
                 }`}
               style={{ borderWidth: selected ? '1px' : '0.5px' }}
             >
-              <span className={selected ? 'text-amber-400' : 'text-gray-400'}>
+              <span className={selected ? 'text-accent' : 'text-gray-400'}>
                 {ind.icon}
               </span>
               <span className="text-caption">{ind.label}</span>

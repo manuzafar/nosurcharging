@@ -40,7 +40,7 @@ export function Step1Volume({ value, onChange, onNext, onBack }: Step1VolumeProp
 
   return (
     <div>
-      <p className="text-label tracking-widest text-amber-400">Step 1</p>
+      <p className="text-label tracking-widest text-accent">Step 1</p>
       <h2 className="mt-2 font-serif text-heading-lg">
         How much do you process in card payments?
       </h2>
@@ -55,7 +55,7 @@ export function Step1Volume({ value, onChange, onNext, onBack }: Step1VolumeProp
             onClick={() => handleToggle(false)}
             className={`rounded-lg px-3 py-1.5 text-body-sm font-medium transition-colors duration-100 ${
               !isMonthly
-                ? 'bg-amber-50 text-amber-800 border border-amber-400'
+                ? 'bg-accent-light text-accent-dark border border-accent'
                 : 'text-gray-500 border border-gray-200'
             }`}
           >
@@ -66,7 +66,7 @@ export function Step1Volume({ value, onChange, onNext, onBack }: Step1VolumeProp
             onClick={() => handleToggle(true)}
             className={`rounded-lg px-3 py-1.5 text-body-sm font-medium transition-colors duration-100 ${
               isMonthly
-                ? 'bg-amber-50 text-amber-800 border border-amber-400'
+                ? 'bg-accent-light text-accent-dark border border-accent'
                 : 'text-gray-500 border border-gray-200'
             }`}
           >
@@ -86,7 +86,7 @@ export function Step1Volume({ value, onChange, onNext, onBack }: Step1VolumeProp
             placeholder={isMonthly ? '80,000' : '1,000,000'}
             className="w-full rounded-lg border border-gray-200 py-3 pl-8 pr-4
               font-mono text-financial-standard outline-none
-              focus:border-amber-400 transition-colors duration-150"
+              focus:border-accent transition-colors duration-150"
           />
         </div>
 
@@ -101,7 +101,7 @@ export function Step1Volume({ value, onChange, onNext, onBack }: Step1VolumeProp
         )}
 
         {showWarning && (
-          <p className="mt-2 text-body-sm text-amber-800 bg-amber-50 rounded-lg px-3 py-2">
+          <p className="mt-2 text-body-sm text-accent-dark bg-accent-light rounded-lg px-3 py-2">
             Under $30,000 per year — the interchange saving may be small relative to your volume.
             You can still proceed.
           </p>

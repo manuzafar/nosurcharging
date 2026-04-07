@@ -63,7 +63,7 @@ export function ExpertPanel({ expertRates, onChange }: ExpertPanelProps) {
                 value={expertRates?.debitCents ?? ''}
                 onChange={(e) => handleChange('debitCents', e.target.value)}
                 className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2
-                  font-mono text-body-sm outline-none focus:border-amber-400
+                  font-mono text-body-sm outline-none focus:border-accent
                   transition-colors duration-150"
               />
             </div>
@@ -78,7 +78,7 @@ export function ExpertPanel({ expertRates, onChange }: ExpertPanelProps) {
                 value={expertRates?.creditPct ?? ''}
                 onChange={(e) => handleChange('creditPct', e.target.value)}
                 className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2
-                  font-mono text-body-sm outline-none focus:border-amber-400
+                  font-mono text-body-sm outline-none focus:border-accent
                   transition-colors duration-150"
               />
             </div>
@@ -93,7 +93,7 @@ export function ExpertPanel({ expertRates, onChange }: ExpertPanelProps) {
                 value={expertRates?.marginPct ?? ''}
                 onChange={(e) => handleChange('marginPct', e.target.value)}
                 className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2
-                  font-mono text-body-sm outline-none focus:border-amber-400
+                  font-mono text-body-sm outline-none focus:border-accent
                   transition-colors duration-150"
               />
             </div>

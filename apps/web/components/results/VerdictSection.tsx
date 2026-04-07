@@ -14,9 +14,9 @@ interface VerdictSectionProps {
   pspName: string;
 }
 
-const CATEGORY_PILLS: Record<1 | 2 | 3 | 4, { variant: 'green' | 'amber' | 'red'; label: string }> = {
+const CATEGORY_PILLS: Record<1 | 2 | 3 | 4, { variant: 'green' | 'accent' | 'red'; label: string }> = {
   1: { variant: 'green', label: 'Category 1' },
-  2: { variant: 'amber', label: 'Category 2' },
+  2: { variant: 'accent', label: 'Category 2' },
   3: { variant: 'red', label: 'Category 3' },
   4: { variant: 'red', label: 'Category 4' },
 };

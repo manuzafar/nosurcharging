@@ -54,12 +54,12 @@ describe('ActionList', () => {
     expect(style).toContain('--color-text-secondary');
   });
 
-  it('date chips render in amber mono', () => {
+  it('date chips render in accent mono', () => {
     render(<ActionList actions={cat2Actions} />);
     const thisWeekChip = screen.getByText('This week');
     const style = thisWeekChip.getAttribute('style') ?? '';
-    // jsdom converts #BA7517 to rgb(186, 117, 23)
-    expect(style).toMatch(/#BA7517|rgb\(186, 117, 23\)/);
+    // jsdom converts #1A6B5A to rgb(26, 107, 90)
+    expect(style).toMatch(/#1A6B5A|rgb\(26, 107, 90\)/);
     expect(thisWeekChip.className).toContain('font-mono');
   });
 

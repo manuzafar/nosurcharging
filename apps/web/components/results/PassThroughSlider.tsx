@@ -2,7 +2,7 @@
 
 // CB-08: Pass-through slider. Categories 2 and 4 only.
 // Range: 0-100%, step 1, initial 0%.
-// accent-color: #BA7517
+// accent-color: #1A6B5A
 //
 // On every input event — all updates in one synchronous pass:
 //   1. Read slider value
@@ -127,7 +127,7 @@ export function PassThroughSlider({
           value={pctValue}
           onInput={handleInput as unknown as React.FormEventHandler<HTMLInputElement>}
           className="flex-1"
-          style={{ accentColor: '#BA7517' }}
+          style={{ accentColor: '#1A6B5A' }}
           aria-label="Pass-through percentage"
         />
         <span

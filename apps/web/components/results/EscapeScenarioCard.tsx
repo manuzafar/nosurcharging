@@ -86,7 +86,7 @@ export function EscapeScenarioCard({
           className="rounded-xl p-4"
           style={{ border: '0.5px solid var(--color-border-secondary)' }}
         >
-          <PillBadge variant="amber">Your current plan</PillBadge>
+          <PillBadge variant="accent">Your current plan</PillBadge>
 
           <p
             className="mt-3 font-mono font-medium"

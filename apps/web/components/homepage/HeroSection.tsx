@@ -1,6 +1,6 @@
 // Homepage hero — full-bleed dark section.
 // Not in a card. Background: var(--color-text-primary).
-// Amber kicker, serif headline, amber CTA, trust bar.
+// Accent kicker, serif headline, accent CTA, trust bar.
 
 import Link from 'next/link';
 
@@ -19,7 +19,7 @@ export function HeroSection() {
         style={{
           fontSize: '11px',
           letterSpacing: '2.5px',
-          color: '#EF9F27',
+          color: '#72C4B0',
         }}
       >
         RBA OCTOBER 2026 REFORM
@@ -59,8 +59,8 @@ export function HeroSection() {
         href="/assessment"
         className="mt-6 inline-block rounded-lg font-medium transition-opacity duration-150 hover:opacity-90"
         style={{
-          background: '#BA7517',
-          color: '#FAEEDA',
+          background: '#1A6B5A',
+          color: '#EBF6F3',
           padding: '13px 34px',
           fontSize: '13px',
         }}

@@ -64,7 +64,7 @@ export function Step3Surcharging({
 
   return (
     <div>
-      <p className="text-label tracking-widest text-amber-400">Step 3</p>
+      <p className="text-label tracking-widest text-accent">Step 3</p>
       <h2 className="mt-2 font-serif text-heading-lg">
         Do you currently surcharge card payments?
       </h2>
@@ -153,7 +153,7 @@ export function Step3Surcharging({
                   type="checkbox"
                   checked={surchargeNetworks.includes(network.id)}
                   onChange={() => toggleNetwork(network.id)}
-                  className="mt-0.5 h-4 w-4 rounded accent-amber-400"
+                  className="mt-0.5 h-4 w-4 rounded accent-accent"
                 />
                 <span className="text-body-sm text-gray-700">
                   {network.label}
@@ -200,7 +200,7 @@ export function Step3Surcharging({
               value={rateInput}
               onChange={(e) => handleRateChange(e.target.value)}
               className="w-full rounded-lg border border-gray-200 px-3 py-2
-                font-mono text-body-sm outline-none focus:border-amber-400
+                font-mono text-body-sm outline-none focus:border-accent
                 transition-colors duration-150 pr-7"
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-body-sm text-gray-400">

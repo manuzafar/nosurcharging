@@ -18,10 +18,10 @@ export default function HomePage() {
           borderBottom: '0.5px solid var(--color-border-tertiary)',
         }}
       >
-        {/* Logo — "surcharging" portion in amber */}
+        {/* Logo — "surcharging" portion in accent */}
         <Link href="/" className="font-serif font-medium" style={{ fontSize: '16px' }}>
           <span style={{ color: 'var(--color-text-primary)' }}>no</span>
-          <span style={{ color: '#BA7517' }}>surcharging</span>
+          <span style={{ color: '#1A6B5A' }}>surcharging</span>
           <span style={{ color: 'var(--color-text-secondary)', fontSize: '13px' }}>.com.au</span>
         </Link>
 
@@ -38,8 +38,8 @@ export default function HomePage() {
             href="/assessment"
             className="rounded-lg px-4 py-1.5 text-body-sm font-medium transition-opacity duration-150 hover:opacity-90"
             style={{
-              border: '1px solid #BA7517',
-              color: '#BA7517',
+              border: '1px solid #1A6B5A',
+              color: '#1A6B5A',
             }}
           >
             Start assessment

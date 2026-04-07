@@ -69,7 +69,7 @@ const PREVIEWS: PreviewData[] = [
 
 const PILL_COLOURS: Record<number, { dot: string }> = {
   1: { dot: 'var(--color-text-success)' },
-  2: { dot: '#BA7517' },
+  2: { dot: '#1A6B5A' },
   3: { dot: 'var(--color-text-danger)' },
   4: { dot: 'var(--color-text-danger)' },
 };
@@ -128,9 +128,9 @@ export function PreviewSection() {
               style={
                 i === active
                   ? {
-                      background: '#FAEEDA',
-                      border: '1px solid #BA7517',
-                      color: '#633806',
+                      background: '#EBF6F3',
+                      border: '1px solid #1A6B5A',
+                      color: '#0D4A3C',
                     }
                   : {
                       background: 'transparent',
@@ -226,7 +226,7 @@ export function PreviewSection() {
             className="mt-3 text-caption"
             style={{ color: 'var(--color-text-secondary)', lineHeight: '1.55' }}
           >
-            <span className="font-mono" style={{ color: '#BA7517', fontSize: '10px' }}>
+            <span className="font-mono" style={{ color: '#1A6B5A', fontSize: '10px' }}>
               This week →{' '}
             </span>
             {preview.topAction}

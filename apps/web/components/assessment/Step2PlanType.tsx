@@ -43,7 +43,7 @@ export function Step2PlanType({
 
   return (
     <div>
-      <p className="text-label tracking-widest text-amber-400">Step 2</p>
+      <p className="text-label tracking-widest text-accent">Step 2</p>
       <h2 className="mt-2 font-serif text-heading-lg">
         What does your card statement look like?
       </h2>
@@ -66,7 +66,7 @@ export function Step2PlanType({
               <p className="text-body font-medium">One blended rate</p>
               <p className="text-caption text-gray-400">Stripe, Square, Tyro default</p>
             </div>
-            <PillBadge variant={planType === 'flat' ? 'amber' : 'grey'}>
+            <PillBadge variant={planType === 'flat' ? 'accent' : 'grey'}>
               Flat rate
             </PillBadge>
           </div>
@@ -95,7 +95,7 @@ export function Step2PlanType({
               <p className="text-body font-medium">Itemised breakdown</p>
               <p className="text-caption text-gray-400">IC++ or cost-plus</p>
             </div>
-            <PillBadge variant={planType === 'costplus' ? 'amber' : 'grey'}>
+            <PillBadge variant={planType === 'costplus' ? 'accent' : 'grey'}>
               Cost-plus
             </PillBadge>
           </div>
@@ -147,7 +147,7 @@ export function Step2PlanType({
               onClick={() => onPspChange(name)}
               className={`rounded-pill px-3 py-1.5 text-caption transition-all duration-100 ${
                 psp === name
-                  ? 'border border-amber-400 bg-amber-50 text-amber-800'
+                  ? 'border border-accent bg-accent-light text-accent-dark'
                   : 'border border-gray-200 text-gray-500 hover:border-gray-300'
               }`}
               style={{ borderWidth: psp === name ? '1px' : '0.5px' }}

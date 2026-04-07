@@ -81,7 +81,7 @@ export function EmailCapture({ assessmentId }: EmailCaptureProps) {
           disabled={state === 'loading'}
           className="rounded-lg px-4 py-2 text-body-sm font-medium shrink-0
             disabled:opacity-50 transition-opacity duration-150"
-          style={{ background: '#BA7517', color: '#FAEEDA' }}
+          style={{ background: '#1A6B5A', color: '#EBF6F3' }}
         >
           {state === 'loading' ? 'Sending...' : 'Get notified →'}
         </button>

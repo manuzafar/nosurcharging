@@ -1,7 +1,7 @@
 'use client';
 
 // Base card component with selected state.
-// Unselected: 0.5px border-secondary. Selected: 1px amber border.
+// Unselected: 0.5px border-secondary. Selected: 1px accent border.
 // No background change on selection — border weight communicates selection.
 // Transition: 150ms ease on border.
 
@@ -44,7 +44,7 @@ export function Card({
       className={`rounded-xl p-4 transition-all duration-150 ease-out
         ${
           selected
-            ? 'border border-amber-400'
+            ? 'border border-accent'
             : 'border border-gray-200'
         }
         ${onClick ? 'cursor-pointer' : ''}

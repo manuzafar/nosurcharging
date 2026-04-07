@@ -32,7 +32,7 @@ interface CostBreakdownChartProps {
 
 const CHART_COLOURS = {
   interchange: '#E24B4A',
-  scheme: '#BA7517',
+  scheme: '#1A6B5A',
   margin: '#888780',
   surcharge: '#3B6D11',
 } as const;

@@ -83,7 +83,7 @@ export function CardMixInput({ value, onChange }: CardMixInputProps) {
                     }
                     onChange={(e) => handleChange(f.key, e.target.value)}
                     className="w-full rounded-lg border border-gray-200 px-3 py-1.5
-                      font-mono text-body-sm outline-none focus:border-amber-400
+                      font-mono text-body-sm outline-none focus:border-accent
                       transition-colors duration-150 text-right pr-7"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-body-sm text-gray-400">
@@ -103,13 +103,13 @@ export function CardMixInput({ value, onChange }: CardMixInputProps) {
                   ? 'text-gray-400'
                   : Math.abs(total - 100) <= 1
                     ? 'text-green-700'
-                    : 'text-amber-800'
+                    : 'text-ink-muted'
               }`}
             >
               {filledCount === 0 ? '—' : `${total.toFixed(0)}%`}
             </span>
             {filledCount > 0 && Math.abs(total - 100) > 1 && (
-              <span className="text-caption text-amber-700">
+              <span className="text-caption text-ink-muted">
                 — we&apos;ll adjust to 100%
               </span>
             )}

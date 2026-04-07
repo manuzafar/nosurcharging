@@ -55,7 +55,7 @@ export function DisclaimerConsent({ onAccept }: DisclaimerConsentProps) {
   return (
     <div className="mx-auto max-w-assessment px-5">
       <div className="mb-8 text-center">
-        <p className="text-label tracking-widest text-amber-400">Free assessment</p>
+        <p className="text-label tracking-widest text-accent">Free assessment</p>
         <h1 className="mt-3 font-serif text-heading-lg">
           What does the RBA reform mean for your P&L?
         </h1>
@@ -69,7 +69,7 @@ export function DisclaimerConsent({ onAccept }: DisclaimerConsentProps) {
           type="checkbox"
           checked={checked}
           onChange={(e) => setChecked(e.target.checked)}
-          className="mt-0.5 h-4 w-4 rounded accent-amber-400"
+          className="mt-0.5 h-4 w-4 rounded accent-accent"
         />
         <span className="text-body-sm text-gray-600 leading-relaxed">
           {DISCLAIMER_TEXT}
