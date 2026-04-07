@@ -10,15 +10,54 @@ const config: Config = {
         mono: ['var(--font-mono)', 'Courier New', 'monospace'],
       },
       colors: {
+        // ── Legacy amber palette — scheduled for removal in Phase 1 final commit ──
         amber: {
           50: '#FAEEDA',
           200: '#EF9F27',
           400: '#BA7517',
           800: '#633806',
         },
+
+        // ── Revamp accent system (approval LED green) ──
+        accent: {
+          DEFAULT: '#1A6B5A',
+          light: '#EBF6F3',
+          border: '#72C4B0',
+          dark: '#0D4A3C',
+        },
+
+        // ── Ink scale (ledger text) ──
+        ink: {
+          DEFAULT: '#1A1409',
+          secondary: '#3D3320',
+          muted: '#6B5E4A',
+          faint: '#9A8C78',
+        },
+
+        // ── Paper (receipt cream canvas) ──
+        paper: {
+          DEFAULT: '#FAF7F2',
+          secondary: '#F3EDE4',
+          white: '#FFFFFE',
+        },
+
+        // ── Borders and dividers ──
+        rule: '#DDD5C8',
+
+        // ── P&L semantic pair ──
+        positive: {
+          DEFAULT: '#166534',
+          bg: '#E8F5EB',
+        },
+        negative: {
+          DEFAULT: '#7F1D1D',
+          bg: '#FDECEA',
+        },
+
+        // ── Chart palette (scheme segment recolour to accent) ──
         chart: {
           interchange: '#E24B4A',
-          scheme: '#BA7517',
+          scheme: '#1A6B5A',
           margin: '#888780',
           surcharge: '#3B6D11',
         },
