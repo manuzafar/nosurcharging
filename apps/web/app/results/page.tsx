@@ -23,6 +23,7 @@ import { sanitiseForHTML } from '@/lib/sanitise';
 import { VerdictSection } from '@/components/results/VerdictSection';
 import { MetricCards } from '@/components/results/MetricCards';
 import { ProblemsBlock } from '@/components/results/ProblemsBlock';
+import { DepthToggle } from '@/components/results/DepthToggle';
 import { PassThroughSlider } from '@/components/results/PassThroughSlider';
 import { EscapeScenarioCard } from '@/components/results/EscapeScenarioCard';
 import { ActionList } from '@/components/results/ActionList';
@@ -174,45 +175,49 @@ function ResultsContent() {
 
         {/* ───────────────────────────── DEPTH ZONE ───────────────────────────────
             Reserved for the merchant who wants to understand the numbers.
-            DepthToggle wrapper added in commit 4g — until then everything below
-            renders inline so the page remains fully functional. */}
+            Wrapped in DepthToggle (collapsed by default) per ux-spec §3.5 so
+            the merchant who only wants the verdict + actions is never
+            visually overloaded. Children only mount when expanded. */}
 
-        {/* 5. DepthToggle — added in commit 4g */}
+        {/* 5. DepthToggle wrapping slider, escape scenario, chart, assumptions */}
+        <div style={revealStyle(360)}>
+          <DepthToggle>
+            {/* 6. PassThroughSlider (Cat 2 / 4 only — internally gates) */}
+            <div className="mt-6">
+              <PassThroughSlider
+                category={category}
+                passThrough={passThrough}
+                outputs={outputs}
+                originalRaw={originalRaw}
+                resolutionContext={resolutionContext}
+                pspName={pspName}
+                onOutputsChange={handleOutputsChange}
+              />
+            </div>
 
-        {/* 6. PassThroughSlider (Cat 2 / 4 only — internally gates) */}
-        <div className="mt-8" style={revealStyle(360)}>
-          <PassThroughSlider
-            category={category}
-            passThrough={passThrough}
-            outputs={outputs}
-            originalRaw={originalRaw}
-            resolutionContext={resolutionContext}
-            pspName={pspName}
-            onOutputsChange={handleOutputsChange}
-          />
-        </div>
+            {/* 7. EscapeScenarioCard (Cat 2 / 4 only — internally gates) */}
+            <div className="mt-4">
+              <EscapeScenarioCard
+                category={category}
+                outputs={outputs}
+                passThrough={passThrough}
+                originalRaw={originalRaw}
+                resolutionContext={resolutionContext}
+                pspName={pspName}
+              />
+            </div>
 
-        {/* 7. EscapeScenarioCard (Cat 2 / 4 only — internally gates) */}
-        <div className="mt-4" style={revealStyle(420)}>
-          <EscapeScenarioCard
-            category={category}
-            outputs={outputs}
-            passThrough={passThrough}
-            originalRaw={originalRaw}
-            resolutionContext={resolutionContext}
-            pspName={pspName}
-          />
-        </div>
+            {/* 8. CostCompositionChart — added in commit 4i */}
 
-        {/* 8. CostCompositionChart — added in commit 4i */}
-
-        {/* 9. AssumptionsPanel */}
-        <div className="mt-6" style={revealStyle(480)}>
-          <AssumptionsPanel
-            outputs={outputs}
-            passThrough={passThrough}
-            resolutionTrace={resolutionTrace}
-          />
+            {/* 9. AssumptionsPanel */}
+            <div className="mt-6">
+              <AssumptionsPanel
+                outputs={outputs}
+                passThrough={passThrough}
+                resolutionTrace={resolutionTrace}
+              />
+            </div>
+          </DepthToggle>
         </div>
 
         {/* ─────────────────────────── ALWAYS VISIBLE ─────────────────────────────
