@@ -26,6 +26,7 @@ import { ProblemsBlock } from '@/components/results/ProblemsBlock';
 import { DepthToggle } from '@/components/results/DepthToggle';
 import { PassThroughSlider } from '@/components/results/PassThroughSlider';
 import { EscapeScenarioCard } from '@/components/results/EscapeScenarioCard';
+import { CostCompositionChart } from '@/components/results/CostCompositionChart';
 import { ActionList } from '@/components/results/ActionList';
 import { AssumptionsPanel } from '@/components/results/AssumptionsPanel';
 import { EmailCapture } from '@/components/results/EmailCapture';
@@ -207,7 +208,14 @@ function ResultsContent() {
               />
             </div>
 
-            {/* 8. CostCompositionChart — added in commit 4i */}
+            {/* 8. CostCompositionChart */}
+            <div className="mt-6">
+              <CostCompositionChart
+                outputs={outputs}
+                passThrough={passThrough}
+                pspName={pspName}
+              />
+            </div>
 
             {/* 9. AssumptionsPanel */}
             <div className="mt-6">
