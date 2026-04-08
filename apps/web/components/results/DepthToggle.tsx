@@ -88,11 +88,7 @@ export function DepthToggle({ children, defaultOpen = false }: DepthToggleProps)
 
       {/* Panel — only mounted when open so child components don't run when hidden */}
       {open && (
-        <div
-          id={panelId}
-          role="region"
-          aria-label="Detailed cost breakdown"
-        >
+        <div id={panelId} role="region" aria-label="Detailed cost breakdown">
           {children}
         </div>
       )}

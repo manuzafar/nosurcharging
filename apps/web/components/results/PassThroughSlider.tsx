@@ -53,25 +53,14 @@ export function PassThroughSlider({
   const netImpact = outputs.plSwing;
   const netCostFromOct = outputs.octNet;
 
-  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const pt = parseInt(e.target.value, 10) / 100;
-
-    const start = typeof performance !== 'undefined' ? performance.now() : 0;
 
     const resolved = resolveAssessmentInputs(
       { ...originalRaw, passThrough: pt },
       resolutionContext,
     );
     const newOutputs = calculateMetrics(resolved);
-
-    if (process.env.NODE_ENV === 'development' && typeof performance !== 'undefined') {
-      const elapsed = performance.now() - start;
-      if (elapsed > 16) {
-        console.warn(
-          `[slider] calculateMetrics took ${elapsed.toFixed(1)}ms (>16ms budget)`,
-        );
-      }
-    }
 
     onOutputsChange(newOutputs, pt);
 
@@ -113,14 +102,17 @@ export function PassThroughSlider({
         October.
       </p>
 
-      {/* Slider */}
+      {/* Slider — controlled input uses onChange so React's controlled-input
+          plumbing hooks correctly. Using onInput without onChange made React
+          treat the field as read-only and re-sync the DOM value on every
+          render, which caused visible jumps while dragging. */}
       <input
         type="range"
-        min="0"
-        max="100"
-        step="1"
+        min={0}
+        max={100}
+        step={1}
         value={pctValue}
-        onInput={handleInput as unknown as React.FormEventHandler<HTMLInputElement>}
+        onChange={handleChange}
         className="w-full"
         style={{ accentColor: '#1A6B5A' }}
         aria-label="Pass-through percentage"

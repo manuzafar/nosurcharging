@@ -35,6 +35,23 @@ import { PSPRateRegistry } from '@/components/results/PSPRateRegistry';
 import { ResultsDisclaimer } from '@/components/results/ResultsDisclaimer';
 import { SkeletonLoader } from '@/components/results/SkeletonLoader';
 
+// Section reveal styles — hoisted to module scope so they are stable
+// across renders. Inline objects created inside the render function
+// would still shallow-equal to React, but keeping them as module
+// constants eliminates any chance of the animation restarting mid-
+// interaction (e.g. while dragging the pass-through slider).
+const REVEAL_STYLE: Record<number, React.CSSProperties> = {
+  0:   { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '0ms' },
+  120: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '120ms' },
+  180: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '180ms' },
+  240: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '240ms' },
+  360: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '360ms' },
+  540: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '540ms' },
+  600: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '600ms' },
+  660: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '660ms' },
+  720: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '720ms' },
+};
+
 export default function ResultsPage() {
   return (
     <Suspense fallback={<SkeletonLoader />}>
@@ -50,6 +67,13 @@ function ResultsContent() {
 
   const [assessment, setAssessment] = useState<StoredAssessment | null>(null);
   const [outputs, setOutputs] = useState<AssessmentOutputs | null>(null);
+  // `actions` lives in its own state, seeded ONCE from the initial DB load.
+  // It is deliberately NOT part of `outputs` — the slider recalculates
+  // outputs via calculateMetrics() which returns a clean AssessmentOutputs
+  // (no actions). If actions were part of outputs, every slider tick would
+  // blank the ActionList, causing the section to collapse and the viewport
+  // to jump. Keep actions separate and immutable after initial load.
+  const [actions, setActions] = useState<ActionItem[]>([]);
   const [passThrough, setPassThrough] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -66,6 +90,9 @@ function ResultsContent() {
       }
       setAssessment(result.data);
       setOutputs(result.data.outputs);
+      // `result.data.outputs` is typed as AssessmentOutputs & { actions?: ActionItem[] }
+      // — the extension is injected at DB insert time in submitAssessment.ts.
+      setActions(result.data.outputs.actions ?? []);
       setLoading(false);
     });
   }, [assessmentId, router]);
@@ -76,7 +103,6 @@ function ResultsContent() {
 
   // ── Extract data from stored assessment ────────────────────────
   const storedInputs = assessment.inputs as Record<string, unknown>;
-  const actions = (outputs as unknown as { actions?: ActionItem[] }).actions ?? [];
   const category = outputs.category;
   const volume = (storedInputs.volume as number) ?? 0;
   const pspName = sanitiseForHTML((storedInputs.psp as string) ?? 'Unknown');
@@ -109,13 +135,6 @@ function ResultsContent() {
     setPassThrough(pt);
   };
 
-  // ── Section reveal animation helper ────────────────────────────
-  const revealStyle = (delayMs: number): React.CSSProperties => ({
-    opacity: 0,
-    animation: 'fadeUp 0.4s ease forwards',
-    animationDelay: `${delayMs}ms`,
-  });
-
   return (
     <main className="min-h-screen bg-paper">
       {/* Site-wide FR-02 disclaimer banner removed from results page (Q5):
@@ -129,7 +148,7 @@ function ResultsContent() {
             merchants see what to DO before they see how the numbers were derived. */}
 
         {/* 1. Verdict */}
-        <div style={revealStyle(0)}>
+        <div style={REVEAL_STYLE[0]}>
           <VerdictSection
             outputs={outputs}
             volume={volume}
@@ -142,12 +161,12 @@ function ResultsContent() {
         </div>
 
         {/* 2. Metric cards */}
-        <div style={revealStyle(120)}>
+        <div style={REVEAL_STYLE[120]}>
           <MetricCards outputs={outputs} />
         </div>
 
         {/* 3. ProblemsBlock — explains why the verdict number looks the way it does */}
-        <div className="mt-6" style={revealStyle(180)}>
+        <div className="mt-6" style={REVEAL_STYLE[180]}>
           <ProblemsBlock
             category={category}
             pspName={pspName}
@@ -157,7 +176,7 @@ function ResultsContent() {
         </div>
 
         {/* 4. ActionList — moved up from the bottom of the page */}
-        <div className="mt-6" style={revealStyle(240)}>
+        <div className="mt-6" style={REVEAL_STYLE[240]}>
           <ActionList actions={actions} />
         </div>
 
@@ -168,7 +187,7 @@ function ResultsContent() {
             visually overloaded. Children only mount when expanded. */}
 
         {/* 5. DepthToggle wrapping slider, escape scenario, chart, assumptions */}
-        <div style={revealStyle(360)}>
+        <div style={REVEAL_STYLE[360]}>
           <DepthToggle>
             {/* 6. PassThroughSlider (Cat 2 / 4 only — internally gates) */}
             <div className="mt-6">
@@ -226,17 +245,17 @@ function ResultsContent() {
             ConsultingCTA now precedes EmailCapture per spec §3.1. */}
 
         {/* 10. ConsultingCTA */}
-        <div className="mt-8" style={revealStyle(540)}>
+        <div className="mt-8" style={REVEAL_STYLE[540]}>
           <ConsultingCTA category={category} pspName={pspName} />
         </div>
 
         {/* 11. EmailCapture */}
-        <div className="mt-6" style={revealStyle(600)}>
+        <div className="mt-6" style={REVEAL_STYLE[600]}>
           <EmailCapture assessmentId={assessmentId ?? undefined} />
         </div>
 
         {/* 12. PSPRateRegistry */}
-        <div className="mt-8" style={revealStyle(660)}>
+        <div className="mt-8" style={REVEAL_STYLE[660]}>
           <PSPRateRegistry
             assessmentId={assessmentId ?? ''}
             pspName={pspName}
@@ -246,7 +265,7 @@ function ResultsContent() {
         </div>
 
         {/* 13. ResultsDisclaimer */}
-        <div className="mt-8 mb-4" style={revealStyle(720)}>
+        <div className="mt-8 mb-4" style={REVEAL_STYLE[720]}>
           <ResultsDisclaimer />
         </div>
       </div>

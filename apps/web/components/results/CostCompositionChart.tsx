@@ -190,7 +190,7 @@ export function CostCompositionChart({
       </div>
 
       {/* Chart — horizontal stacked bars */}
-      <div style={{ height: 110 }} data-testid="cost-composition-chart">
+      <div style={{ height: 110, width: '100%' }} data-testid="cost-composition-chart">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}

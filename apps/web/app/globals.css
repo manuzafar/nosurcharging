@@ -37,7 +37,10 @@
   --chart-margin: #888780;
   --chart-surcharge: #3B6D11;
 
-  /* Semantic colours — light mode.
+  /* Semantic colours.
+     The revamped UI is single-mode (paper canvas + ink text) by intent,
+     so we deliberately do NOT switch on prefers-color-scheme: dark.
+     A dark-mode flip on a fixed cream background made body text invisible.
      Warning stays amber/orange (semantic) — accent green is brand, not warning. */
   --color-background-success: #EAF3DE;
   --color-text-success: #27500A;
@@ -64,30 +67,9 @@
   --color-border-tertiary: rgba(0,0,0,0.08);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background-success: #173404;
-    --color-text-success: #C0DD97;
-    --color-border-success: #3B6D11;
-
-    --color-background-warning: #412402;
-    --color-text-warning: #FAC775;
-    --color-border-warning: #854F0B;
-
-    --color-background-danger: #501313;
-    --color-text-danger: #F09595;
-    --color-border-danger: #A32D2D;
-
-    --color-background-info: #042C53;
-    --color-text-info: #85B7EB;
-    --color-border-info: #185FA5;
-
-    --color-text-primary: #F9FAFB;
-    --color-text-secondary: #9CA3AF;
-    --color-text-tertiary: rgba(255,255,255,0.35);
-    --color-background-primary: #111111;
-    --color-background-secondary: #1F2937;
-    --color-border-secondary: rgba(255,255,255,0.15);
-    --color-border-tertiary: rgba(255,255,255,0.08);
-  }
+/* Force light scheme — the revamped UI uses a fixed paper canvas and
+   ink text. Without this, browsers may apply UA-level dark-mode overrides
+   (autofill, scrollbars, form controls) that don't match the design. */
+:root {
+  color-scheme: light;
 }
