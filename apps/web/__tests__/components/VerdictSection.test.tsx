@@ -81,6 +81,19 @@ describe('VerdictSection', () => {
     expect(screen.getByText('+$4,200')).toBeInTheDocument();
   });
 
+  it('renders the hero P&L number WITHOUT a sign when plSwing is exactly 0', () => {
+    // Cat 2 default state — flat rate, slider at 0% pass-through.
+    // A "+$0" hero contradicts the headline "the saving exists but won't
+    // arrive automatically". Render plain "$0" instead.
+    const zero = makeOutputs({ category: 2, plSwing: 0 });
+    render(<VerdictSection outputs={zero} {...COMMON_PROPS} planType="flat" surcharging={false} />);
+    expect(screen.getByText('$0')).toBeInTheDocument();
+    // No "+$0" anywhere — guard against the regression
+    const text = document.body.textContent ?? '';
+    expect(text).not.toContain('+$0');
+    expect(text).not.toContain('−$0');
+  });
+
   it('builds the context line for flat-rate + surcharging merchants', () => {
     render(<VerdictSection outputs={makeOutputs()} {...COMMON_PROPS} />);
     const text = document.body.textContent ?? '';

@@ -110,7 +110,13 @@ export function VerdictSection({
   surchargeRate,
 }: VerdictSectionProps) {
   const { category, plSwing } = outputs;
-  const isPositive = plSwing >= 0;
+  // Sign affects colour AND prefix. We treat exactly zero as a third state:
+  // no sign at all. Cat 2 at the default passThrough=0 hits this — pairing
+  // a green "+$0" with a "the saving exists but won't arrive" headline reads
+  // as a contradiction. Plain "$0" matches the headline's tone exactly.
+  const isPositive = plSwing > 0;
+  const isNegative = plSwing < 0;
+  const isPositiveOrZero = plSwing >= 0;
   const pillStyle = SITUATION_PILLS[category];
 
   const formattedSwing = formatDollar(plSwing);
@@ -120,7 +126,7 @@ export function VerdictSection({
   // The strong wraps "$X more per day" only — not the trailing context.
   const dailyAnchor = Math.round(Math.abs(plSwing) / 365);
   const dailyAnchorStrong = `$${dailyAnchor.toLocaleString('en-AU')} more per day`;
-  const dailyAnchorTail = isPositive
+  const dailyAnchorTail = isPositiveOrZero
     ? ' in your pocket.'
     : ' in net payments cost.';
 
@@ -175,17 +181,20 @@ export function VerdictSection({
         {CATEGORY_VERDICTS[category]}
       </h2>
 
-      {/* Row 3: Hero P&L number — 44px mono, CLAUDE.md Rule 2 */}
+      {/* Row 3: Hero P&L number — 44px mono, CLAUDE.md Rule 2.
+          Zero is rendered without a sign — see comment above the
+          isPositive/isNegative declarations. */}
       <p
         className="mt-3 font-mono text-financial-hero"
         style={{
-          color: isPositive
-            ? 'var(--color-text-success)'
-            : 'var(--color-text-danger)',
+          color: isNegative
+            ? 'var(--color-text-danger)'
+            : 'var(--color-text-success)',
           marginBottom: '6px',
         }}
       >
-        {isPositive ? '+' : '−'}
+        {isPositive && '+'}
+        {isNegative && '−'}
         {formattedSwing}
       </p>
 
