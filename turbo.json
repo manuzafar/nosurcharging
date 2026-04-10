@@ -15,7 +15,8 @@
       "dependsOn": ["^build"]
     },
     "test:e2e": {
-      "dependsOn": ["build"]
+      "cache": false,
+      "passThroughEnv": ["PLAYWRIGHT_BASE_URL", "CI"]
     }
   }
 }
