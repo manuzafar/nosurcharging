@@ -42,7 +42,9 @@ export default function HomePage() {
           </span>
         </Link>
 
-        {/* Single CTA — solid accent, square corners */}
+        {/* Single CTA — pill shape (Modern Fintech Hierarchy). The nav CTA
+            is the primary action on this sticky bar, so it shares the same
+            reserved pill shape as AccentButton and the hero CTA below. */}
         <Link
           href="/assessment"
           className="bg-accent text-white transition-opacity duration-150 hover:opacity-90"
@@ -50,6 +52,7 @@ export default function HomePage() {
             fontSize: '12px',
             fontWeight: 500,
             padding: '8px 18px',
+            borderRadius: '9999px',
           }}
         >
           Generate my free report →
@@ -93,6 +96,9 @@ export default function HomePage() {
         >
           Find out exactly what October costs your business.
         </p>
+        {/* Bottom CTA — pill shape, matches hero CTA. Offset outline traces
+            the rounded border thanks to modern-browser `outline` support for
+            border-radius. */}
         <Link
           href="/assessment"
           className="mt-7 inline-block bg-accent text-white transition-opacity duration-150 hover:opacity-90 focus-visible:opacity-90"
@@ -102,6 +108,7 @@ export default function HomePage() {
             padding: '14px 32px',
             outline: '3px solid #1A6B5A',
             outlineOffset: '2px',
+            borderRadius: '9999px',
           }}
         >
           Generate my free report →

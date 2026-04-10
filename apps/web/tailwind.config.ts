@@ -1,5 +1,47 @@
 import type { Config } from 'tailwindcss';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Corner Radius System — Modern Fintech Hierarchy
+// ─────────────────────────────────────────────────────────────────────────────
+// Corner radius in this app communicates function. It is not decorative.
+// Five tokens, one rule. Reference set: Stripe, Mercury, Shopify, Linear,
+// Vercel, Anthropic, Perplexity (2025–2026 modern B2B fintech aesthetic).
+//
+//   rounded-full    9999px   Primary CTA  — "THE action on this screen"
+//                            Applied ONLY to AccentButton and the handful
+//                            of custom dark CTAs (Step 4 "See my results",
+//                            EmailCapture "Get notified", homepage CTAs).
+//                            Reserved. Nothing else gets this shape.
+//
+//   rounded-lg      8px      Interactive  — buttons, inputs, selection cards,
+//                            toggles, inner containers, info boxes,
+//                            action cards. The baseline.
+//
+//   rounded-xl      12px     Wrapper card — large outer containers that
+//                            hold multiple elements (plan type cards,
+//                            ExpertPanel, CardMixInput, EmailCapture success,
+//                            EscapeScenarioCard green box).
+//
+//   rounded-pill    20px     Classification chip — category pills, tier
+//                            chips (URGENT/PLAN/MONITOR), confidence chip,
+//                            "Estimated breakdown" pill, situation pill.
+//                            Small, high-density, non-interactive labels.
+//
+//   rounded-full    9999px   Decorative circle — pulsing dots, checkmark
+//                            bullets, DepthToggle icon. Not interactive.
+//
+// The rule (memorable in one sentence):
+//   "Primary CTAs are pill-shaped. Everything else interactive is 8px.
+//    Large containers are 12px. Chips are pills. Circles are circles."
+//
+// Why the pill CTA matters: the pill is *reserved*. There is exactly one
+// pill CTA per screen — the thing the merchant should press. Because it's
+// reserved, the shape itself communicates importance. The moment it's used
+// for secondary actions, the signal evaporates.
+//
+// Do not add new corner-radius tokens without revisiting this system.
+// ─────────────────────────────────────────────────────────────────────────────
+
 const config: Config = {
   content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}'],
   theme: {

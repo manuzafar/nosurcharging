@@ -77,7 +77,7 @@ export function Step3Surcharging({
         <button
           type="button"
           onClick={() => onSurchargingChange(true)}
-          className="rounded-xl p-5 text-left transition-all duration-150"
+          className="rounded-lg p-5 text-left transition-all duration-150"
           style={
             surcharging === true
               ? {
@@ -103,7 +103,7 @@ export function Step3Surcharging({
         <button
           type="button"
           onClick={handleNo}
-          className="rounded-xl p-5 text-left transition-all duration-150"
+          className="rounded-lg p-5 text-left transition-all duration-150"
           style={
             surcharging === false
               ? {
@@ -158,7 +158,7 @@ export function Step3Surcharging({
                 <span className="text-body-sm text-gray-700">
                   {network.label}
                   {network.note && (
-                    <span className="ml-1 text-caption text-gray-400">
+                    <span className="ml-1 text-caption text-gray-500">
                       ({network.note})
                     </span>
                   )}
@@ -203,7 +203,7 @@ export function Step3Surcharging({
                 font-mono text-body-sm outline-none focus:border-accent
                 transition-colors duration-150 pr-7"
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-body-sm text-gray-400">
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-body-sm text-gray-500">
               %
             </span>
           </div>

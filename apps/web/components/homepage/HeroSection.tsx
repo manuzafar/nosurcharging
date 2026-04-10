@@ -53,7 +53,10 @@ export function HeroSection() {
         costs your business — in dollars, with Stripe named directly.
       </p>
 
-      {/* Primary CTA — solid accent, square corners, offset outline */}
+      {/* Primary CTA — pill shape under the Modern Fintech Hierarchy. The
+          offset outline still works: the `outline` property respects
+          `border-radius` in modern browsers (Chrome 94+, Firefox 88+,
+          Safari 16.4+), so the amber double-ring traces the pill shape. */}
       <Link
         href="/assessment"
         className="mt-9 inline-block bg-accent text-white transition-opacity duration-150 hover:opacity-90 focus-visible:opacity-90"
@@ -63,6 +66,7 @@ export function HeroSection() {
           padding: '14px 32px',
           outline: '3px solid #1A6B5A',
           outlineOffset: '2px',
+          borderRadius: '9999px',
         }}
       >
         Generate my free report →

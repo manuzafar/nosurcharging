@@ -60,7 +60,13 @@
 
   --color-text-primary: #111111;
   --color-text-secondary: #6B7280;
-  --color-text-tertiary: rgba(0,0,0,0.35);
+  /* Tertiary used to be rgba(0,0,0,0.35), which is ~#A6A6A6 on white and
+     computes to ~2.5:1 contrast — failing WCAG AA for the 9-11px labels,
+     eyebrows, slider help text, and caption copy that use it. Setting it
+     to the same hex as --color-text-secondary (#6B7280, ~4.66:1) meets
+     WCAG AA 1.4.3. The visual hierarchy between secondary and tertiary
+     now comes from font-size and font-weight rather than from colour. */
+  --color-text-tertiary: #6B7280;
   --color-background-primary: #FFFFFF;
   --color-background-secondary: #F9FAFB;
   --color-border-secondary: rgba(0,0,0,0.15);
@@ -72,4 +78,59 @@
    (autofill, scrollbars, form controls) that don't match the design. */
 :root {
   color-scheme: light;
+}
+
+/* ── Accessibility: keyboard focus visibility ─────────────────────────
+   Universal :focus-visible ring for every interactive element. Applies
+   to buttons, links, inputs, selects, textareas, summary, range sliders,
+   and anything with a role that makes it focusable (role=button/radio/
+   checkbox/option/switch/tab). Uses the accent colour with 2px offset so
+   it reads against both the paper canvas and the ink sticky nav.
+
+   We scope this by element selectors rather than a blanket *:focus-visible
+   so we don't paint rings around non-interactive containers that happen to
+   become focus targets (e.g. for skip-to-content patterns). */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[role='button']:focus-visible,
+[role='radio']:focus-visible,
+[role='checkbox']:focus-visible,
+[role='switch']:focus-visible,
+[role='tab']:focus-visible,
+[role='option']:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #1A6B5A;
+  outline-offset: 2px;
+  /* Kill any legacy outline:none that components set via style= */
+  box-shadow: none;
+}
+
+/* For elements sitting on the dark ink sticky nav (e.g. the homepage
+   logo + CTA), a dark accent ring disappears. Use a light accent-border
+   ring instead. */
+nav.bg-ink a:focus-visible,
+nav.bg-ink button:focus-visible {
+  outline-color: #72C4B0;
+}
+
+/* ── Accessibility: reduced motion ────────────────────────────────────
+   For users who've set prefers-reduced-motion: reduce, collapse every
+   animation and transition to near-instant. We keep final states intact
+   — the reveal screen still flashes to the category label, the DepthToggle
+   chevron still rotates to its open state, the staggered results reveal
+   still ends with everything visible — the user just doesn't see them
+   move. ux-spec §8. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

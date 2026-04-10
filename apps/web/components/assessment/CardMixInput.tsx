@@ -4,7 +4,7 @@
 // 7 fields, all optional. Live total display. Auto-normalise. Never blocks progression.
 // Confidence badge updates live as fields are filled.
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import type { CardMixInput as CardMixInputType } from '@nosurcharging/calculations/types';
 
 const FIELDS: { key: keyof CardMixInputType; label: string }[] = [
@@ -24,6 +24,10 @@ interface CardMixInputProps {
 
 export function CardMixInput({ value, onChange }: CardMixInputProps) {
   const [expanded, setExpanded] = useState(false);
+  // One id prefix per mount; each field uses `${idPrefix}-${key}` so screen
+  // readers get a stable label/input association without a fragile manual map.
+  const idPrefix = useId();
+  const panelId = useId();
 
   const filledCount = FIELDS.filter(
     (f) => value[f.key] !== undefined && value[f.key] !== null,
@@ -44,6 +48,8 @@ export function CardMixInput({ value, onChange }: CardMixInputProps) {
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
+        aria-controls={panelId}
         className="text-body-sm text-gray-500 underline decoration-gray-300
           underline-offset-2 hover:text-gray-700 transition-colors duration-100"
       >
@@ -53,6 +59,7 @@ export function CardMixInput({ value, onChange }: CardMixInputProps) {
       </button>
 
       <div
+        id={panelId}
         className={`overflow-hidden transition-all duration-250 ease-out ${
           expanded ? 'mt-3 max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
         }`}
@@ -61,37 +68,49 @@ export function CardMixInput({ value, onChange }: CardMixInputProps) {
           <p className="text-body-sm font-medium text-gray-700">
             How your customers typically pay
           </p>
-          <p className="mt-1 text-caption text-gray-400">
+          <p className="mt-1 text-caption text-gray-500">
             Percentages should add up to 100%
           </p>
 
           <div className="mt-3 space-y-2">
-            {FIELDS.map((f) => (
-              <div key={f.key} className="flex items-center gap-3">
-                <span className="w-32 text-body-sm text-gray-600">{f.label}</span>
-                <div className="relative flex-1 max-w-[100px]">
-                  <input
-                    type="number"
-                    step="1"
-                    min="0"
-                    max="100"
-                    placeholder="—"
-                    value={
-                      value[f.key] !== undefined && value[f.key] !== null
-                        ? Math.round(value[f.key]! * 100)
-                        : ''
-                    }
-                    onChange={(e) => handleChange(f.key, e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-1.5
-                      font-mono text-body-sm outline-none focus:border-accent
-                      transition-colors duration-150 text-right pr-7"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-body-sm text-gray-400">
-                    %
-                  </span>
+            {FIELDS.map((f) => {
+              const inputId = `${idPrefix}-${f.key}`;
+              return (
+                <div key={f.key} className="flex items-center gap-3">
+                  <label
+                    htmlFor={inputId}
+                    className="w-32 text-body-sm text-gray-600"
+                  >
+                    {f.label}
+                  </label>
+                  <div className="relative flex-1 max-w-[100px]">
+                    <input
+                      id={inputId}
+                      type="number"
+                      step="1"
+                      min="0"
+                      max="100"
+                      placeholder="—"
+                      value={
+                        value[f.key] !== undefined && value[f.key] !== null
+                          ? Math.round(value[f.key]! * 100)
+                          : ''
+                      }
+                      onChange={(e) => handleChange(f.key, e.target.value)}
+                      className="w-full rounded-lg border border-gray-200 px-3 py-1.5
+                        font-mono text-body-sm outline-none focus:border-accent
+                        transition-colors duration-150 text-right pr-7"
+                    />
+                    <span
+                      aria-hidden
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-body-sm text-gray-500"
+                    >
+                      %
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Live total */}
@@ -100,7 +119,7 @@ export function CardMixInput({ value, onChange }: CardMixInputProps) {
             <span
               className={`font-mono text-body-sm font-medium ${
                 filledCount === 0
-                  ? 'text-gray-400'
+                  ? 'text-gray-500'
                   : Math.abs(total - 100) <= 1
                     ? 'text-green-700'
                     : 'text-ink-muted'

@@ -34,7 +34,8 @@ describe('Step1Volume', () => {
       <Step1Volume value={0} onChange={onChange} onNext={onNext} onBack={onBack} />,
     );
 
-    const monthlyBtn = screen.getByRole('button', { name: /monthly/i });
+    // Annual/Monthly toggle is now a radiogroup — query by role=radio
+    const monthlyBtn = screen.getByRole('radio', { name: /monthly/i });
     await user.click(monthlyBtn);
 
     // Type a value after switching to monthly

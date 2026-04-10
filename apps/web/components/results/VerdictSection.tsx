@@ -2,7 +2,10 @@
 
 // Results verdict — the first thing the merchant sees.
 // Per ux-spec §3.2:
-//   • Pill label is "SITUATION N" (no "of 4" suffix, sharp corners)
+//   • Pill label is "SITUATION N" — 20px pill radius under the Modern Fintech
+//     Hierarchy (supersedes the original §3.2 "sharp corners" direction; chips
+//     are classification labels and belong on the 20px tier with all other
+//     badges in the app)
 //   • Hero P&L number stays at 44px monospace (CLAUDE.md Rule 2 wins over §3.2's 60px)
 //   • Daily anchor sentence (NEW): "That's $X more per day..."
 //   • Context line tells the merchant which inputs drove the number
@@ -23,7 +26,7 @@ interface VerdictSectionProps {
   surchargeRate: number;
 }
 
-// Sharp-cornered situation pill — variant per spec §3.2
+// Situation pill variants — 20px pill radius under the Modern Fintech Hierarchy
 const SITUATION_PILLS: Record<
   1 | 2 | 3 | 4,
   { background: string; color: string }
@@ -153,7 +156,7 @@ export function VerdictSection({
             fontSize: '10px',
             letterSpacing: '1.5px',
             padding: '4px 10px',
-            // sharp corners per spec — no border-radius
+            borderRadius: '20px',
           }}
         >
           Situation {category}

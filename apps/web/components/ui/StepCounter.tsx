@@ -12,7 +12,7 @@ export function StepCounter({ current, total = 4 }: StepCounterProps) {
   const pad = (n: number) => String(n).padStart(2, '0');
 
   return (
-    <span className="font-mono text-body-sm text-gray-400 whitespace-nowrap">
+    <span className="font-mono text-body-sm text-gray-500 whitespace-nowrap">
       <span className="text-accent">{pad(current)}</span>
       {' / '}
       {pad(total)}

@@ -105,7 +105,14 @@ export function PassThroughSlider({
       {/* Slider — controlled input uses onChange so React's controlled-input
           plumbing hooks correctly. Using onInput without onChange made React
           treat the field as read-only and re-sync the DOM value on every
-          render, which caused visible jumps while dragging. */}
+          render, which caused visible jumps while dragging.
+
+          a11y: native <input type="range"> already exposes role=slider and
+          aria-valuenow via the `value` attribute, but we set aria-valuetext
+          to give screen readers a meaningful phrase ("50 percent — half of
+          the interchange saving reflected in your Stripe rate") instead of
+          the bare number. aria-valuemin/max are explicit for AT that don't
+          derive them from min/max props. */}
       <input
         type="range"
         min={0}
@@ -115,7 +122,17 @@ export function PassThroughSlider({
         onChange={handleChange}
         className="w-full"
         style={{ accentColor: '#1A6B5A' }}
-        aria-label="Pass-through percentage"
+        aria-label={`Pass-through percentage — how much of the interchange saving is reflected in your ${pspName} rate`}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={pctValue}
+        aria-valuetext={
+          pctValue === 0
+            ? `0 percent — none of the saving reflected in your ${pspName} rate`
+            : pctValue === 100
+              ? `100 percent — the full saving reflected in your ${pspName} rate`
+              : `${pctValue} percent of the saving reflected in your ${pspName} rate`
+        }
       />
 
       {/* Slider labels (per spec) */}
@@ -132,13 +149,15 @@ export function PassThroughSlider({
         <span>Fully reflected (100%)</span>
       </div>
 
-      {/* Result box — accent-light bg, accent-border */}
+      {/* Result box — accent-light bg, accent-border, 8px radius
+          (structured content on the 8px tier of the Modern Fintech Hierarchy). */}
       <div
         style={{
           background: '#EBF6F3',
           border: '1px solid #72C4B0',
           padding: '12px 14px',
           marginTop: '14px',
+          borderRadius: '8px',
         }}
       >
         <div className="flex items-center justify-between" style={{ marginBottom: '6px' }}>

@@ -77,12 +77,25 @@ export function RevealScreen({ formData, onComplete, onError }: RevealScreenProp
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-gray-900">
-      <p className="text-caption tracking-widest text-white/35">
+    // role="status" + aria-live="polite" announces the calculating state
+    // and the category label to screen readers without interrupting. The
+    // pulsing dot is marked aria-hidden — it's decorative.
+    <div
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-gray-900"
+    >
+      {/* text-white/65 on bg-gray-900 computes to ~6.8:1 — passes WCAG AA.
+          text-white/35 (the previous value) was ~3.1:1 and failed 1.4.3. */}
+      <p className="text-caption tracking-widest text-white/65">
         Calculating your position...
       </p>
 
-      <div className="h-3 w-3 rounded-full bg-accent-border animate-pulse-accent" />
+      <div
+        aria-hidden
+        className="h-3 w-3 rounded-full bg-accent-border animate-pulse-accent"
+      />
 
       <p
         className={`font-serif text-body-lg text-white/60 transition-opacity duration-400 ease-out ${

@@ -147,6 +147,7 @@ export function CostCompositionChart({
               padding: '2px 7px',
               background: 'rgba(154, 140, 120, 0.1)',
               color: '#9A8C78',
+              borderRadius: '20px',
             }}
           >
             Estimated breakdown
@@ -189,67 +190,122 @@ export function CostCompositionChart({
         ))}
       </div>
 
-      {/* Chart — horizontal stacked bars */}
-      <div style={{ height: 110, width: '100%' }} data-testid="cost-composition-chart">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={data}
-            layout="vertical"
-            margin={{ top: 4, right: 8, bottom: 4, left: 8 }}
-          >
-            <XAxis
-              type="number"
-              tick={{ fontSize: 10, fill: 'var(--color-text-tertiary)' }}
-              axisLine={false}
-              tickLine={false}
-              tickFormatter={(v: number) => '$' + (v / 1000).toFixed(0) + 'K'}
-            />
-            <YAxis
-              type="category"
-              dataKey="name"
-              tick={{ fontSize: 11, fill: 'var(--color-text-secondary)' }}
-              axisLine={false}
-              tickLine={false}
-              width={60}
-            />
-            <Tooltip
-              formatter={(value: number, name: string) => [
-                '$' + Math.round(value).toLocaleString('en-AU'),
-                name.charAt(0).toUpperCase() + name.slice(1),
-              ]}
-              contentStyle={{
-                fontSize: 11,
-                border: '0.5px solid var(--color-border-secondary)',
-              }}
-            />
-            <Bar
-              dataKey="interchange"
-              stackId="cost"
-              fill={COLOURS.interchange}
-              isAnimationActive={false}
-            />
-            <Bar
-              dataKey="scheme"
-              stackId="cost"
-              fill={COLOURS.scheme}
-              isAnimationActive={false}
-            />
-            <Bar
-              dataKey="margin"
-              stackId="cost"
-              fill={COLOURS.margin}
-              isAnimationActive={false}
-            />
-            {isFlatRate && (
+      {/* Chart — horizontal stacked bars.
+
+          a11y: Recharts renders an SVG with no accessible alternative. We
+          wrap it in role="img" + aria-label for the high-level summary, and
+          mark the chart container aria-hidden so AT skips the SVG internals.
+          The real data is exposed via the sr-only <table> below, which gives
+          screen reader users the exact dollar breakdown for each column. */}
+      <div
+        role="img"
+        aria-label={`Cost composition — Today total $${(todayInterchange + todayScheme + todayMargin + todayOther).toLocaleString('en-AU')}, October total $${(octInterchange + octScheme + octMargin + octOther).toLocaleString('en-AU')}. Only interchange changes.`}
+      >
+        <div
+          aria-hidden
+          style={{ height: 110, width: '100%' }}
+          data-testid="cost-composition-chart"
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={data}
+              layout="vertical"
+              margin={{ top: 4, right: 8, bottom: 4, left: 8 }}
+            >
+              <XAxis
+                type="number"
+                tick={{ fontSize: 10, fill: 'var(--color-text-tertiary)' }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(v: number) => '$' + (v / 1000).toFixed(0) + 'K'}
+              />
+              <YAxis
+                type="category"
+                dataKey="name"
+                tick={{ fontSize: 11, fill: 'var(--color-text-secondary)' }}
+                axisLine={false}
+                tickLine={false}
+                width={60}
+              />
+              <Tooltip
+                formatter={(value: number, name: string) => [
+                  '$' + Math.round(value).toLocaleString('en-AU'),
+                  name.charAt(0).toUpperCase() + name.slice(1),
+                ]}
+                contentStyle={{
+                  fontSize: 11,
+                  border: '0.5px solid var(--color-border-secondary)',
+                }}
+              />
               <Bar
-                dataKey="other"
+                dataKey="interchange"
                 stackId="cost"
-                fill={COLOURS.other}
+                fill={COLOURS.interchange}
                 isAnimationActive={false}
               />
+              <Bar
+                dataKey="scheme"
+                stackId="cost"
+                fill={COLOURS.scheme}
+                isAnimationActive={false}
+              />
+              <Bar
+                dataKey="margin"
+                stackId="cost"
+                fill={COLOURS.margin}
+                isAnimationActive={false}
+              />
+              {isFlatRate && (
+                <Bar
+                  dataKey="other"
+                  stackId="cost"
+                  fill={COLOURS.other}
+                  isAnimationActive={false}
+                />
+              )}
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Visually-hidden data table — the accessible alternative for the
+            stacked bar chart above. Screen readers announce "table, 4 rows,
+            3 columns" and the merchant can navigate cell by cell. */}
+        <table className="sr-only">
+          <caption>
+            Cost composition by category — today versus October.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Cost category</th>
+              <th scope="col">Today</th>
+              <th scope="col">From October</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Interchange</th>
+              <td>${todayInterchange.toLocaleString('en-AU')}</td>
+              <td>${octInterchange.toLocaleString('en-AU')}</td>
+            </tr>
+            <tr>
+              <th scope="row">Scheme fees (unchanged)</th>
+              <td>${todayScheme.toLocaleString('en-AU')}</td>
+              <td>${octScheme.toLocaleString('en-AU')}</td>
+            </tr>
+            <tr>
+              <th scope="row">{pspName} margin (unchanged)</th>
+              <td>${todayMargin.toLocaleString('en-AU')}</td>
+              <td>${octMargin.toLocaleString('en-AU')}</td>
+            </tr>
+            {isFlatRate && (
+              <tr>
+                <th scope="row">Other (flat rate bundle)</th>
+                <td>${todayOther.toLocaleString('en-AU')}</td>
+                <td>${octOther.toLocaleString('en-AU')}</td>
+              </tr>
             )}
-          </BarChart>
-        </ResponsiveContainer>
+          </tbody>
+        </table>
       </div>
 
       {/* Insight note */}
@@ -259,6 +315,7 @@ export function CostCompositionChart({
           borderLeft: '2px solid #BA7517',
           padding: '10px 12px',
           marginTop: '12px',
+          borderRadius: '8px',
         }}
       >
         <p

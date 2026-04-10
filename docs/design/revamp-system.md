@@ -3,6 +3,17 @@
 
 ---
 
+> **⚠ Corner radius superseded (April 2026).** The "sharp corners / document
+> aesthetic" border-radius direction in this document is superseded by the
+> **Modern Fintech Hierarchy** — a five-token system (pill CTA, 8px
+> interactive, 12px wrapper card, 20px pill chip, full-round decoration)
+> unified across the entire app. See the comment block at the top of
+> `apps/web/tailwind.config.ts` for the full definition. All other sections
+> of this document (colour, typography, spacing, borders-only depth, receipt
+> paper canvas) remain authoritative.
+
+---
+
 ## Direction
 **Personality:** Sophistication & Trust
 **Foundation:** Warm neutral — receipt paper cream base, not pure white

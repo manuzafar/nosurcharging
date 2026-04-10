@@ -84,12 +84,14 @@ export function EscapeScenarioCard({
         rate review.
       </p>
 
-      {/* Green box */}
+      {/* Green box — 12px wrapper card tier (it's the main structural card
+          of the section, containing a heading + hero number + body copy). */}
       <div
         style={{
           background: '#E8F5EB',
           border: '1px solid rgba(39, 80, 10, 0.25)',
           padding: '16px 18px',
+          borderRadius: '12px',
         }}
       >
         <p

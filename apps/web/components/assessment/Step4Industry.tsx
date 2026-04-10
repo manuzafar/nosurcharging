@@ -106,7 +106,11 @@ export function Step4Industry({
                 }`}
               style={{ borderWidth: selected ? '1px' : '0.5px' }}
             >
-              <span className={selected ? 'text-accent' : 'text-gray-400'}>
+              {/* The icon itself is purely decorative (the label says the
+                  industry name) — aria-hidden keeps it out of the a11y tree.
+                  text-gray-500 meets 4.5:1 against the white card for sighted
+                  users who still scan the icon. */}
+              <span aria-hidden className={selected ? 'text-accent' : 'text-gray-500'}>
                 {ind.icon}
               </span>
               <span className="text-caption">{ind.label}</span>
@@ -117,16 +121,9 @@ export function Step4Industry({
 
       <div className="mt-8 flex items-center justify-between">
         <TextButton onClick={onBack}>Back</TextButton>
-        <button
-          type="button"
-          onClick={onNext}
-          disabled={!industry}
-          className="rounded-lg bg-gray-900 px-8 py-3 text-body font-medium text-white
-            transition-opacity duration-150 hover:opacity-90
-            disabled:opacity-30 disabled:cursor-not-allowed"
-        >
+        <AccentButton onClick={onNext} disabled={!industry}>
           See my results →
-        </button>
+        </AccentButton>
       </div>
     </div>
   );
