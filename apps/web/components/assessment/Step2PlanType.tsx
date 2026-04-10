@@ -8,7 +8,7 @@
 
 import { Card } from '@/components/ui/Card';
 import { PillBadge } from '@/components/ui/PillBadge';
-import { AmberButton } from '@/components/ui/AmberButton';
+import { AccentButton } from '@/components/ui/AccentButton';
 import { TextButton } from '@/components/ui/TextButton';
 import { ExpertPanel } from './ExpertPanel';
 import { CardMixInput } from './CardMixInput';
@@ -43,7 +43,7 @@ export function Step2PlanType({
 
   return (
     <div>
-      <p className="text-label tracking-widest text-amber-400">Step 2</p>
+      <p className="text-label tracking-widest text-accent">Step 2</p>
       <h2 className="mt-2 font-serif text-heading-lg">
         What does your card statement look like?
       </h2>
@@ -51,8 +51,16 @@ export function Step2PlanType({
         Pick the card that looks most like your PSP statement.
       </p>
 
-      {/* CB-01: Plan type cards */}
-      <div className="mt-6 grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+      {/* CB-01: Plan type cards.
+          a11y: wrap in role="radiogroup" with aria-label so screen readers
+          announce the grouping when the user tabs into the first card. The
+          cards themselves are already role="radio" + aria-checked. */}
+      <div
+        role="radiogroup"
+        aria-label="Plan type"
+        className="mt-6 grid gap-3"
+        style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}
+      >
         {/* Flat rate card */}
         <Card
           selected={planType === 'flat'}
@@ -64,9 +72,9 @@ export function Step2PlanType({
           <div className="flex items-start justify-between">
             <div>
               <p className="text-body font-medium">One blended rate</p>
-              <p className="text-caption text-gray-400">Stripe, Square, Tyro default</p>
+              <p className="text-caption text-gray-500">Stripe, Square, Tyro default</p>
             </div>
-            <PillBadge variant={planType === 'flat' ? 'amber' : 'grey'}>
+            <PillBadge variant={planType === 'flat' ? 'accent' : 'grey'}>
               Flat rate
             </PillBadge>
           </div>
@@ -93,9 +101,9 @@ export function Step2PlanType({
           <div className="flex items-start justify-between">
             <div>
               <p className="text-body font-medium">Itemised breakdown</p>
-              <p className="text-caption text-gray-400">IC++ or cost-plus</p>
+              <p className="text-caption text-gray-500">IC++ or cost-plus</p>
             </div>
-            <PillBadge variant={planType === 'costplus' ? 'amber' : 'grey'}>
+            <PillBadge variant={planType === 'costplus' ? 'accent' : 'grey'}>
               Cost-plus
             </PillBadge>
           </div>
@@ -134,35 +142,50 @@ export function Step2PlanType({
         }
       />
 
-      {/* CB-03: PSP selector */}
+      {/* CB-03: PSP selector.
+          a11y: single-select pill group. role="radiogroup" + role="radio"
+          per pill + aria-checked. tabIndex rolls focus to the active pill
+          only (standard radiogroup pattern). min-h-[44px] + px-4 flex
+          centering satisfies WCAG 2.5.5 target size. The heading paragraph
+          is linked as the group label via aria-labelledby. */}
       <div className="mt-6">
-        <p className="text-body-sm font-medium tracking-wide">
+        <p id="psp-selector-label" className="text-body-sm font-medium tracking-wide">
           Who processes your payments?
         </p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {PSP_OPTIONS.map((name) => (
-            <button
-              key={name}
-              type="button"
-              onClick={() => onPspChange(name)}
-              className={`rounded-pill px-3 py-1.5 text-caption transition-all duration-100 ${
-                psp === name
-                  ? 'border border-amber-400 bg-amber-50 text-amber-800'
-                  : 'border border-gray-200 text-gray-500 hover:border-gray-300'
-              }`}
-              style={{ borderWidth: psp === name ? '1px' : '0.5px' }}
-            >
-              {name}
-            </button>
-          ))}
+        <div
+          role="radiogroup"
+          aria-labelledby="psp-selector-label"
+          className="mt-2 flex flex-wrap gap-2"
+        >
+          {PSP_OPTIONS.map((name) => {
+            const selected = psp === name;
+            return (
+              <button
+                key={name}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                tabIndex={selected || (psp === null && name === PSP_OPTIONS[0]) ? 0 : -1}
+                onClick={() => onPspChange(name)}
+                className={`flex min-h-[44px] items-center justify-center rounded-lg px-4 text-caption transition-all duration-100 ${
+                  selected
+                    ? 'border border-accent bg-accent-light text-accent-dark'
+                    : 'border border-gray-200 text-gray-500 hover:border-gray-300'
+                }`}
+                style={{ borderWidth: selected ? '1px' : '0.5px' }}
+              >
+                {name}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       <div className="mt-8 flex items-center justify-between">
         <TextButton onClick={onBack}>Back</TextButton>
-        <AmberButton onClick={onNext} disabled={!canProceed}>
+        <AccentButton onClick={onNext} disabled={!canProceed}>
           Next
-        </AmberButton>
+        </AccentButton>
       </div>
     </div>
   );

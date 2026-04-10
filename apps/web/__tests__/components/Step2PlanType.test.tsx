@@ -86,7 +86,8 @@ describe('Step2PlanType', () => {
   it('PSP pill selection works', async () => {
     render(<Step2PlanType {...defaultProps} />);
 
-    const stripePill = screen.getByRole('button', { name: 'Stripe' });
+    // PSP pills are now a radiogroup — query by role=radio
+    const stripePill = screen.getByRole('radio', { name: 'Stripe' });
     await user.click(stripePill);
     expect(onPspChange).toHaveBeenCalledWith('Stripe');
   });
@@ -95,7 +96,7 @@ describe('Step2PlanType', () => {
     render(<Step2PlanType {...defaultProps} />);
     const psps = ['Stripe', 'Square', 'Tyro', 'CommBank', 'ANZ', 'Westpac', 'eWAY', 'Adyen', 'Other'];
     for (const psp of psps) {
-      expect(screen.getByRole('button', { name: psp })).toBeInTheDocument();
+      expect(screen.getByRole('radio', { name: psp })).toBeInTheDocument();
     }
   });
 

@@ -6,8 +6,9 @@ test.describe('Homepage', () => {
 
     await expect(page.getByText(/RBA banned surcharges/)).toBeVisible();
     await expect(page.getByRole('link', { name: /start free assessment/i })).toBeVisible();
-    await expect(page.getByText(/no account required/i)).toBeVisible();
-    await expect(page.getByText(/no psp affiliation/i)).toBeVisible();
+    // Trust bar items — use .first() since features section also contains "No account"
+    await expect(page.getByText('No account required').first()).toBeVisible();
+    await expect(page.getByText('No PSP affiliation').first()).toBeVisible();
   });
 
   test('preview section rotates categories', async ({ page }) => {
@@ -26,7 +27,7 @@ test.describe('Homepage', () => {
   test('features section renders 3 items', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page.getByText('How it works')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'How it works' })).toBeVisible();
     await expect(page.getByText('Answer four questions')).toBeVisible();
     await expect(page.getByText('See your P&L impact')).toBeVisible();
     await expect(page.getByText('Get your action plan')).toBeVisible();

@@ -33,7 +33,7 @@ test.describe('Mobile 375px', () => {
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 3
-    await page.getByText('No').click();
+    await page.getByRole('button', { name: /No.*customers/i }).click();
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 4 — industry grid should be 2 columns on mobile

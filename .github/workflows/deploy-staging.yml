@@ -4,8 +4,11 @@ on:
   push:
     branches: [staging]
 
+env:
+  STAGING_URL: https://nosurcharging-staging.up.railway.app
+
 jobs:
-  test-and-deploy:
+  test-and-build:
     runs-on: ubuntu-latest
     env:
       IP_HASH_SECRET: ci-test-secret
@@ -23,12 +26,12 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
-      # Railway auto-deploys from staging branch
-      # E2E tests run after Railway deploy completes
+      # Railway auto-deploys from staging branch — no manual deploy step needed
 
   e2e:
     runs-on: ubuntu-latest
-    needs: test-and-deploy
+    needs: test-and-build
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -37,15 +40,38 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: npx playwright install --with-deps
-      - name: Wait for staging deploy
-        run: sleep 60
+
+      # Install only Chromium to save CI time (~400MB vs ~2GB for all browsers)
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      # Poll health check instead of blind sleep — faster and more reliable
+      - name: Wait for staging deployment
+        run: |
+          echo "Waiting for staging to be healthy..."
+          for i in $(seq 1 30); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ env.STAGING_URL }}/api/health || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "Staging is healthy (attempt $i)"
+              exit 0
+            fi
+            echo "Attempt $i: status $STATUS, retrying in 10s..."
+            sleep 10
+          done
+          echo "Staging did not become healthy in 5 minutes"
+          exit 1
+
+      # Run E2E tests against live staging deployment
       - name: Run E2E tests
         run: pnpm turbo test:e2e
         env:
-          PLAYWRIGHT_BASE_URL: https://staging.nosurcharging.com.au
-      - uses: actions/upload-artifact@v4
+          PLAYWRIGHT_BASE_URL: ${{ env.STAGING_URL }}
+
+      # Upload Playwright report on failure for debugging
+      - name: Upload E2E report
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: playwright-report
           path: apps/web/playwright-report/
+          retention-days: 7

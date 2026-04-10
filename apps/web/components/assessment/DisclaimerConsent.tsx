@@ -2,17 +2,48 @@
 
 // FR-23: Assessment entry consent. Affirmative checkbox, not pre-checked.
 // consent_type: "disclaimer", consent_version: "v1.0"
-// Exact wording from docs/legal/disclaimer-text.md — do not change.
+// Exact wording from docs/legal/disclaimer-text.md — do not change without
+// bumping the version and re-running the legal review.
+//
+// Visual treatment per docs/design/revamp-ux-spec.md §2 — paper canvas,
+// four commitment items, white checkbox area, centred natural-width CTA.
+//
+// IMPORTANT: The <input type="checkbox">, createSession() call, and
+// recordConsent() call are intentionally untouched. This commit changes
+// only copy + wrapper markup.
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { AmberButton } from '@/components/ui/AmberButton';
 import { createSession } from '@/actions/createSession';
 import { recordConsent } from '@/actions/recordConsent';
 
 const DISCLAIMER_TEXT =
   'I understand that this assessment provides illustrative estimates only. It is not financial advice. Figures are based on RBA published data and the information I provide. I should verify any figures with my PSP before making business decisions.';
 const DISCLAIMER_VERSION = 'v1.0';
+
+interface CommitmentItem {
+  title: string;
+  body: string;
+}
+
+const COMMITMENTS: CommitmentItem[] = [
+  {
+    title: 'This is an estimate, not a guarantee.',
+    body: 'We use your inputs and RBA data to calculate your likely impact. Your actual result depends on what your payment provider does after October.',
+  },
+  {
+    title: 'We explain everything.',
+    body: 'Every technical term in your report has a plain English explanation. You should be able to understand every number we show you.',
+  },
+  {
+    title: 'We are independent.',
+    body: "No relationship with Stripe, Square, Tyro, or any payment provider. We're not trying to sell you a new provider.",
+  },
+  {
+    title: 'This is not financial advice.',
+    body: 'Talk to your accountant before making changes to your pricing or payment setup.',
+  },
+];
 
 interface DisclaimerConsentProps {
   onAccept: () => void;
@@ -53,44 +84,158 @@ export function DisclaimerConsent({ onAccept }: DisclaimerConsentProps) {
   };
 
   return (
-    <div className="mx-auto max-w-assessment px-5">
-      <div className="mb-8 text-center">
-        <p className="text-label tracking-widest text-amber-400">Free assessment</p>
-        <h1 className="mt-3 font-serif text-heading-lg">
-          What does the RBA reform mean for your P&L?
-        </h1>
-        <p className="mt-3 text-body text-gray-500 leading-relaxed">
-          Four questions. Under five minutes. No account required.
-        </p>
+    <div
+      className="mx-auto bg-paper"
+      style={{ maxWidth: '420px', padding: '40px 24px' }}
+    >
+      {/* Eyebrow tag */}
+      <p
+        className="font-medium uppercase text-accent"
+        style={{ fontSize: '10px', letterSpacing: '2px' }}
+      >
+        Before we start
+      </p>
+
+      {/* Headline */}
+      <h1
+        className="mt-3 font-serif text-ink"
+        style={{
+          fontSize: '26px',
+          fontWeight: 500,
+          letterSpacing: '-0.8px',
+          lineHeight: '1.25',
+        }}
+      >
+        A few things to know about this report
+      </h1>
+
+      {/* Sub */}
+      <p
+        className="mt-3 text-ink-secondary"
+        style={{ fontSize: '14px', lineHeight: '1.65', marginBottom: '20px' }}
+      >
+        We want to be completely upfront about what this tool does — and
+        doesn&apos;t do.
+      </p>
+
+      {/* Four commitment items */}
+      <div
+        className="bg-paper-white border border-rule"
+        style={{ marginBottom: '16px' }}
+      >
+        {COMMITMENTS.map((item, i) => (
+          <div
+            key={item.title}
+            className="flex items-start"
+            style={{
+              gap: '12px',
+              padding: '14px 16px',
+              borderBottom:
+                i < COMMITMENTS.length - 1
+                  ? '1px solid rgba(221, 213, 200, 0.6)'
+                  : undefined,
+            }}
+          >
+            {/* Tick icon — 20px circle */}
+            <span
+              aria-hidden
+              className="shrink-0 flex items-center justify-center bg-accent-light text-accent rounded-full"
+              style={{
+                width: '20px',
+                height: '20px',
+                marginTop: '1px',
+              }}
+            >
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 10 10"
+                fill="none"
+                aria-hidden
+              >
+                <path
+                  d="M2 5.2L4 7.2L8 2.8"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+
+            <p
+              className="text-ink-secondary"
+              style={{ fontSize: '13px', lineHeight: '1.65' }}
+            >
+              <strong
+                className="text-ink"
+                style={{ fontWeight: 500 }}
+              >
+                {item.title}
+              </strong>{' '}
+              {item.body}
+            </p>
+          </div>
+        ))}
       </div>
 
-      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 p-4">
+      {/* Checkbox area — white background, accent tick only */}
+      <label
+        className="flex cursor-pointer items-start bg-paper-white border border-rule"
+        style={{ gap: '12px', padding: '14px', marginBottom: '16px' }}
+      >
         <input
           type="checkbox"
           checked={checked}
           onChange={(e) => setChecked(e.target.checked)}
-          className="mt-0.5 h-4 w-4 rounded accent-amber-400"
+          className="shrink-0 accent-accent"
+          style={{ width: '16px', height: '16px', marginTop: '2px' }}
         />
-        <span className="text-body-sm text-gray-600 leading-relaxed">
-          {DISCLAIMER_TEXT}
+        <span
+          className="text-ink-secondary"
+          style={{ fontSize: '12px', lineHeight: '1.6' }}
+        >
+          {DISCLAIMER_TEXT}{' '}
+          <Link
+            href="/privacy"
+            className="text-accent underline"
+            style={{ textUnderlineOffset: '2px' }}
+          >
+            Privacy policy
+          </Link>
+          .
         </span>
       </label>
-      <p className="mt-2 text-center">
-        <Link href="/privacy" className="text-caption underline" style={{ color: 'var(--color-text-secondary)' }}>
-          Read our privacy policy
-        </Link>
-      </p>
 
       {consentError && (
-        <p className="mt-4 text-center text-body-sm text-red-700 bg-red-50 rounded-lg px-4 py-3">
+        <p
+          className="text-red-700 bg-red-50"
+          style={{
+            fontSize: '13px',
+            padding: '12px 16px',
+            marginBottom: '16px',
+            lineHeight: '1.5',
+          }}
+        >
           We could not record your consent. Please try again or contact us.
         </p>
       )}
 
-      <div className="mt-6 flex justify-center">
-        <AmberButton onClick={handleStart} disabled={!checked || loading}>
-          {loading ? 'Starting...' : 'Start assessment'}
-        </AmberButton>
+      {/* CTA — centred, natural width on desktop, full-width on mobile */}
+      <div className="text-center">
+        <button
+          type="button"
+          onClick={handleStart}
+          disabled={!checked || loading}
+          className="w-full bg-accent text-white transition-opacity duration-150 hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed min-[640px]:w-auto min-[640px]:inline-block"
+          style={{
+            fontSize: '14px',
+            fontWeight: 500,
+            padding: '14px 40px',
+          }}
+        >
+          {loading ? 'Starting...' : 'Start my assessment →'}
+        </button>
       </div>
     </div>
   );

@@ -3,6 +3,13 @@
 
 **Version:** 1.0 | **April 2026**
 
+> **⚠ Corner radius superseded (April 2026).** The radius tokens in this
+> document are superseded by the **Modern Fintech Hierarchy** — a five-token
+> system unified across the entire app. See the comment block at the top of
+> `apps/web/tailwind.config.ts` for the full definition, or the plan file
+> documenting the migration. All other sections of this document remain
+> authoritative.
+
 A working HTML prototype (v3) exists and is the primary visual reference. Read this document for the design system, principles, and rationale. Reference the prototype for the implementation.
 
 ---

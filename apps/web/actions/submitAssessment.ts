@@ -126,8 +126,15 @@ export async function submitAssessment(
   const outputs = calculateMetrics(resolved);
 
   // 7. Build action list — sanitise PSP name before embedding in text (SR-08)
+  //    Pass runtime context so the builder can interpolate [$X], [rate], [volume]
+  //    placeholders into the per-category script copy (ux-spec §3.4).
   const safePsp = sanitiseForHTML(formData.psp);
-  const actions = buildActions(outputs.category, safePsp, formData.industry);
+  const actions = buildActions(outputs.category, safePsp, formData.industry, {
+    volume: formData.volume,
+    surchargeRate: formData.surchargeRate,
+    surchargeRevenue: outputs.surchargeRevenue,
+    icSaving: outputs.icSaving,
+  });
 
   // 9. INSERT with idempotency key — use .select() to get generated ID
   const { data: inserted, error: insertError } = await supabaseAdmin

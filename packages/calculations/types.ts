@@ -141,7 +141,23 @@ export type ActionPriority = 'urgent' | 'plan' | 'monitor';
 export interface ActionItem {
   priority: ActionPriority;
   timeAnchor: string;
+  // What — the instruction (e.g. "Ask Stripe whether your rate will change")
   text: string;
+  // Script — verbatim words to say (italic, paper bg, accent-border-left)
+  // Optional because not every legacy/test caller provides one.
+  script?: string;
+  // Why — short explanation rendered below the script in ink-faint.
+  why?: string;
+}
+
+// Runtime context the action builder needs to interpolate spec placeholders
+// ([PSP], [volume], [rate], $X) into the script + what copy.
+// Sourced from formData + AssessmentOutputs at the call site.
+export interface ActionContext {
+  volume: number;
+  surchargeRate: number;
+  surchargeRevenue: number;
+  icSaving: number;
 }
 
 // ── Reform dates ─────────────────────────────────────────────────
