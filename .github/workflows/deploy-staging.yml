@@ -43,7 +43,7 @@ jobs:
 
       # Install only Chromium to save CI time (~400MB vs ~2GB for all browsers)
       - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+        run: pnpm --filter web exec playwright install --with-deps chromium
 
       # Poll health check instead of blind sleep — faster and more reliable
       - name: Wait for staging deployment
