@@ -148,9 +148,9 @@ describe('PassThroughSlider', () => {
       />,
     );
 
-    // Intro: "$1,725 processing cost reduction is reflected in your Stripe rate"
+    // Updated intro: "RBA estimates ~45%... Stripe keeps the full $1,725 interchange saving"
     expect(
-      screen.getByText(/processing cost reduction is reflected in your Stripe rate/i),
+      screen.getByText(/RBA estimates ~45% of merchants/i),
     ).toBeInTheDocument();
     expect(screen.getByText(/\$1,725/)).toBeInTheDocument();
   });

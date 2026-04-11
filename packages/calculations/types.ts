@@ -98,7 +98,7 @@ export type Confidence = 'high' | 'medium' | 'low';
 
 export interface ResolvedAssessmentInputs {
   volume: number;
-  planType: 'flat' | 'costplus';
+  planType: 'flat' | 'costplus' | 'blended' | 'zero_cost';
   msfRate: number;
   surcharging: boolean;
   surchargeRate: number;
@@ -111,6 +111,10 @@ export interface ResolvedAssessmentInputs {
   expertRates: ExpertRates;
   resolutionTrace: ResolutionTrace;
   confidence: Confidence;
+  // strategic_rate never reaches the engine — intercepted in submitAssessment.ts
+  estimatedMSFRate?: number;  // zero-cost: resolved post-reform rate
+  debitRate?: number;         // blended: debit rate as proportion (e.g. 0.009)
+  creditRate?: number;        // blended: credit rate as proportion (e.g. 0.018)
 }
 
 // ── Assessment outputs ───────────────────────────────────────────
@@ -128,10 +132,39 @@ export interface AssessmentOutputs {
   netToday: number;
   octNet: number;
   plSwing: number;
+  plSwingLow: number;   // Cat2/blended: 0%PT. Costplus: icSaving×0.80. Fixed at submission.
+  plSwingHigh: number;  // Cat2/blended: 100%PT. Costplus: icSaving×1.20. Fixed at submission.
+  rangeDriver: 'pass_through' | 'card_mix';
+  rangeNote: string;
   todayScheme: number;
   oct2026Scheme: number;
   confidence: Confidence;
   period: ReformPeriod;
+}
+
+// ── Zero-cost outputs ────────────────────────────────────────────
+
+export interface ZeroCostOutputs {
+  modelType: 'zero_cost';
+  preReformNetCost: 0;           // LITERAL TYPE — compiler enforces invariant
+  postReformNetCost: number;
+  reformImpact: number;
+  plSwingLow: number;
+  plSwing: number;
+  plSwingHigh: number;
+  rangeDriver: 'post_reform_rate';
+  rangeNote: string;
+  estimatedMSFRate: number;
+  confidence: 'directional';
+  urgency: 'critical';
+  period: ReformPeriod;
+}
+
+// ── Strategic rate detection ─────────────────────────────────────
+
+export interface StrategicRateDetection {
+  detected: boolean;
+  triggerReason: 'volume_threshold' | 'self_reported' | null;
 }
 
 // ── Action list ──────────────────────────────────────────────────
@@ -192,6 +225,10 @@ export interface MerchantInputOverrides {
     creditPct?: number;
     marginPct?: number;
   };
+  blendedRates?: {
+    debitRate?: number;
+    creditRate?: number;
+  };
 }
 
 // ── Invoice parsed values (Phase 2) ──────────────────────────────
@@ -217,7 +254,7 @@ export interface ResolutionContext {
 
 export interface RawAssessmentData {
   volume: number;
-  planType: 'flat' | 'costplus';
+  planType: 'flat' | 'costplus' | 'blended' | 'zero_cost' | 'strategic_rate';
   msfRate: number;
   surcharging: boolean;
   surchargeRate: number;
@@ -226,4 +263,7 @@ export interface RawAssessmentData {
   psp: string;
   passThrough: number;
   country: string;
+  msfRateMode?: 'unselected' | 'market_estimate' | 'custom';
+  customMSFRate?: number;
+  // estimatedMSFRate is DERIVED in resolver from msfRateMode + customMSFRate
 }

@@ -2,13 +2,11 @@
 
 // Results verdict — the first thing the merchant sees.
 // Per ux-spec §3.2:
-//   • Pill label is "SITUATION N" — 20px pill radius under the Modern Fintech
-//     Hierarchy (supersedes the original §3.2 "sharp corners" direction; chips
-//     are classification labels and belong on the 20px tier with all other
-//     badges in the app)
-//   • Hero P&L number stays at 44px monospace (CLAUDE.md Rule 2 wins over §3.2's 60px)
-//   • Daily anchor sentence (NEW): "That's $X more per day..."
-//   • Context line tells the merchant which inputs drove the number
+//   - Pill label is "SITUATION N" — 20px pill radius
+//   - Range display: plSwingLow to plSwingHigh at clamp(24px, 7vw, 32px)
+//   - Expected line: plSwing at text-financial-standard (22px)
+//   - Old records without plSwingLow: single 44px number + "Complete a new assessment" note
+//   - Daily anchor sentence: "That's $X more per day..."
 //
 // Banned phrasing: never "your PSP" or "your provider" — always the
 // actual PSP name interpolated inline.
@@ -20,7 +18,7 @@ interface VerdictSectionProps {
   outputs: AssessmentOutputs;
   volume: number;
   pspName: string;
-  planType: 'flat' | 'costplus';
+  planType: 'flat' | 'costplus' | 'blended';
   msfRate: number;
   surcharging: boolean;
   surchargeRate: number;
@@ -53,6 +51,10 @@ function formatDollar(value: number): string {
   return '$' + Math.round(Math.abs(value)).toLocaleString('en-AU');
 }
 
+function formatSignedDollar(value: number): string {
+  return (value >= 0 ? '+' : '-') + '$' + Math.abs(Math.round(value)).toLocaleString('en-AU');
+}
+
 // Format volume in human-readable form: $500K, $1.2M, $5M
 function formatVolumeShort(volume: number): string {
   if (volume >= 1_000_000) {
@@ -73,7 +75,7 @@ function formatPct(rate: number): string {
 function buildContextLine(
   volume: number,
   pspName: string,
-  planType: 'flat' | 'costplus',
+  planType: 'flat' | 'costplus' | 'blended',
   msfRate: number,
   surcharging: boolean,
   surchargeRate: number,
@@ -82,6 +84,8 @@ function buildContextLine(
 
   if (planType === 'flat') {
     parts.push(`${pspName} flat rate ${formatPct(msfRate)}`);
+  } else if (planType === 'blended') {
+    parts.push(`${pspName} blended rate`);
   } else {
     parts.push(`${pspName} cost-plus`);
   }
@@ -112,26 +116,10 @@ export function VerdictSection({
   surcharging,
   surchargeRate,
 }: VerdictSectionProps) {
-  const { category, plSwing } = outputs;
-  // Sign affects colour AND prefix. We treat exactly zero as a third state:
-  // no sign at all. Cat 2 at the default passThrough=0 hits this — pairing
-  // a green "+$0" with a "the saving exists but won't arrive" headline reads
-  // as a contradiction. Plain "$0" matches the headline's tone exactly.
-  const isPositive = plSwing > 0;
+  const { category, plSwing, plSwingLow, plSwingHigh, rangeDriver, rangeNote } = outputs;
   const isNegative = plSwing < 0;
   const isPositiveOrZero = plSwing >= 0;
   const pillStyle = SITUATION_PILLS[category];
-
-  const formattedSwing = formatDollar(plSwing);
-
-  // Daily anchor: spec §3.2 — Math.round(Math.abs(plSwing) / 365)
-  // Phrasing flips for positive (saving) vs negative (cost increase) outcomes.
-  // The strong wraps "$X more per day" only — not the trailing context.
-  const dailyAnchor = Math.round(Math.abs(plSwing) / 365);
-  const dailyAnchorStrong = `$${dailyAnchor.toLocaleString('en-AU')} more per day`;
-  const dailyAnchorTail = isPositiveOrZero
-    ? ' in your pocket.'
-    : ' in net payments cost.';
 
   const contextLine = buildContextLine(
     volume,
@@ -141,6 +129,18 @@ export function VerdictSection({
     surcharging,
     surchargeRate,
   );
+
+  // Daily anchor: spec §3.2 — Math.round(Math.abs(plSwing) / 365)
+  const dailyAnchor = Math.round(Math.abs(plSwing) / 365);
+  const dailyAnchorStrong = `$${dailyAnchor.toLocaleString('en-AU')} more per day`;
+  const dailyAnchorTail = isPositiveOrZero
+    ? ' in your pocket.'
+    : ' in net payments cost.';
+
+  // Range colour — uses the sign of plSwingLow to determine colour
+  const rangeColour = (plSwingLow ?? plSwing) >= 0
+    ? 'var(--color-text-success)'
+    : 'var(--color-text-danger)';
 
   return (
     <div
@@ -184,40 +184,80 @@ export function VerdictSection({
         {CATEGORY_VERDICTS[category]}
       </h2>
 
-      {/* Row 3: Hero P&L number — 44px mono, CLAUDE.md Rule 2.
-          Zero is rendered without a sign — see comment above the
-          isPositive/isNegative declarations. */}
-      <p
-        className="mt-3 font-mono text-financial-hero"
-        style={{
-          color: isNegative
-            ? 'var(--color-text-danger)'
-            : 'var(--color-text-success)',
-          marginBottom: '6px',
-        }}
-      >
-        {isPositive && '+'}
-        {isNegative && '−'}
-        {formattedSwing}
-      </p>
+      {/* Row 3: Range display or fallback single number */}
+      {plSwingLow === undefined ? (
+        // Old records without range — single 44px hero number
+        <div>
+          <p
+            className="mt-3 font-mono text-financial-hero"
+            style={{
+              color: isNegative
+                ? 'var(--color-text-danger)'
+                : 'var(--color-text-success)',
+              marginBottom: '6px',
+            }}
+          >
+            {plSwing > 0 && '+'}
+            {plSwing < 0 && '−'}
+            {formatDollar(plSwing)}
+          </p>
+          <p
+            style={{
+              fontSize: '13px',
+              color: 'var(--color-text-tertiary)',
+              marginBottom: '8px',
+            }}
+          >
+            per year, from 1 October 2026
+          </p>
+          <p className="mt-1 text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
+            Complete a new assessment to see the full range.
+          </p>
+        </div>
+      ) : (
+        // Range display — overrides CLAUDE.md Rule 2 (44px) for the pair
+        <div>
+          <div className="mt-3">
+            <p className="font-mono" style={{ fontSize: 'clamp(24px, 7vw, 32px)', color: rangeColour }}>
+              {formatSignedDollar(plSwingLow)}
+              <span className="font-sans mx-2" style={{ fontSize: '14px', color: 'var(--color-text-tertiary)' }}>
+                to
+              </span>
+              {formatSignedDollar(plSwingHigh)}
+            </p>
+            <p className="mt-1 text-caption" style={{ color: 'var(--color-text-secondary)' }}>
+              per year from 1 October 2026
+            </p>
+          </div>
 
-      {/* Row 4: Unit label */}
-      <p
-        style={{
-          fontSize: '13px',
-          color: 'var(--color-text-tertiary)',
-          marginBottom: '8px',
-        }}
-      >
-        per year, from 1 October 2026
-      </p>
+          <div className="mt-2 flex flex-wrap items-center gap-x-2">
+            <span className="text-caption" style={{ color: 'var(--color-text-secondary)' }}>Expected:</span>
+            <span
+              className="font-mono text-body-sm font-medium"
+              style={{ color: plSwing >= 0 ? 'var(--color-text-success)' : 'var(--color-text-danger)' }}
+            >
+              {formatSignedDollar(plSwing)}
+            </span>
+            <span className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
+              {rangeDriver === 'pass_through'
+                ? '— at 45% PSP pass-through (RBA market estimate)'
+                : '— at estimated card mix'}
+            </span>
+          </div>
 
-      {/* Row 5: Daily anchor — NEW per spec §3.2 */}
+          <p className="mt-2 text-caption" style={{ color: 'var(--color-text-tertiary)', lineHeight: '1.55' }}>
+            {rangeNote}
+          </p>
+        </div>
+      )}
+
+      {/* Daily anchor — §3.2 */}
       <p
         style={{
           fontSize: '15px',
           color: 'var(--color-text-secondary)',
           lineHeight: '1.6',
+          marginTop: '8px',
           marginBottom: '8px',
         }}
       >
@@ -228,7 +268,7 @@ export function VerdictSection({
         {dailyAnchorTail}
       </p>
 
-      {/* Row 6: Context line — what inputs drove the number */}
+      {/* Context line — what inputs drove the number */}
       <p
         style={{
           fontSize: '11px',
@@ -238,7 +278,7 @@ export function VerdictSection({
         {contextLine}
       </p>
 
-      {/* Row 7: Body paragraph — category-specific narrative */}
+      {/* Body paragraph — category-specific narrative */}
       <p
         className="mt-4 text-body-sm"
         style={{

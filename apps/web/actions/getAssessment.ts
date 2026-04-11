@@ -5,13 +5,14 @@
 // Service role bypasses RLS (assessments table has SELECT USING(false) for anon).
 
 import { supabaseAdmin } from '@/lib/supabase/server';
-import type { AssessmentOutputs, ActionItem } from '@nosurcharging/calculations/types';
+import type { AssessmentOutputs, ZeroCostOutputs, ActionItem } from '@nosurcharging/calculations/types';
 
 export interface StoredAssessment {
   id: string;
   category: number;
+  variant_type: 'standard' | 'zero_cost' | 'strategic_rate';
   inputs: Record<string, unknown>;
-  outputs: AssessmentOutputs & { actions?: ActionItem[] };
+  outputs: (AssessmentOutputs | ZeroCostOutputs) & { actions?: ActionItem[] };
   created_at: string;
 }
 
@@ -24,7 +25,7 @@ export async function getAssessment(
 
   const { data, error } = await supabaseAdmin
     .from('assessments')
-    .select('id, category, inputs, outputs, created_at')
+    .select('id, category, variant_type, inputs, outputs, created_at')
     .eq('id', assessmentId)
     .single();
 
