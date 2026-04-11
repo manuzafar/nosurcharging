@@ -52,7 +52,8 @@ function formatDollar(value: number): string {
 }
 
 function formatSignedDollar(value: number): string {
-  return (value >= 0 ? '+' : '-') + '$' + Math.abs(Math.round(value)).toLocaleString('en-AU');
+  if (value === 0) return '$0';
+  return (value > 0 ? '+' : '−') + '$' + Math.abs(Math.round(value)).toLocaleString('en-AU');
 }
 
 // Format volume in human-readable form: $500K, $1.2M, $5M
