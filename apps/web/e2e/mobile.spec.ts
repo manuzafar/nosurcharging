@@ -42,6 +42,6 @@ test.describe('Mobile 375px', () => {
 
     // Should navigate to results
     await page.waitForURL(/\/results\?id=/, { timeout: 10000 });
-    await expect(page.getByText('Category 2')).toBeVisible();
+    await expect(page.getByText('Situation 2')).toBeVisible();
   });
 });
