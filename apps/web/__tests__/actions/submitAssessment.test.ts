@@ -87,6 +87,10 @@ vi.mock('@nosurcharging/calculations/calculations', () => ({
       netToday: 6000.0,
       octNet: 40835.89,
       plSwing: -34835.89,
+      plSwingLow: -34835.89,
+      plSwingHigh: -34835.89,
+      rangeDriver: 'card_mix' as const,
+      rangeNote: '',
       todayScheme: 3150.0,
       oct2026Scheme: 3150.0,
       confidence: 'low' as const,
@@ -107,6 +111,7 @@ import { submitAssessment } from '@/actions/submitAssessment';
 import type { AssessmentFormData } from '@/actions/submitAssessment';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { calculateMetrics } from '@nosurcharging/calculations/calculations';
+import type { AssessmentOutputs } from '@nosurcharging/calculations/types';
 
 const CAT4_FORM: AssessmentFormData = {
   volume: 3_000_000,
@@ -158,9 +163,9 @@ describe('submitAssessment', () => {
     const result = await submitAssessment(CAT4_FORM, TEST_IDEMPOTENCY_KEY);
 
     expect(result.success).toBe(true);
-    expect(result.outputs!.category).toBe(4);
-    expect(result.outputs!.plSwing).toBeLessThan(0);
-    expect(result.outputs!.plSwing).toBeCloseTo(-34835.89, 1);
+    expect((result.outputs as AssessmentOutputs).category).toBe(4);
+    expect((result.outputs as AssessmentOutputs).plSwing).toBeLessThan(0);
+    expect((result.outputs as AssessmentOutputs).plSwing).toBeCloseTo(-34835.89, 1);
   });
 
   it('Category 1 cost-plus+not-surcharging produces positive plSwing', async () => {
@@ -178,6 +183,10 @@ describe('submitAssessment', () => {
       netToday: 9401.54,
       octNet: 7676.92,
       plSwing: 1724.62,
+      plSwingLow: 1724.62,
+      plSwingHigh: 1724.62,
+      rangeDriver: 'card_mix' as const,
+      rangeNote: '',
       todayScheme: 2100.0,
       oct2026Scheme: 2100.0,
       confidence: 'low',
@@ -187,9 +196,9 @@ describe('submitAssessment', () => {
     const result = await submitAssessment(CAT1_FORM, TEST_IDEMPOTENCY_KEY);
 
     expect(result.success).toBe(true);
-    expect(result.outputs!.category).toBe(1);
-    expect(result.outputs!.plSwing).toBeGreaterThan(0);
-    expect(result.outputs!.plSwing).toBeCloseTo(1724.62, 1);
+    expect((result.outputs as AssessmentOutputs).category).toBe(1);
+    expect((result.outputs as AssessmentOutputs).plSwing).toBeGreaterThan(0);
+    expect((result.outputs as AssessmentOutputs).plSwing).toBeCloseTo(1724.62, 1);
   });
 
   it('ip_hash stored is hashed (never raw IP)', async () => {

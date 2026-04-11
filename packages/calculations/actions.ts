@@ -26,23 +26,28 @@ function formatPct(rate: number): string {
 // ── Public entry point ───────────────────────────────────────────
 
 export function buildActions(
-  category: 1 | 2 | 3 | 4,
+  category: 1 | 2 | 3 | 4 | 'zero_cost',
   psp: string,
   industry: string,
   ctx: ActionContext,
+  planType?: 'flat' | 'costplus' | 'blended' | 'zero_cost',
 ): ActionItem[] {
   // industry reserved for Phase 2 industry-specific copy
   void industry;
+
+  if (category === 'zero_cost') return buildZeroCostActions(psp);
+
+  const isBlended = planType === 'blended';
 
   switch (category) {
     case 1:
       return buildCat1Actions(psp);
     case 2:
-      return buildCat2Actions(psp);
+      return buildCat2Actions(psp, isBlended);
     case 3:
       return buildCat3Actions(psp, ctx);
     case 4:
-      return buildCat4Actions(psp, ctx);
+      return buildCat4Actions(psp, ctx, isBlended);
   }
 }
 
@@ -78,8 +83,8 @@ function buildCat1Actions(psp: string): ActionItem[] {
 // ── Category 2: flat rate, not surcharging ───────────────────────
 // Most common. Saving exists but won't arrive automatically.
 
-function buildCat2Actions(psp: string): ActionItem[] {
-  return [
+function buildCat2Actions(psp: string, isBlended: boolean = false): ActionItem[] {
+  const actions: ActionItem[] = [
     {
       priority: 'urgent',
       timeAnchor: 'BEFORE END OF APRIL',
@@ -102,6 +107,25 @@ function buildCat2Actions(psp: string): ActionItem[] {
       why: `For the first time, you'll have independent data to see whether your ${psp} rate is in line with the market.`,
     },
   ];
+
+  if (isBlended) {
+    actions.push(
+      {
+        priority: 'plan',
+        timeAnchor: 'BEFORE 1 AUGUST 2026',
+        text: `Ask ${psp} for your full card mix breakdown — debit vs credit percentage`,
+        why: `Your blended rate means the savings depend on your actual card mix. Knowing the split improves accuracy.`,
+      },
+      {
+        priority: 'plan',
+        timeAnchor: 'BEFORE 1 AUGUST 2026',
+        text: `Ask ${psp} for a quote on itemised (cost-plus) pricing`,
+        why: `Blended pricing obscures the actual interchange cost. Itemised pricing makes future savings flow automatically.`,
+      },
+    );
+  }
+
+  return actions;
 }
 
 // ── Category 3: cost-plus, surcharging ───────────────────────────
@@ -139,12 +163,12 @@ function buildCat3Actions(psp: string, ctx: ActionContext): ActionItem[] {
 // ── Category 4: flat rate, surcharging ───────────────────────────
 // Worst case — both problems. Copy is verbatim from ux-spec §3.4.
 
-function buildCat4Actions(psp: string, ctx: ActionContext): ActionItem[] {
+function buildCat4Actions(psp: string, ctx: ActionContext, isBlended: boolean = false): ActionItem[] {
   const surchargeRev = formatCurrency(ctx.surchargeRevenue);
   const ratePct = formatPct(ctx.surchargeRate);
   const volume = formatCurrency(ctx.volume);
 
-  return [
+  const actions: ActionItem[] = [
     {
       priority: 'urgent',
       timeAnchor: 'BEFORE END OF APRIL',
@@ -172,6 +196,53 @@ function buildCat4Actions(psp: string, ctx: ActionContext): ActionItem[] {
       text: `Check the published rate benchmarks on 30 October`,
       script: `From 30 October, ${psp} and other large processors must publish their average merchant service fees. Compare your rate directly against the published market average.`,
       why: `For the first time, you'll have independent data to see whether your ${psp} rate is in line with the market.`,
+    },
+  ];
+
+  if (isBlended) {
+    actions.push(
+      {
+        priority: 'plan',
+        timeAnchor: 'BEFORE 1 AUGUST 2026',
+        text: `Ask ${psp} for your full card mix breakdown — debit vs credit percentage`,
+        why: `Your blended rate means the savings depend on your actual card mix. Knowing the split improves accuracy.`,
+      },
+      {
+        priority: 'plan',
+        timeAnchor: 'BEFORE 1 AUGUST 2026',
+        text: `Ask ${psp} for a quote on itemised (cost-plus) pricing`,
+        why: `Blended pricing obscures the actual interchange cost. Itemised pricing makes future savings flow automatically.`,
+      },
+    );
+  }
+
+  return actions;
+}
+
+// ── Zero-cost actions ────────────────────────────────────────────
+
+function buildZeroCostActions(psp: string): ActionItem[] {
+  return [
+    {
+      priority: 'urgent',
+      timeAnchor: 'This week',
+      text: `Call ${psp} and ask what plan you will be transferred to`,
+      script: `My zero-cost plan is built on the surcharge mechanism. When the surcharge ban takes effect on 1 October 2026, that mechanism ends. What plan will I be transferred to, and at what rate? I need a written quote before October.`,
+      why: `Your zero-cost model cannot survive the surcharge ban. You need to know your post-reform rate now to plan cash flow.`,
+    },
+    {
+      priority: 'urgent',
+      timeAnchor: 'This week',
+      text: `Calculate your new monthly payment cost`,
+      script: `Multiply your monthly card turnover by your expected post-reform rate (use 1.4% if you don't have a confirmed rate). This is your new monthly payment cost from 1 October. Build it into your cash flow now.`,
+      why: `Going from $0 to a percentage-based fee is a material change. Cash flow planning needs to start immediately.`,
+    },
+    {
+      priority: 'urgent',
+      timeAnchor: 'Before August 2026',
+      text: `Get quotes from at least two other payment providers`,
+      script: `I am currently on zero-cost EFTPOS. What is your best rate for a merchant switching off that model?`,
+      why: `Use ${psp}'s quote as your benchmark. Competition drives better rates.`,
     },
   ];
 }

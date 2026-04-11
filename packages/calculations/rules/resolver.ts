@@ -6,7 +6,7 @@
 // It never decides where values come from.
 
 import { RULE_SCHEMA } from './schema';
-import { AU_SCHEME_CARD_MIX_DEFAULTS } from '../constants/au';
+import { AU_SCHEME_CARD_MIX_DEFAULTS, AU_INDUSTRY_CARD_MIX } from '../constants/au';
 import type {
   RuleSource,
   ResolutionTrace,
@@ -68,47 +68,59 @@ function resolveCardMix(
   const merchantMix = ctx.merchantInput?.cardMix;
   const invoiceMix = ctx.invoiceParsed?.cardMix;
 
+  // Industry defaults (priority 3 source — between invoice and env var)
+  const industry = ctx.industry?.toLowerCase() ?? 'other';
+  // 'other' always exists in AU_INDUSTRY_CARD_MIX — safe fallback
+  const industryDefaults = (AU_INDUSTRY_CARD_MIX[industry] ?? AU_INDUSTRY_CARD_MIX['other'])!;
+
   // Resolve each scheme component with source priority
   const components = {
     visa_debit: resolveValue('cardMix.visa_debit', [
       { source: 'merchant_input', value: merchantMix?.visa_debit },
       { source: 'invoice_parsed', value: invoiceMix?.visa_debit },
+      { source: 'industry_default', value: industryDefaults.visa_debit },
       { source: 'env_var', value: parseEnvFloat('CALC_CARD_MIX_VISA_DEBIT') },
       { source: 'regulatory_constant', value: AU_SCHEME_CARD_MIX_DEFAULTS.visa_debit },
     ]),
     visa_credit: resolveValue('cardMix.visa_credit', [
       { source: 'merchant_input', value: merchantMix?.visa_credit },
       { source: 'invoice_parsed', value: invoiceMix?.visa_credit },
+      { source: 'industry_default', value: industryDefaults.visa_credit },
       { source: 'env_var', value: parseEnvFloat('CALC_CARD_MIX_VISA_CREDIT') },
       { source: 'regulatory_constant', value: AU_SCHEME_CARD_MIX_DEFAULTS.visa_credit },
     ]),
     mastercard_debit: resolveValue('cardMix.mastercard_debit', [
       { source: 'merchant_input', value: merchantMix?.mastercard_debit },
       { source: 'invoice_parsed', value: invoiceMix?.mastercard_debit },
+      { source: 'industry_default', value: industryDefaults.mastercard_debit },
       { source: 'env_var', value: parseEnvFloat('CALC_CARD_MIX_MC_DEBIT') },
       { source: 'regulatory_constant', value: AU_SCHEME_CARD_MIX_DEFAULTS.mastercard_debit },
     ]),
     mastercard_credit: resolveValue('cardMix.mastercard_credit', [
       { source: 'merchant_input', value: merchantMix?.mastercard_credit },
       { source: 'invoice_parsed', value: invoiceMix?.mastercard_credit },
+      { source: 'industry_default', value: industryDefaults.mastercard_credit },
       { source: 'env_var', value: parseEnvFloat('CALC_CARD_MIX_MC_CREDIT') },
       { source: 'regulatory_constant', value: AU_SCHEME_CARD_MIX_DEFAULTS.mastercard_credit },
     ]),
     eftpos: resolveValue('cardMix.eftpos', [
       { source: 'merchant_input', value: merchantMix?.eftpos },
       { source: 'invoice_parsed', value: invoiceMix?.eftpos },
+      { source: 'industry_default', value: industryDefaults.eftpos },
       { source: 'env_var', value: parseEnvFloat('CALC_CARD_MIX_EFTPOS') },
       { source: 'regulatory_constant', value: AU_SCHEME_CARD_MIX_DEFAULTS.eftpos },
     ]),
     amex: resolveValue('cardMix.amex', [
       { source: 'merchant_input', value: merchantMix?.amex },
       { source: 'invoice_parsed', value: invoiceMix?.amex },
+      { source: 'industry_default', value: industryDefaults.amex },
       { source: 'env_var', value: parseEnvFloat('CALC_CARD_MIX_AMEX') },
       { source: 'regulatory_constant', value: AU_SCHEME_CARD_MIX_DEFAULTS.amex },
     ]),
     foreign: resolveValue('cardMix.foreign', [
       { source: 'merchant_input', value: merchantMix?.foreign },
       { source: 'invoice_parsed', value: invoiceMix?.foreign },
+      { source: 'industry_default', value: industryDefaults.foreign },
       { source: 'env_var', value: parseEnvFloat('CALC_CARD_MIX_FOREIGN') },
       { source: 'regulatory_constant', value: AU_SCHEME_CARD_MIX_DEFAULTS.foreign },
     ]),
@@ -237,9 +249,35 @@ export function resolveAssessmentInputs(
 
   const confidence = deriveConfidence(trace);
 
+  // Zero-cost: derive estimatedMSFRate from three-state msfRateMode
+  let estimatedMSFRate: number | undefined;
+  if (raw.planType === 'zero_cost') {
+    const derivedMSF =
+      raw.msfRateMode === 'market_estimate' ? 0.014
+      : raw.msfRateMode === 'custom' && raw.customMSFRate ? raw.customMSFRate
+      : undefined;
+    const r = resolveValue('estimatedMSFRate', [
+      { source: 'merchant_input',      value: derivedMSF },
+      { source: 'regulatory_constant', value: 0.014 },
+    ]);
+    trace['estimatedMSFRate'] = { source: r.source, value: r.value, label: sourceLabel(r.source) };
+    estimatedMSFRate = r.value;
+  }
+
+  // Blended: pass through rates from merchantInput.blendedRates
+  let debitRate: number | undefined;
+  let creditRate: number | undefined;
+  if (raw.planType === 'blended') {
+    debitRate  = ctx.merchantInput?.blendedRates?.debitRate;
+    creditRate = ctx.merchantInput?.blendedRates?.creditRate;
+  }
+
+  // Normalise planType: strategic_rate should never reach here, but defensive
+  const resolvedPlanType = raw.planType === 'strategic_rate' ? 'flat' as const : raw.planType;
+
   return {
     volume: raw.volume,
-    planType: raw.planType,
+    planType: resolvedPlanType,
     msfRate: raw.msfRate,
     surcharging: raw.surcharging,
     surchargeRate: raw.surchargeRate,
@@ -256,5 +294,8 @@ export function resolveAssessmentInputs(
     },
     resolutionTrace: trace,
     confidence,
+    estimatedMSFRate,
+    debitRate,
+    creditRate,
   };
 }

@@ -97,6 +97,31 @@ export const AU_AVG_TXN_BY_INDUSTRY: Record<string, number> = {
   other: 65,
 };
 
+// ── Debit percentage rates (for "lower of" formula) ──────────────
+// Source: RBA Conclusions Paper, March 2026, Policy 4
+export const AU_DEBIT_PCT_RATES = {
+  preSep2026:  0.002,   // 0.20% — pre-reform percentage component
+  postOct2026: 0.0016,  // 0.16% — new cap from 1 October 2026
+} as const;
+
+// ── Industry card mix defaults ───────────────────────────────────
+export const AU_INDUSTRY_CARD_MIX: Record<string, { visa_debit: number; visa_credit: number; mastercard_debit: number; mastercard_credit: number; eftpos: number; amex: number; foreign: number; commercial: number }> = {
+  cafe:        { visa_debit:0.38, visa_credit:0.14, mastercard_debit:0.22, mastercard_credit:0.09, eftpos:0.10, amex:0.03, foreign:0.03, commercial:0.01 },
+  hospitality: { visa_debit:0.34, visa_credit:0.16, mastercard_debit:0.20, mastercard_credit:0.11, eftpos:0.09, amex:0.05, foreign:0.05, commercial:0 },
+  retail:      { visa_debit:0.35, visa_credit:0.18, mastercard_debit:0.17, mastercard_credit:0.12, eftpos:0.08, amex:0.05, foreign:0.05, commercial:0 },
+  online:      { visa_debit:0.22, visa_credit:0.25, mastercard_debit:0.13, mastercard_credit:0.17, eftpos:0.02, amex:0.11, foreign:0.10, commercial:0 },
+  travel:      { visa_debit:0.18, visa_credit:0.20, mastercard_debit:0.12, mastercard_credit:0.14, eftpos:0.04, amex:0.12, foreign:0.20, commercial:0 },
+  ticketing:   { visa_debit:0.28, visa_credit:0.22, mastercard_debit:0.16, mastercard_credit:0.15, eftpos:0.06, amex:0.08, foreign:0.05, commercial:0 },
+  other:       { visa_debit:0.35, visa_credit:0.18, mastercard_debit:0.17, mastercard_credit:0.12, eftpos:0.08, amex:0.05, foreign:0.05, commercial:0 },
+} as const;
+
+// ── Zero-cost MSF range ──────────────────────────────────────────
+export const ZERO_COST_MSF_RANGE = {
+  low:     0.012,  // 1.2% — merchant negotiates below market
+  default: 0.014,  // 1.4% — RBA SME flat-rate benchmark
+  high:    0.016,  // 1.6% — above-market scenario
+} as const;
+
 // ── Network classifications ──────────────────────────────────────
 
 export const AU_DESIGNATED_NETWORKS = ['visa', 'mastercard', 'eftpos'] as const;

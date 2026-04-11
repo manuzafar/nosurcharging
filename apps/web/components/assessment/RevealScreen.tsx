@@ -41,15 +41,24 @@ export function RevealScreen({ formData, onComplete, onError }: RevealScreenProp
         return;
       }
 
-      const cat = r.outputs!.category;
-      const verdicts: Record<number, string> = {
-        1: 'Category 1 — your costs fall automatically',
-        2: 'Category 2 — conditional saving',
-        3: 'Category 3 — repricing required',
-        4: 'Category 4 — act immediately',
-      };
-      setCategoryLabel(verdicts[cat] ?? '');
-      trackEvent('Results viewed', { category: String(cat) });
+      // Handle strategic rate exit and zero-cost (no standard category)
+      if (r.strategicRateExit) {
+        setCategoryLabel('Strategic rate — specialist guidance');
+        trackEvent('Results viewed', { category: 'strategic_rate' });
+      } else if (r.outputs && 'modelType' in r.outputs) {
+        setCategoryLabel('Zero-cost — action required');
+        trackEvent('Results viewed', { category: 'zero_cost' });
+      } else {
+        const cat = (r.outputs as { category: number })?.category;
+        const verdicts: Record<number, string> = {
+          1: 'Category 1 — your costs fall automatically',
+          2: 'Category 2 — conditional saving',
+          3: 'Category 3 — repricing required',
+          4: 'Category 4 — act immediately',
+        };
+        setCategoryLabel(verdicts[cat] ?? '');
+        trackEvent('Results viewed', { category: String(cat) });
+      }
 
       if (timerDone) {
         onComplete(r);

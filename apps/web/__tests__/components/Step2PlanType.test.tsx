@@ -12,10 +12,18 @@ describe('Step2PlanType', () => {
   const user = userEvent.setup();
 
   const defaultProps = {
-    planType: null as 'flat' | 'costplus' | null,
+    planType: null as 'flat' | 'costplus' | 'blended' | 'zero_cost' | null,
+    msfRateMode: 'unselected' as 'unselected' | 'market_estimate' | 'custom',
+    customMSFRate: null as number | null,
+    blendedDebitRate: null as number | null,
+    blendedCreditRate: null as number | null,
     psp: null as string | null,
     merchantInput: {},
     onPlanTypeChange,
+    onMsfRateModeChange: vi.fn(),
+    onCustomMSFRateChange: vi.fn(),
+    onBlendedRatesChange: vi.fn(),
+    onStrategicRateSelected: vi.fn(),
     onPspChange,
     onMerchantInputChange,
     onNext,

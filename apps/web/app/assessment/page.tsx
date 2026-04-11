@@ -4,6 +4,7 @@
 // Steps 1-4 are fully client-side (no network calls).
 // Network calls: (1) createSession on disclaimer, (2) recordConsent, (3) submitAssessment on reveal.
 // Step transitions: opacity only, no slide animations. 200ms ease-out.
+// Strategic rate selection replaces flow with inline exit page (URL unchanged).
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -28,13 +29,20 @@ export default function AssessmentPage() {
 
   // Form state — persists across steps
   const [volume, setVolume] = useState(0);
-  const [planType, setPlanType] = useState<'flat' | 'costplus' | null>(null);
+  const [planType, setPlanType] = useState<'flat' | 'costplus' | 'blended' | 'zero_cost' | null>(null);
   const [psp, setPsp] = useState<string | null>(null);
   const [merchantInput, setMerchantInput] = useState<MerchantInputOverrides>({});
   const [surcharging, setSurcharging] = useState<boolean | null>(null);
   const [surchargeRate, setSurchargeRate] = useState(0);
   const [surchargeNetworks, setSurchargeNetworks] = useState<string[]>([]);
   const [industry, setIndustry] = useState<string | null>(null);
+
+  // Iteration 2 state
+  const [msfRateMode, setMsfRateMode] = useState<'unselected' | 'market_estimate' | 'custom'>('unselected');
+  const [customMSFRate, setCustomMSFRate] = useState<number | null>(null);
+  const [blendedDebitRate, setBlendedDebitRate] = useState<number | null>(null);
+  const [blendedCreditRate, setBlendedCreditRate] = useState<number | null>(null);
+  const [strategicRateSelected, setStrategicRateSelected] = useState(false);
 
   // Tracking flags — fire once per session, not on every keystroke
   const expertModeTracked = useRef(false);
@@ -69,14 +77,18 @@ export default function AssessmentPage() {
   const buildFormData = (): AssessmentFormData => ({
     volume,
     planType: planType!,
-    msfRate: 0.014, // Default MSF for flat rate — Phase 2 will allow input
+    msfRate: 0.014,
     surcharging: surcharging!,
     surchargeRate,
     surchargeNetworks,
     industry: industry!,
     psp: psp!,
-    passThrough: 0, // Default — slider on results page adjusts this
+    passThrough: 0.45, // CB-08 override: 45% (RBA market average)
     merchantInput: Object.keys(merchantInput).length > 0 ? merchantInput : undefined,
+    msfRateMode: planType === 'zero_cost' ? msfRateMode : undefined,
+    customMSFRate: planType === 'zero_cost' && msfRateMode === 'custom' ? customMSFRate ?? undefined : undefined,
+    blendedDebitRate: planType === 'blended' ? blendedDebitRate ?? undefined : undefined,
+    blendedCreditRate: planType === 'blended' ? blendedCreditRate ?? undefined : undefined,
   });
 
   const handleRevealComplete = (result: AssessmentResult) => {
@@ -89,6 +101,41 @@ export default function AssessmentPage() {
     setError(err);
     setPhase('error');
   };
+
+  // Strategic rate inline exit — replaces entire flow, URL unchanged
+  if (strategicRateSelected) {
+    return (
+      <main className="min-h-screen bg-paper">
+        <div className="mx-auto max-w-assessment px-5 py-8">
+          <div className="text-center">
+            <p className="text-label tracking-widest text-accent">STRATEGIC RATE</p>
+            <h2 className="mt-4 font-serif text-heading-lg">
+              You may have a strategic interchange rate
+            </h2>
+            <p className="mt-4 text-body text-gray-600">
+              Merchants processing over $50M annually or with self-reported strategic rates
+              typically have individually negotiated interchange arrangements that fall
+              outside standard category analysis.
+            </p>
+            <p className="mt-4 text-body text-gray-600">
+              Our standard assessment cannot accurately model your position.
+              We recommend specialist guidance for your pricing review.
+            </p>
+            <div className="mt-8">
+              <button
+                type="button"
+                onClick={() => setStrategicRateSelected(false)}
+                className="rounded-lg border border-gray-200 px-6 py-2 text-body-sm text-gray-600
+                  hover:border-gray-300 transition-colors duration-150"
+              >
+                Back to assessment
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   const currentStep =
     phase === 'step1' ? 1 : phase === 'step2' ? 2 : phase === 'step3' ? 3 : phase === 'step4' ? 4 : 0;
@@ -172,11 +219,33 @@ export default function AssessmentPage() {
             {phase === 'step2' && (
               <Step2PlanType
                 planType={planType}
+                msfRateMode={msfRateMode}
+                customMSFRate={customMSFRate}
+                blendedDebitRate={blendedDebitRate}
+                blendedCreditRate={blendedCreditRate}
                 psp={psp}
                 merchantInput={merchantInput}
+                volume={volume}
                 onPlanTypeChange={(type) => {
                   setPlanType(type);
                   trackEvent('Plan type selected', { type });
+                }}
+                onMsfRateModeChange={(mode) => {
+                  setMsfRateMode(mode);
+                  trackEvent('Zero-cost rate selected', { mode });
+                }}
+                onCustomMSFRateChange={setCustomMSFRate}
+                onBlendedRatesChange={(debit, credit) => {
+                  setBlendedDebitRate(debit);
+                  setBlendedCreditRate(credit);
+                  trackEvent('Blended rates entered', {
+                    debit_provided: String(debit !== null),
+                    credit_provided: String(credit !== null),
+                  });
+                }}
+                onStrategicRateSelected={() => {
+                  setStrategicRateSelected(true);
+                  trackEvent('Strategic rate exit viewed', { trigger: 'self_select' });
                 }}
                 onPspChange={(name) => {
                   setPsp(name);

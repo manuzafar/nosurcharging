@@ -4,9 +4,14 @@
 // Loads assessment data from URL search param: /results?id=<assessmentId>
 // If no ID or invalid ID, redirects to /assessment.
 //
+// Routing:
+//   strategicRateExit → StrategicRateExitPage (no dollar figures)
+//   ZeroCostOutputs   → ZeroCostResultsVariant (critical banner, before/after)
+//   standard          → full results with verdict, metrics, actions, depth zone
+//
 // State managed here:
 //   outputs: AssessmentOutputs (from server, updated by slider)
-//   passThrough: number (0-1, driven by PassThroughSlider)
+//   passThrough: number (0-1, driven by PassThroughSlider, default 0.45)
 //
 // All child components receive outputs and passThrough as props.
 // No child component manages its own calculation state.
@@ -17,7 +22,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getAssessment } from '@/actions/getAssessment';
 import type { StoredAssessment } from '@/actions/getAssessment';
-import type { AssessmentOutputs, RawAssessmentData, ResolutionContext, ResolutionTrace, ActionItem } from '@nosurcharging/calculations/types';
+import type { AssessmentOutputs, ZeroCostOutputs, RawAssessmentData, ResolutionContext, ResolutionTrace, ActionItem } from '@nosurcharging/calculations/types';
 import { sanitiseForHTML } from '@/lib/sanitise';
 
 import { VerdictSection } from '@/components/results/VerdictSection';
@@ -34,6 +39,9 @@ import { ConsultingCTA } from '@/components/results/ConsultingCTA';
 import { PSPRateRegistry } from '@/components/results/PSPRateRegistry';
 import { ResultsDisclaimer } from '@/components/results/ResultsDisclaimer';
 import { SkeletonLoader } from '@/components/results/SkeletonLoader';
+import { StrategicRateExitPage } from '@/components/results/StrategicRateExitPage';
+import { ZeroCostResultsVariant } from '@/components/results/ZeroCostResultsVariant';
+import { LCRInsightPanel } from '@/components/results/LCRInsightPanel';
 
 // Section reveal styles — hoisted to module scope so they are stable
 // across renders. Inline objects created inside the render function
@@ -74,8 +82,11 @@ function ResultsContent() {
   // blank the ActionList, causing the section to collapse and the viewport
   // to jump. Keep actions separate and immutable after initial load.
   const [actions, setActions] = useState<ActionItem[]>([]);
-  const [passThrough, setPassThrough] = useState(0);
+  const [passThrough, setPassThrough] = useState(0.45); // CB-08: 45% default
   const [loading, setLoading] = useState(true);
+  // Track variant routing
+  const [isStrategicExit, setIsStrategicExit] = useState(false);
+  const [zeroCostOutputs, setZeroCostOutputs] = useState<ZeroCostOutputs | null>(null);
 
   useEffect(() => {
     if (!assessmentId) {
@@ -88,16 +99,53 @@ function ResultsContent() {
         router.replace('/assessment');
         return;
       }
-      setAssessment(result.data);
-      setOutputs(result.data.outputs);
-      // `result.data.outputs` is typed as AssessmentOutputs & { actions?: ActionItem[] }
-      // — the extension is injected at DB insert time in submitAssessment.ts.
-      setActions(result.data.outputs.actions ?? []);
+
+      const data = result.data;
+      setAssessment(data);
+
+      // Route by variant type
+      if (data.variant_type === 'strategic_rate') {
+        setIsStrategicExit(true);
+        setLoading(false);
+        return;
+      }
+
+      if (data.variant_type === 'zero_cost' || (data.outputs && 'modelType' in data.outputs)) {
+        setZeroCostOutputs(data.outputs as ZeroCostOutputs);
+        setActions((data.outputs as { actions?: ActionItem[] }).actions ?? []);
+        setLoading(false);
+        return;
+      }
+
+      setOutputs(data.outputs as AssessmentOutputs);
+      setActions((data.outputs as { actions?: ActionItem[] }).actions ?? []);
       setLoading(false);
     });
   }, [assessmentId, router]);
 
-  if (loading || !assessment || !outputs) {
+  if (loading) {
+    return <SkeletonLoader />;
+  }
+
+  // Strategic rate exit — no dollar figures
+  if (isStrategicExit) {
+    return <StrategicRateExitPage onBack={() => router.push('/assessment')} />;
+  }
+
+  // Zero-cost variant
+  if (zeroCostOutputs && assessment) {
+    const storedInputs = assessment.inputs as Record<string, unknown>;
+    return (
+      <ZeroCostResultsVariant
+        outputs={zeroCostOutputs}
+        volume={(storedInputs.volume as number) ?? 0}
+        pspName={sanitiseForHTML((storedInputs.psp as string) ?? 'Unknown')}
+        actions={actions}
+      />
+    );
+  }
+
+  if (!assessment || !outputs) {
     return <SkeletonLoader />;
   }
 
@@ -106,7 +154,7 @@ function ResultsContent() {
   const category = outputs.category;
   const volume = (storedInputs.volume as number) ?? 0;
   const pspName = sanitiseForHTML((storedInputs.psp as string) ?? 'Unknown');
-  const planType = (storedInputs.planType as 'flat' | 'costplus') ?? 'flat';
+  const planType = (storedInputs.planType as 'flat' | 'costplus' | 'blended') ?? 'flat';
   const resolutionTrace = (storedInputs.resolutionTrace as ResolutionTrace) ?? {};
 
   // Build raw and context for slider recalculation
@@ -135,17 +183,13 @@ function ResultsContent() {
     setPassThrough(pt);
   };
 
+  // Normalise blended → flat for components that only accept flat|costplus
+  const verdictPlanType = planType === 'blended' ? 'blended' : planType === 'costplus' ? 'costplus' : 'flat';
+
   return (
     <main className="min-h-screen bg-paper">
-      {/* Site-wide FR-02 disclaimer banner removed from results page (Q5):
-          the dedicated <ResultsDisclaimer/> at the bottom + verdict copy
-          carry the legal weight. Keeping the top banner duplicates messaging. */}
-
       <div className="mx-auto max-w-results px-5 pb-12">
-        {/* ───────────────────────────── PRIMARY ZONE ─────────────────────────────
-            Always visible. Carries the verdict, the metrics, and the action plan.
-            Per ux-spec §3.1 the action plan is moved up out of the depth zone so
-            merchants see what to DO before they see how the numbers were derived. */}
+        {/* ───────────────────────────── PRIMARY ZONE ───────────────────────────── */}
 
         {/* 1. Verdict */}
         <div style={REVEAL_STYLE[0]}>
@@ -153,7 +197,7 @@ function ResultsContent() {
             outputs={outputs}
             volume={volume}
             pspName={pspName}
-            planType={planType}
+            planType={verdictPlanType}
             msfRate={originalRaw.msfRate}
             surcharging={originalRaw.surcharging}
             surchargeRate={originalRaw.surchargeRate}
@@ -165,7 +209,7 @@ function ResultsContent() {
           <MetricCards outputs={outputs} />
         </div>
 
-        {/* 3. ProblemsBlock — explains why the verdict number looks the way it does */}
+        {/* 3. ProblemsBlock */}
         <div className="mt-6" style={REVEAL_STYLE[180]}>
           <ProblemsBlock
             category={category}
@@ -175,16 +219,12 @@ function ResultsContent() {
           />
         </div>
 
-        {/* 4. ActionList — moved up from the bottom of the page */}
+        {/* 4. ActionList */}
         <div className="mt-6" style={REVEAL_STYLE[240]}>
           <ActionList actions={actions} />
         </div>
 
-        {/* ───────────────────────────── DEPTH ZONE ───────────────────────────────
-            Reserved for the merchant who wants to understand the numbers.
-            Wrapped in DepthToggle (collapsed by default) per ux-spec §3.5 so
-            the merchant who only wants the verdict + actions is never
-            visually overloaded. Children only mount when expanded. */}
+        {/* ───────────────────────────── DEPTH ZONE ─────────────────────────────── */}
 
         {/* 5. DepthToggle wrapping slider, escape scenario, chart, assumptions */}
         <div style={REVEAL_STYLE[360]}>
@@ -214,7 +254,19 @@ function ResultsContent() {
               />
             </div>
 
-            {/* 8. CostCompositionChart */}
+            {/* 8. LCR Insight Panel — flat and blended plans only */}
+            {(planType === 'flat' || planType === 'blended') && (
+              <div className="mt-6">
+                <LCRInsightPanel
+                  volume={volume}
+                  pspName={pspName}
+                  planType={planType}
+                  avgTransactionValue={(storedInputs.avgTransactionValue as number) ?? 65}
+                />
+              </div>
+            )}
+
+            {/* 9. CostCompositionChart */}
             <div className="mt-6">
               <CostCompositionChart
                 outputs={outputs}
@@ -223,7 +275,7 @@ function ResultsContent() {
               />
             </div>
 
-            {/* 9. AssumptionsPanel */}
+            {/* 10. AssumptionsPanel */}
             <div className="mt-6">
               <AssumptionsPanel
                 outputs={outputs}
@@ -231,7 +283,7 @@ function ResultsContent() {
                 resolutionTrace={resolutionTrace}
                 volume={volume}
                 pspName={pspName}
-                planType={planType}
+                planType={planType === 'blended' ? 'flat' : planType}
                 msfRate={originalRaw.msfRate}
                 surcharging={originalRaw.surcharging}
                 surchargeRate={originalRaw.surchargeRate}
@@ -240,31 +292,29 @@ function ResultsContent() {
           </DepthToggle>
         </div>
 
-        {/* ─────────────────────────── ALWAYS VISIBLE ─────────────────────────────
-            Below the depth zone but above the legal disclaimer.
-            ConsultingCTA now precedes EmailCapture per spec §3.1. */}
+        {/* ─────────────────────────── ALWAYS VISIBLE ─────────────────────────── */}
 
-        {/* 10. ConsultingCTA */}
+        {/* 11. ConsultingCTA */}
         <div className="mt-8" style={REVEAL_STYLE[540]}>
           <ConsultingCTA category={category} pspName={pspName} />
         </div>
 
-        {/* 11. EmailCapture */}
+        {/* 12. EmailCapture */}
         <div className="mt-6" style={REVEAL_STYLE[600]}>
           <EmailCapture assessmentId={assessmentId ?? undefined} />
         </div>
 
-        {/* 12. PSPRateRegistry */}
+        {/* 13. PSPRateRegistry */}
         <div className="mt-8" style={REVEAL_STYLE[660]}>
           <PSPRateRegistry
             assessmentId={assessmentId ?? ''}
             pspName={pspName}
-            planType={planType}
+            planType={planType === 'blended' ? 'flat' : planType}
             volume={volume}
           />
         </div>
 
-        {/* 13. ResultsDisclaimer */}
+        {/* 14. ResultsDisclaimer */}
         <div className="mt-8 mb-4" style={REVEAL_STYLE[720]}>
           <ResultsDisclaimer />
         </div>

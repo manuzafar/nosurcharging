@@ -197,7 +197,7 @@ The `submitAssessment()` server action begins immediately when the reveal appear
 ## CB-08 — Pass-Through Slider (Results, Categories 2 and 4)
 
 **Range:** 0–100%, step 1
-**Initial value:** 0%
+**Initial value:** 45% (RBA market average pass-through rate)
 
 **On every input event (16ms budget):**
 1. Read slider value

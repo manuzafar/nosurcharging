@@ -97,9 +97,9 @@ export function PassThroughSlider({
           marginBottom: '16px',
         }}
       >
-        The key variable is how much of the {formatDollar(outputs.icSaving)}{' '}
-        processing cost reduction is reflected in your {pspName} rate after
-        October.
+        The RBA estimates ~45% of merchants will see some pass-through from their PSP.
+        At 0%, the full {formatDollar(outputs.icSaving)} interchange saving stays with {pspName}.
+        At 100%, it passes through entirely.
       </p>
 
       {/* Slider — controlled input uses onChange so React's controlled-input

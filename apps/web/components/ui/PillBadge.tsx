@@ -4,7 +4,7 @@
 // 11px, 4px 12px padding, 20px border-radius.
 // Variants: accent, green, red, grey.
 
-type PillVariant = 'accent' | 'green' | 'red' | 'grey';
+type PillVariant = 'accent' | 'amber' | 'green' | 'red' | 'grey';
 
 interface PillBadgeProps {
   children: React.ReactNode;
@@ -16,6 +16,10 @@ const variantStyles: Record<PillVariant, React.CSSProperties> = {
   accent: {
     background: '#EBF6F3',
     color: '#0D4A3C',
+  },
+  amber: {
+    background: 'var(--color-accent-light)',
+    color: 'var(--color-accent-dark)',
   },
   green: {
     background: 'var(--color-background-success)',

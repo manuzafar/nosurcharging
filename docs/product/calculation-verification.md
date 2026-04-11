@@ -54,14 +54,14 @@ passThrough:  0  (irrelevant for cost-plus)
 **Step-by-step working:**
 
 ```
-Debit transactions:
-  = (2,000,000 × 0.60) / 65
-  = 1,200,000 / 65
-  = 18,461.538...
+Visa+MC Debit transactions (eftpos excluded — already below 8c cap):
+  = (2,000,000 × 0.52) / 65     [0.52 = visa_debit(0.35) + mastercard_debit(0.17)]
+  = 16,000
+Lower of rule: MIN(9c, 0.20%×$65) = MIN(9c, 13c) = 9c (cents cap wins at ATV $65)
 
 Debit IC saving (9c → 8c = 1c per txn):
-  = 18,461.538 × 0.01
-  = $184.62
+  = 16,000 × $0.01
+  = $160.00
 
 Consumer credit IC saving (0.52% → 0.30% = 0.22% of credit volume):
   = 2,000,000 × 0.35 × 0.0022
@@ -69,10 +69,11 @@ Consumer credit IC saving (0.52% → 0.30% = 0.22% of credit volume):
   = $1,540.00
 
 Total IC saving:
-  = $184.62 + $1,540.00
-  = $1,724.62
+  = $160.00 + $1,540.00
+  = $1,700.00
 
-Today's gross COA:
+Today's gross COA (uses full debitShare 0.60 including eftpos — UNCHANGED):
+  allDebitTxns: (2,000,000 × 0.60) / 65 = 18,461.538
   Debit IC:     18,461.538 × 0.09  = $1,661.54
   Credit IC:    2,000,000 × 0.35 × 0.0052 = $3,640.00
   Scheme fees:  2,000,000 × 0.00105 = $2,100.00
@@ -82,8 +83,8 @@ Today's gross COA:
 Surcharge revenue: $0
 
 Net today:    $9,401.54 - $0         = $9,401.54
-Oct net:      $9,401.54 - $1,724.62  = $7,676.92
-P&L swing:    $9,401.54 - $7,676.92  = +$1,724.62
+Oct net:      $9,401.54 - $1,700.00  = $7,701.54
+P&L swing:    $9,401.54 - $7,701.54  = +$1,700.00
 
 Scheme fees invariant:
   todayScheme  = $2,100.00
@@ -95,10 +96,10 @@ Scheme fees invariant:
 ```typescript
 {
   category:     1,
-  icSaving:     1724.62,
+  icSaving:     1700.00,
   netToday:     9401.54,
-  octNet:       7676.92,
-  plSwing:      1724.62,   // positive — saving
+  octNet:       7701.54,
+  plSwing:      1700.00,   // positive — saving
   todayScheme:  2100.00,
   oct2026Scheme: 2100.00,  // MUST equal todayScheme
   confidence:   'low',     // all defaults used
@@ -118,30 +119,30 @@ surchargeRate: 0
 msfRate:      0.014  (1.4%)
 ```
 
-IC saving is identical to Scenario 1: **$1,724.62**
+IC saving is identical to Scenario 1: **$1,700.00**
 
 **At 0% pass-through (PSP keeps all saving):**
 ```
 annualMSF:   2,000,000 × 0.014   = $28,000.00
 netToday:    $28,000.00 - $0     = $28,000.00
-octNet:      $28,000.00 - ($1,724.62 × 0) = $28,000.00
+octNet:      $28,000.00 - ($1,700.00 × 0) = $28,000.00
 plSwing:     $28,000.00 - $28,000.00 = $0.00
 ```
 
 **At 45% pass-through:**
 ```
-octNet:      $28,000.00 - ($1,724.62 × 0.45)
-           = $28,000.00 - $776.08
-           = $27,223.92
-plSwing:     $28,000.00 - $27,223.92 = +$776.08
+octNet:      $28,000.00 - ($1,700.00 × 0.45)
+           = $28,000.00 - $765.00
+           = $27,235.00
+plSwing:     $28,000.00 - $27,235.00 = +$765.00
 ```
 
 **At 100% pass-through (full saving passes through):**
 ```
-octNet:      $28,000.00 - ($1,724.62 × 1.0)
-           = $28,000.00 - $1,724.62
-           = $26,275.38
-plSwing:     $28,000.00 - $26,275.38 = +$1,724.62
+octNet:      $28,000.00 - ($1,700.00 × 1.0)
+           = $28,000.00 - $1,700.00
+           = $26,300.00
+plSwing:     $28,000.00 - $26,300.00 = +$1,700.00
 ```
 
 Note: at 100% pass-through, plSwing MUST equal totalICSaving. This is a mathematical
@@ -149,17 +150,17 @@ invariant — test it explicitly.
 
 **Expected outputs (at 0%):**
 ```typescript
-{ category: 2, plSwing: 0.00, icSaving: 1724.62 }
+{ category: 2, plSwing: 0.00, icSaving: 1700.00 }
 ```
 
 **Expected outputs (at 45%):**
 ```typescript
-{ category: 2, plSwing: 776.08, icSaving: 1724.62 }
+{ category: 2, plSwing: 765.00, icSaving: 1700.00 }
 ```
 
 **Expected outputs (at 100%):**
 ```typescript
-{ category: 2, plSwing: 1724.62, icSaving: 1724.62 }  // plSwing === icSaving ✓
+{ category: 2, plSwing: 1700.00, icSaving: 1700.00 }  // plSwing === icSaving ✓
 ```
 
 ---
@@ -176,38 +177,39 @@ surchargeRate: 0.012  (1.2%)
 
 **Step-by-step working:**
 ```
-Debit transactions:
-  = (10,000,000 × 0.60) / 65
-  = 6,000,000 / 65
-  = 92,307.692...
+Visa+MC Debit transactions (eftpos excluded — already below 8c cap):
+  = (10,000,000 × 0.52) / 65 = 80,000
 
 Debit IC saving:
-  = 92,307.692 × 0.01 = $923.08
+  = 80,000 × 0.01 = $800.00
 
 Credit IC saving:
   = 10,000,000 × 0.35 × 0.0022 = $7,700.00
 
 Total IC saving:
-  = $923.08 + $7,700.00 = $8,623.08
+  = $800.00 + $7,700.00 = $8,500.00
 
-Today's gross COA:
+Today's gross COA (uses full debitShare 0.60 — UNCHANGED):
+  allDebitTxns: (10,000,000 × 0.60) / 65 = 92,307.692
   Debit IC:     92,307.692 × 0.09 = $8,307.69
   Credit IC:    10,000,000 × 0.35 × 0.0052 = $18,200.00
   Scheme fees:  10,000,000 × 0.00105 = $10,500.00
   PSP margin:   10,000,000 × 0.001   = $10,000.00
   TOTAL:                                $47,007.69
 
-Surcharge revenue:
-  = 10,000,000 × 0.012 = $120,000.00
+Surcharge revenue (designated networks — actual card mix share):
+  = 10,000,000 × 0.012 × 0.90
+    [0.90 = visa_debit(0.35)+visa_credit(0.18)+mc_debit(0.17)+mc_credit(0.12)+eftpos(0.08)]
+  = $108,000.00
 
-Net today:    $47,007.69 - $120,000.00 = -$72,992.31
+Net today:    $47,007.69 - $108,000.00 = -$60,992.31
               (surcharge revenue exceeds costs — merchant has a net surplus today)
 
-Oct net:      $47,007.69 - $8,623.08 = $38,384.61
+Oct net:      $47,007.69 - $8,500.00 = $38,507.69
               (surcharge gone, IC saving absorbed, merchant now pays net $38K)
 
-P&L swing:    -$72,992.31 - $38,384.61 = -$111,376.92
-              (negative: merchant is $111K worse off after reform)
+P&L swing:    -$60,992.31 - $38,507.69 = -$99,500.00
+              (negative: merchant is $99.5K worse off after reform)
 
 Scheme fees invariant:
   todayScheme  = $10,500.00
@@ -218,10 +220,10 @@ Scheme fees invariant:
 ```typescript
 {
   category:      3,
-  icSaving:      8623.08,
-  netToday:      -72992.31,   // negative — surcharge revenue currently exceeds costs
-  octNet:        38384.61,
-  plSwing:       -111376.92,  // large negative swing — Category 3 is painful
+  icSaving:      8500.00,
+  netToday:      -60992.31,   // negative — surcharge revenue currently exceeds costs
+  octNet:        38507.69,
+  plSwing:       -99500.00,   // large negative swing — Category 3 is painful
   todayScheme:   10500.00,
   oct2026Scheme: 10500.00,
 }
@@ -243,43 +245,40 @@ passThrough:   0.45   (45%)
 
 **Step-by-step working:**
 ```
-Debit transactions:
-  = (3,000,000 × 0.60) / 65
-  = 1,800,000 / 65
-  = 27,692.308...
+Visa+MC Debit transactions (eftpos excluded — already below 8c cap):
+  = (3,000,000 × 0.52) / 65 = 24,000
 
 Debit IC saving:
-  = 27,692.308 × 0.01 = $276.92
+  = 24,000 × 0.01 = $240.00
 
 Credit IC saving:
   = 3,000,000 × 0.35 × 0.0022 = $2,310.00
 
 Total IC saving:
-  = $276.92 + $2,310.00 = $2,586.92
+  = $240.00 + $2,310.00 = $2,550.00
 
 Annual MSF:         3,000,000 × 0.014 = $42,000.00
-Surcharge revenue:  3,000,000 × 0.012 = $36,000.00
+Surcharge revenue:  3,000,000 × 0.012 × 0.90 = $32,400.00
 
-Net today:    $42,000.00 - $36,000.00 = $6,000.00
-              (still paying net $6K after surcharge offsets most of MSF)
+Net today:    $42,000.00 - $32,400.00 = $9,600.00
 
 Oct net (45% pass-through):
-  = $42,000.00 - ($2,586.92 × 0.45)
-  = $42,000.00 - $1,164.11
-  = $40,835.89
+  = $42,000.00 - ($2,550.00 × 0.45)
+  = $42,000.00 - $1,147.50
+  = $40,852.50
 
-P&L swing:    $6,000.00 - $40,835.89 = -$34,835.89
-              (merchant goes from $6K cost to $40.8K cost — a $34.8K worsening)
+P&L swing:    $9,600.00 - $40,852.50 = -$31,252.50
+              (merchant goes from $9.6K cost to $40.9K cost — a $31.3K worsening)
 ```
 
 **Expected outputs:**
 ```typescript
 {
   category:   4,
-  icSaving:   2586.92,
-  netToday:   6000.00,
-  octNet:     40835.89,
-  plSwing:    -34835.89,  // negative — Category 4 is painful
+  icSaving:   2550.00,
+  netToday:   9600.00,
+  octNet:     40852.50,
+  plSwing:    -31252.50,  // negative — Category 4 is painful
 }
 ```
 
