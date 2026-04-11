@@ -36,7 +36,7 @@ test.describe('Wizard journey → Category 1', () => {
     await page.waitForURL(/\/results\?id=/, { timeout: 10000 });
 
     // Category 1 — costs fall automatically
-    await expect(page.getByText('Category 1')).toBeVisible();
+    await expect(page.getByText('Situation 1')).toBeVisible();
 
     // Slider should NOT be visible (Category 1)
     await expect(page.getByRole('slider')).not.toBeVisible();
