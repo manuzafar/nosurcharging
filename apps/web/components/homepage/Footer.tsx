@@ -1,38 +1,36 @@
-// Site footer — disclaimer, privacy link, copyright.
+// Site footer — ux-spec §1.8.
+// Layout: flex space-between with the disclaimer block on the left and
+// the privacy policy link on the right. Paper background, no top border.
 
 import Link from 'next/link';
 
 export function Footer() {
   return (
-    <footer
-      className="py-6 px-5 text-center"
-      style={{ borderTop: '0.5px solid var(--color-border-tertiary)' }}
-    >
-      <p
-        style={{
-          fontSize: '11px',
-          lineHeight: '1.5',
-          color: 'var(--color-text-secondary)',
-          maxWidth: '480px',
-          margin: '0 auto',
-        }}
-      >
-        nosurcharging.com.au provides general guidance only. Not financial advice.
-        Verify with your PSP before making business decisions.
-      </p>
+    <footer className="bg-paper px-5 py-6">
+      <div className="mx-auto flex max-w-results flex-col items-start justify-between gap-3 min-[500px]:flex-row min-[500px]:items-center">
+        <p
+          className="text-ink-faint"
+          style={{
+            fontSize: '11px',
+            lineHeight: '1.6',
+            maxWidth: '440px',
+          }}
+        >
+          General guidance only. Not financial advice. Based on RBA
+          Conclusions Paper, March 2026. Verify with your payment provider
+          before making business decisions.
+        </p>
 
-      <div className="mt-3 flex items-center justify-center gap-3">
         <Link
           href="/privacy"
-          className="text-caption underline"
-          style={{ color: 'var(--color-text-tertiary)' }}
+          className="text-ink-faint underline shrink-0"
+          style={{
+            fontSize: '11px',
+            textUnderlineOffset: '2px',
+          }}
         >
           Privacy policy
         </Link>
-        <span style={{ color: 'var(--color-text-tertiary)', fontSize: '11px' }}>·</span>
-        <span style={{ color: 'var(--color-text-tertiary)', fontSize: '11px' }}>
-          © {new Date().getFullYear()} nosurcharging.com.au
-        </span>
       </div>
     </footer>
   );

@@ -22,28 +22,39 @@ import { sanitiseForHTML } from '@/lib/sanitise';
 
 import { VerdictSection } from '@/components/results/VerdictSection';
 import { MetricCards } from '@/components/results/MetricCards';
-import { ReformTimeline } from '@/components/results/ReformTimeline';
+import { ProblemsBlock } from '@/components/results/ProblemsBlock';
+import { DepthToggle } from '@/components/results/DepthToggle';
 import { PassThroughSlider } from '@/components/results/PassThroughSlider';
-import { WaterfallChart } from '@/components/charts/WaterfallChart';
 import { EscapeScenarioCard } from '@/components/results/EscapeScenarioCard';
+import { CostCompositionChart } from '@/components/results/CostCompositionChart';
 import { ActionList } from '@/components/results/ActionList';
 import { AssumptionsPanel } from '@/components/results/AssumptionsPanel';
 import { EmailCapture } from '@/components/results/EmailCapture';
 import { ConsultingCTA } from '@/components/results/ConsultingCTA';
 import { PSPRateRegistry } from '@/components/results/PSPRateRegistry';
 import { ResultsDisclaimer } from '@/components/results/ResultsDisclaimer';
+import { SkeletonLoader } from '@/components/results/SkeletonLoader';
+
+// Section reveal styles — hoisted to module scope so they are stable
+// across renders. Inline objects created inside the render function
+// would still shallow-equal to React, but keeping them as module
+// constants eliminates any chance of the animation restarting mid-
+// interaction (e.g. while dragging the pass-through slider).
+const REVEAL_STYLE: Record<number, React.CSSProperties> = {
+  0:   { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '0ms' },
+  120: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '120ms' },
+  180: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '180ms' },
+  240: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '240ms' },
+  360: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '360ms' },
+  540: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '540ms' },
+  600: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '600ms' },
+  660: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '660ms' },
+  720: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '720ms' },
+};
 
 export default function ResultsPage() {
   return (
-    <Suspense
-      fallback={
-        <main className="flex min-h-screen items-center justify-center">
-          <p className="text-body" style={{ color: 'var(--color-text-secondary)' }}>
-            Loading results...
-          </p>
-        </main>
-      }
-    >
+    <Suspense fallback={<SkeletonLoader />}>
       <ResultsContent />
     </Suspense>
   );
@@ -56,6 +67,13 @@ function ResultsContent() {
 
   const [assessment, setAssessment] = useState<StoredAssessment | null>(null);
   const [outputs, setOutputs] = useState<AssessmentOutputs | null>(null);
+  // `actions` lives in its own state, seeded ONCE from the initial DB load.
+  // It is deliberately NOT part of `outputs` — the slider recalculates
+  // outputs via calculateMetrics() which returns a clean AssessmentOutputs
+  // (no actions). If actions were part of outputs, every slider tick would
+  // blank the ActionList, causing the section to collapse and the viewport
+  // to jump. Keep actions separate and immutable after initial load.
+  const [actions, setActions] = useState<ActionItem[]>([]);
   const [passThrough, setPassThrough] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -72,23 +90,19 @@ function ResultsContent() {
       }
       setAssessment(result.data);
       setOutputs(result.data.outputs);
+      // `result.data.outputs` is typed as AssessmentOutputs & { actions?: ActionItem[] }
+      // — the extension is injected at DB insert time in submitAssessment.ts.
+      setActions(result.data.outputs.actions ?? []);
       setLoading(false);
     });
   }, [assessmentId, router]);
 
   if (loading || !assessment || !outputs) {
-    return (
-      <main className="flex min-h-screen items-center justify-center">
-        <p className="text-body" style={{ color: 'var(--color-text-secondary)' }}>
-          Loading results...
-        </p>
-      </main>
-    );
+    return <SkeletonLoader />;
   }
 
   // ── Extract data from stored assessment ────────────────────────
   const storedInputs = assessment.inputs as Record<string, unknown>;
-  const actions = (outputs as unknown as { actions?: ActionItem[] }).actions ?? [];
   const category = outputs.category;
   const volume = (storedInputs.volume as number) ?? 0;
   const pspName = sanitiseForHTML((storedInputs.psp as string) ?? 'Unknown');
@@ -121,98 +135,127 @@ function ResultsContent() {
     setPassThrough(pt);
   };
 
-  // ── Section reveal animation helper ────────────────────────────
-  const revealStyle = (delayMs: number): React.CSSProperties => ({
-    opacity: 0,
-    animation: 'fadeUp 0.4s ease forwards',
-    animationDelay: `${delayMs}ms`,
-  });
-
   return (
-    <main className="min-h-screen" style={{ background: 'var(--color-background-primary)' }}>
-      {/* Site-wide disclaimer */}
-      <div
-        className="py-2 text-center"
-        style={{ borderBottom: '0.5px solid var(--color-border-tertiary)' }}
-      >
-        <p className="text-micro" style={{ color: 'var(--color-text-tertiary)' }}>
-          nosurcharging.com.au provides general guidance only. Not financial advice.
-          Verify with your PSP before making business decisions.
-        </p>
-      </div>
+    <main className="min-h-screen bg-paper">
+      {/* Site-wide FR-02 disclaimer banner removed from results page (Q5):
+          the dedicated <ResultsDisclaimer/> at the bottom + verdict copy
+          carry the legal weight. Keeping the top banner duplicates messaging. */}
 
       <div className="mx-auto max-w-results px-5 pb-12">
-        {/* 1. Verdict — delay 0ms */}
-        <div style={revealStyle(0)}>
-          <VerdictSection outputs={outputs} volume={volume} pspName={pspName} />
+        {/* ───────────────────────────── PRIMARY ZONE ─────────────────────────────
+            Always visible. Carries the verdict, the metrics, and the action plan.
+            Per ux-spec §3.1 the action plan is moved up out of the depth zone so
+            merchants see what to DO before they see how the numbers were derived. */}
+
+        {/* 1. Verdict */}
+        <div style={REVEAL_STYLE[0]}>
+          <VerdictSection
+            outputs={outputs}
+            volume={volume}
+            pspName={pspName}
+            planType={planType}
+            msfRate={originalRaw.msfRate}
+            surcharging={originalRaw.surcharging}
+            surchargeRate={originalRaw.surchargeRate}
+          />
         </div>
 
-        {/* 2. Metrics — delay 120ms */}
-        <div style={revealStyle(120)}>
+        {/* 2. Metric cards */}
+        <div style={REVEAL_STYLE[120]}>
           <MetricCards outputs={outputs} />
         </div>
 
-        {/* 3. Reform Timeline — delay 180ms */}
-        <div className="mt-4" style={revealStyle(180)}>
-          <ReformTimeline />
-        </div>
-
-        {/* 4. Pass-through Slider — delay 240ms (Cat 2/4 only) */}
-        <div className="mt-4" style={revealStyle(240)}>
-          <PassThroughSlider
+        {/* 3. ProblemsBlock — explains why the verdict number looks the way it does */}
+        <div className="mt-6" style={REVEAL_STYLE[180]}>
+          <ProblemsBlock
             category={category}
-            passThrough={passThrough}
-            outputs={outputs}
-            originalRaw={originalRaw}
-            resolutionContext={resolutionContext}
             pspName={pspName}
-            onOutputsChange={handleOutputsChange}
+            surchargeRevenue={outputs.surchargeRevenue}
+            icSaving={outputs.icSaving}
           />
         </div>
 
-        {/* 5. Waterfall Chart — delay 240ms */}
-        <div className="mt-4" style={revealStyle(240)}>
-          <WaterfallChart outputs={outputs} />
-        </div>
-
-        {/* 6. Escape Scenario Card — no delay (Cat 2/4 only) */}
-        <div className="mt-4" style={revealStyle(300)}>
-          <EscapeScenarioCard
-            category={category}
-            outputs={outputs}
-            passThrough={passThrough}
-            originalRaw={originalRaw}
-            resolutionContext={resolutionContext}
-            pspName={pspName}
-          />
-        </div>
-
-        {/* 7. Action List — delay 360ms */}
-        <div className="mt-6" style={revealStyle(360)}>
+        {/* 4. ActionList — moved up from the bottom of the page */}
+        <div className="mt-6" style={REVEAL_STYLE[240]}>
           <ActionList actions={actions} />
         </div>
 
-        {/* 8. Assumptions Panel — delay 360ms */}
-        <div className="mt-6" style={revealStyle(360)}>
-          <AssumptionsPanel
-            outputs={outputs}
-            passThrough={passThrough}
-            resolutionTrace={resolutionTrace}
-          />
+        {/* ───────────────────────────── DEPTH ZONE ───────────────────────────────
+            Reserved for the merchant who wants to understand the numbers.
+            Wrapped in DepthToggle (collapsed by default) per ux-spec §3.5 so
+            the merchant who only wants the verdict + actions is never
+            visually overloaded. Children only mount when expanded. */}
+
+        {/* 5. DepthToggle wrapping slider, escape scenario, chart, assumptions */}
+        <div style={REVEAL_STYLE[360]}>
+          <DepthToggle>
+            {/* 6. PassThroughSlider (Cat 2 / 4 only — internally gates) */}
+            <div className="mt-6">
+              <PassThroughSlider
+                category={category}
+                passThrough={passThrough}
+                outputs={outputs}
+                originalRaw={originalRaw}
+                resolutionContext={resolutionContext}
+                pspName={pspName}
+                onOutputsChange={handleOutputsChange}
+              />
+            </div>
+
+            {/* 7. EscapeScenarioCard (Cat 2 / 4 only — internally gates) */}
+            <div className="mt-4">
+              <EscapeScenarioCard
+                category={category}
+                outputs={outputs}
+                passThrough={passThrough}
+                originalRaw={originalRaw}
+                resolutionContext={resolutionContext}
+                pspName={pspName}
+              />
+            </div>
+
+            {/* 8. CostCompositionChart */}
+            <div className="mt-6">
+              <CostCompositionChart
+                outputs={outputs}
+                passThrough={passThrough}
+                pspName={pspName}
+              />
+            </div>
+
+            {/* 9. AssumptionsPanel */}
+            <div className="mt-6">
+              <AssumptionsPanel
+                outputs={outputs}
+                passThrough={passThrough}
+                resolutionTrace={resolutionTrace}
+                volume={volume}
+                pspName={pspName}
+                planType={planType}
+                msfRate={originalRaw.msfRate}
+                surcharging={originalRaw.surcharging}
+                surchargeRate={originalRaw.surchargeRate}
+              />
+            </div>
+          </DepthToggle>
         </div>
 
-        {/* 9. Email Capture — delay 480ms */}
-        <div className="mt-8" style={revealStyle(480)}>
-          <EmailCapture assessmentId={assessmentId ?? undefined} />
-        </div>
+        {/* ─────────────────────────── ALWAYS VISIBLE ─────────────────────────────
+            Below the depth zone but above the legal disclaimer.
+            ConsultingCTA now precedes EmailCapture per spec §3.1. */}
 
-        {/* 10. Consulting CTA — delay 480ms */}
-        <div className="mt-6" style={revealStyle(480)}>
+        {/* 10. ConsultingCTA */}
+        <div className="mt-8" style={REVEAL_STYLE[540]}>
           <ConsultingCTA category={category} pspName={pspName} />
         </div>
 
-        {/* 11. PSP Rate Registry */}
-        <div className="mt-8" style={revealStyle(540)}>
+        {/* 11. EmailCapture */}
+        <div className="mt-6" style={REVEAL_STYLE[600]}>
+          <EmailCapture assessmentId={assessmentId ?? undefined} />
+        </div>
+
+        {/* 12. PSPRateRegistry */}
+        <div className="mt-8" style={REVEAL_STYLE[660]}>
           <PSPRateRegistry
             assessmentId={assessmentId ?? ''}
             pspName={pspName}
@@ -221,8 +264,8 @@ function ResultsContent() {
           />
         </div>
 
-        {/* 12. Results Disclaimer */}
-        <div className="mt-8 mb-4" style={revealStyle(600)}>
+        {/* 13. ResultsDisclaimer */}
+        <div className="mt-8 mb-4" style={REVEAL_STYLE[720]}>
           <ResultsDisclaimer />
         </div>
       </div>

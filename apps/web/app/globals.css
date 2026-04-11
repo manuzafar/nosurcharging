@@ -8,6 +8,12 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* Results skeleton pulse — ux-spec §3.11 */
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 0.65; }
+}
+
 :root {
   /* Animation delays for staggered results reveal */
   --delay-block-1: 0ms;
@@ -27,17 +33,15 @@
 
   /* Chart colours (hardcoded — consistent across themes) */
   --chart-interchange: #E24B4A;
-  --chart-scheme: #BA7517;
+  --chart-scheme: #1A6B5A;
   --chart-margin: #888780;
   --chart-surcharge: #3B6D11;
 
-  /* Brand amber (hardcoded for themed sections) */
-  --amber-50: #FAEEDA;
-  --amber-200: #EF9F27;
-  --amber-400: #BA7517;
-  --amber-800: #633806;
-
-  /* Semantic colours — light mode */
+  /* Semantic colours.
+     The revamped UI is single-mode (paper canvas + ink text) by intent,
+     so we deliberately do NOT switch on prefers-color-scheme: dark.
+     A dark-mode flip on a fixed cream background made body text invisible.
+     Warning stays amber/orange (semantic) — accent green is brand, not warning. */
   --color-background-success: #EAF3DE;
   --color-text-success: #27500A;
   --color-border-success: #C0DD97;
@@ -56,37 +60,77 @@
 
   --color-text-primary: #111111;
   --color-text-secondary: #6B7280;
-  --color-text-tertiary: rgba(0,0,0,0.35);
+  /* Tertiary used to be rgba(0,0,0,0.35), which is ~#A6A6A6 on white and
+     computes to ~2.5:1 contrast — failing WCAG AA for the 9-11px labels,
+     eyebrows, slider help text, and caption copy that use it. Setting it
+     to the same hex as --color-text-secondary (#6B7280, ~4.66:1) meets
+     WCAG AA 1.4.3. The visual hierarchy between secondary and tertiary
+     now comes from font-size and font-weight rather than from colour. */
+  --color-text-tertiary: #6B7280;
   --color-background-primary: #FFFFFF;
   --color-background-secondary: #F9FAFB;
   --color-border-secondary: rgba(0,0,0,0.15);
   --color-border-tertiary: rgba(0,0,0,0.08);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background-success: #173404;
-    --color-text-success: #C0DD97;
-    --color-border-success: #3B6D11;
+/* Force light scheme — the revamped UI uses a fixed paper canvas and
+   ink text. Without this, browsers may apply UA-level dark-mode overrides
+   (autofill, scrollbars, form controls) that don't match the design. */
+:root {
+  color-scheme: light;
+}
 
-    --color-background-warning: #412402;
-    --color-text-warning: #FAC775;
-    --color-border-warning: #854F0B;
+/* ── Accessibility: keyboard focus visibility ─────────────────────────
+   Universal :focus-visible ring for every interactive element. Applies
+   to buttons, links, inputs, selects, textareas, summary, range sliders,
+   and anything with a role that makes it focusable (role=button/radio/
+   checkbox/option/switch/tab). Uses the accent colour with 2px offset so
+   it reads against both the paper canvas and the ink sticky nav.
 
-    --color-background-danger: #501313;
-    --color-text-danger: #F09595;
-    --color-border-danger: #A32D2D;
+   We scope this by element selectors rather than a blanket *:focus-visible
+   so we don't paint rings around non-interactive containers that happen to
+   become focus targets (e.g. for skip-to-content patterns). */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[role='button']:focus-visible,
+[role='radio']:focus-visible,
+[role='checkbox']:focus-visible,
+[role='switch']:focus-visible,
+[role='tab']:focus-visible,
+[role='option']:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #1A6B5A;
+  outline-offset: 2px;
+  /* Kill any legacy outline:none that components set via style= */
+  box-shadow: none;
+}
 
-    --color-background-info: #042C53;
-    --color-text-info: #85B7EB;
-    --color-border-info: #185FA5;
+/* For elements sitting on the dark ink sticky nav (e.g. the homepage
+   logo + CTA), a dark accent ring disappears. Use a light accent-border
+   ring instead. */
+nav.bg-ink a:focus-visible,
+nav.bg-ink button:focus-visible {
+  outline-color: #72C4B0;
+}
 
-    --color-text-primary: #F9FAFB;
-    --color-text-secondary: #9CA3AF;
-    --color-text-tertiary: rgba(255,255,255,0.35);
-    --color-background-primary: #111111;
-    --color-background-secondary: #1F2937;
-    --color-border-secondary: rgba(255,255,255,0.15);
-    --color-border-tertiary: rgba(255,255,255,0.08);
+/* ── Accessibility: reduced motion ────────────────────────────────────
+   For users who've set prefers-reduced-motion: reduce, collapse every
+   animation and transition to near-instant. We keep final states intact
+   — the reveal screen still flashes to the category label, the DepthToggle
+   chevron still rotates to its open state, the staggered results reveal
+   still ends with everything visible — the user just doesn't see them
+   move. ux-spec §8. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

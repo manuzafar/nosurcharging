@@ -1,17 +1,15 @@
 'use client';
 
-// CB-08: Pass-through slider. Categories 2 and 4 only.
-// Range: 0-100%, step 1, initial 0%.
-// accent-color: #BA7517
+// PassThroughSlider — per ux-spec §3.6.
+// Categories 2 and 4 only — internally gates.
 //
-// On every input event — all updates in one synchronous pass:
-//   1. Read slider value
-//   2. resolveAssessmentInputs with updated passThrough
-//   3. calculateMetrics with resolved inputs
-//   4. onOutputsChange(newOutputs) — parent re-renders all children
+// Lets the merchant model how much of the IC saving is reflected in
+// their flat rate after October. The slider drives a single
+// resolve→calculate pass on every input event; parent re-renders all
+// children with the fresh outputs.
 //
-// Performance: <16ms per calculateMetrics call.
-// Console.warn if exceeded in development.
+// Banned: "Stripe keeps all of it" / "your PSP" / "your provider".
+// Use: "Not reflected in your rate" / explicit pspName.
 
 import { useRef } from 'react';
 import { resolveAssessmentInputs } from '@nosurcharging/calculations/rules/resolver';
@@ -33,6 +31,10 @@ interface PassThroughSliderProps {
   onOutputsChange: (outputs: AssessmentOutputs, passThrough: number) => void;
 }
 
+function formatDollar(v: number): string {
+  return '$' + Math.abs(Math.round(v)).toLocaleString('en-AU');
+}
+
 export function PassThroughSlider({
   category,
   passThrough,
@@ -42,41 +44,26 @@ export function PassThroughSlider({
   pspName,
   onOutputsChange,
 }: PassThroughSliderProps) {
-  // Fire Slider used event once per mount — not per input event
   const sliderUsedTracked = useRef(false);
 
-  // Only visible for categories 2 and 4
   if (category !== 2 && category !== 4) return null;
 
   const pctValue = Math.round(passThrough * 100);
-  const savingAmount = Math.round(outputs.icSaving * passThrough);
+  const reflectedSaving = Math.round(outputs.icSaving * passThrough);
+  const netImpact = outputs.plSwing;
+  const netCostFromOct = outputs.octNet;
 
-  const formatDollar = (v: number) =>
-    '$' + v.toLocaleString('en-AU', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-
-  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const pt = parseInt(e.target.value, 10) / 100;
 
-    // Performance measurement in development
-    const start = typeof performance !== 'undefined' ? performance.now() : 0;
-
-    // Resolve → calculate — single synchronous pass
     const resolved = resolveAssessmentInputs(
       { ...originalRaw, passThrough: pt },
       resolutionContext,
     );
     const newOutputs = calculateMetrics(resolved);
 
-    if (process.env.NODE_ENV === 'development' && typeof performance !== 'undefined') {
-      const elapsed = performance.now() - start;
-      if (elapsed > 16) {
-        console.warn(`[slider] calculateMetrics took ${elapsed.toFixed(1)}ms (>16ms budget)`);
-      }
-    }
-
     onOutputsChange(newOutputs, pt);
 
-    // Fire once per mount — not per input event
     if (!sliderUsedTracked.current) {
       trackEvent('Slider used');
       sliderUsedTracked.current = true;
@@ -84,75 +71,141 @@ export function PassThroughSlider({
   };
 
   return (
-    <div
-      className="rounded-xl p-4"
-      style={{
-        border: '0.5px solid var(--color-border-secondary)',
-        background: 'var(--color-background-primary)',
-      }}
+    <section
+      className="py-5"
+      style={{ borderBottom: '1px solid var(--color-border-secondary)' }}
     >
-      {/* Header row */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p
-            className="text-body-sm font-medium"
-            style={{ color: 'var(--color-text-primary)' }}
-          >
-            If {pspName} passes through...
-          </p>
-          <p className="mt-0.5 text-caption" style={{ color: 'var(--color-text-secondary)' }}>
-            Drag to model different outcomes
-          </p>
-        </div>
-        <p
-          className="font-mono font-medium shrink-0"
-          style={{
-            fontSize: '24px',
-            color: savingAmount > 0
-              ? 'var(--color-text-success)'
-              : 'var(--color-text-secondary)',
-          }}
-        >
-          {formatDollar(savingAmount)}
-        </p>
-      </div>
-
-      {/* Slider row */}
-      <div className="mt-3 flex items-center gap-2.5">
-        <input
-          type="range"
-          min="0"
-          max="100"
-          step="1"
-          value={pctValue}
-          onInput={handleInput as unknown as React.FormEventHandler<HTMLInputElement>}
-          className="flex-1"
-          style={{ accentColor: '#BA7517' }}
-          aria-label="Pass-through percentage"
-        />
-        <span
-          className="font-mono text-caption text-right shrink-0"
-          style={{
-            minWidth: '28px',
-            color: 'var(--color-text-secondary)',
-          }}
-        >
-          {pctValue}%
-        </span>
-      </div>
-
-      {/* Note */}
+      {/* Section eyebrow */}
       <p
-        className="mt-3 rounded-lg px-3 py-2 text-caption"
+        className="font-medium uppercase"
         style={{
-          background: 'var(--color-background-secondary)',
-          color: 'var(--color-text-secondary)',
-          lineHeight: '1.55',
+          fontSize: '9px',
+          letterSpacing: '2.5px',
+          color: 'var(--color-text-tertiary)',
+          marginBottom: '12px',
         }}
       >
-        RBA data shows 90% of Australian merchants did not switch PSP last year.
-        At 0%, {pspName} keeps the full {formatDollar(Math.round(outputs.icSaving))} IC saving.
+        Model your outcome
       </p>
-    </div>
+
+      {/* Intro */}
+      <p
+        style={{
+          fontSize: '13px',
+          color: 'var(--color-text-secondary)',
+          lineHeight: 1.65,
+          marginBottom: '16px',
+        }}
+      >
+        The key variable is how much of the {formatDollar(outputs.icSaving)}{' '}
+        processing cost reduction is reflected in your {pspName} rate after
+        October.
+      </p>
+
+      {/* Slider — controlled input uses onChange so React's controlled-input
+          plumbing hooks correctly. Using onInput without onChange made React
+          treat the field as read-only and re-sync the DOM value on every
+          render, which caused visible jumps while dragging.
+
+          a11y: native <input type="range"> already exposes role=slider and
+          aria-valuenow via the `value` attribute, but we set aria-valuetext
+          to give screen readers a meaningful phrase ("50 percent — half of
+          the interchange saving reflected in your Stripe rate") instead of
+          the bare number. aria-valuemin/max are explicit for AT that don't
+          derive them from min/max props. */}
+      <input
+        type="range"
+        min={0}
+        max={100}
+        step={1}
+        value={pctValue}
+        onChange={handleChange}
+        className="w-full"
+        style={{ accentColor: '#1A6B5A' }}
+        aria-label={`Pass-through percentage — how much of the interchange saving is reflected in your ${pspName} rate`}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={pctValue}
+        aria-valuetext={
+          pctValue === 0
+            ? `0 percent — none of the saving reflected in your ${pspName} rate`
+            : pctValue === 100
+              ? `100 percent — the full saving reflected in your ${pspName} rate`
+              : `${pctValue} percent of the saving reflected in your ${pspName} rate`
+        }
+      />
+
+      {/* Slider labels (per spec) */}
+      <div
+        className="flex justify-between"
+        style={{
+          fontSize: '11px',
+          color: 'var(--color-text-tertiary)',
+          marginTop: '4px',
+        }}
+      >
+        <span>Not reflected in your rate (0%)</span>
+        <span className="font-mono">{pctValue}%</span>
+        <span>Fully reflected (100%)</span>
+      </div>
+
+      {/* Result box — accent-light bg, accent-border, 8px radius
+          (structured content on the 8px tier of the Modern Fintech Hierarchy). */}
+      <div
+        style={{
+          background: '#EBF6F3',
+          border: '1px solid #72C4B0',
+          padding: '12px 14px',
+          marginTop: '14px',
+          borderRadius: '8px',
+        }}
+      >
+        <div className="flex items-center justify-between" style={{ marginBottom: '6px' }}>
+          <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+            Cost reduction in your {pspName} rate
+          </span>
+          <span
+            className="font-mono font-medium"
+            style={{ fontSize: '13px', color: 'var(--color-text-success)' }}
+          >
+            +{formatDollar(reflectedSaving)}/yr
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between" style={{ marginBottom: '6px' }}>
+          <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+            Your net annual impact
+          </span>
+          <span
+            className="font-mono font-medium"
+            style={{
+              fontSize: '13px',
+              color: netImpact >= 0 ? 'var(--color-text-success)' : 'var(--color-text-danger)',
+            }}
+          >
+            {netImpact >= 0 ? '+' : '−'}
+            {formatDollar(netImpact)}/yr
+          </span>
+        </div>
+
+        <div
+          className="flex items-center justify-between"
+          style={{
+            paddingTop: '6px',
+            borderTop: '0.5px solid #72C4B0',
+          }}
+        >
+          <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+            Net cost from October
+          </span>
+          <span
+            className="font-mono font-medium"
+            style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}
+          >
+            {formatDollar(netCostFromOct)}/yr
+          </span>
+        </div>
+      </div>
+    </section>
   );
 }

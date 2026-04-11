@@ -72,13 +72,13 @@ describe('Step4Industry', () => {
       />,
     );
 
-    // The online store button should have amber border class
+    // The online store button should have accent border class
     const onlineBtn = screen.getByText('Online store').closest('button')!;
-    expect(onlineBtn.className).toContain('amber');
+    expect(onlineBtn.className).toContain('accent');
 
     // The retail button should not
     const retailBtn = screen.getByText('Retail').closest('button')!;
-    expect(retailBtn.className).not.toContain('amber');
+    expect(retailBtn.className).not.toContain('accent');
   });
 
   it('only one tile can be selected at a time', () => {
@@ -91,12 +91,12 @@ describe('Step4Industry', () => {
       />,
     );
 
-    // Count tiles with amber in className (should be exactly 1)
+    // Count tiles with accent in className (should be exactly 1)
     const allButtons = screen.getAllByRole('button').filter(
       (btn) => btn.textContent !== 'Back' && btn.textContent !== 'See my results →',
     );
     const selectedButtons = allButtons.filter((btn) =>
-      btn.className.includes('amber'),
+      btn.className.includes('accent'),
     );
     expect(selectedButtons).toHaveLength(1);
   });

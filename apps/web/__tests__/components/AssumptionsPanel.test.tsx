@@ -1,38 +1,36 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-
-// Mock Recharts for CostBreakdownChart inside AssumptionsPanel
-vi.mock('recharts', () => ({
-  BarChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  Bar: () => <div />,
-  XAxis: () => <div />,
-  YAxis: () => <div />,
-  Tooltip: () => <div />,
-  Legend: () => <div />,
-  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-}));
 
 import { AssumptionsPanel } from '@/components/results/AssumptionsPanel';
 import type { AssessmentOutputs, ResolutionTrace } from '@nosurcharging/calculations/types';
 
-const MOCK_OUTPUTS: AssessmentOutputs = {
-  category: 2,
-  icSaving: 1724.62,
-  debitSaving: 184.62,
-  creditSaving: 1540.0,
-  todayInterchange: 5301.54,
-  todayMargin: 2000.0,
-  grossCOA: 9401.54,
-  annualMSF: 28000.0,
-  surchargeRevenue: 0,
-  netToday: 28000.0,
-  octNet: 28000.0,
-  plSwing: 0,
-  todayScheme: 2100.0,
-  oct2026Scheme: 2100.0,
+const FLAT_OUTPUTS: AssessmentOutputs = {
+  category: 4,
+  icSaving: 4_200,
+  debitSaving: 1_200,
+  creditSaving: 3_000,
+  todayInterchange: 12_000,
+  todayMargin: 8_000,
+  grossCOA: 25_000,
+  annualMSF: 28_000,
+  surchargeRevenue: 7_500,
+  netToday: 20_500,
+  octNet: 25_900,
+  plSwing: -5_400,
+  todayScheme: 2_100,
+  oct2026Scheme: 2_100,
   confidence: 'low',
   period: 'pre_reform',
+};
+
+const COSTPLUS_OUTPUTS: AssessmentOutputs = {
+  ...FLAT_OUTPUTS,
+  category: 1,
+  surchargeRevenue: 0,
+  netToday: 25_000,
+  octNet: 20_800,
+  plSwing: 4_200,
 };
 
 const MOCK_TRACE: ResolutionTrace = {
@@ -47,28 +45,102 @@ const MOCK_TRACE: ResolutionTrace = {
   'expertRates.creditPct': { source: 'regulatory_constant', value: 0.52, label: 'RBA average' },
 };
 
+const FLAT_PROPS = {
+  outputs: FLAT_OUTPUTS,
+  passThrough: 0.5,
+  resolutionTrace: MOCK_TRACE,
+  volume: 500_000,
+  pspName: 'Stripe',
+  planType: 'flat' as const,
+  msfRate: 0.014,
+  surcharging: true,
+  surchargeRate: 0.015,
+};
+
+const COSTPLUS_PROPS = {
+  ...FLAT_PROPS,
+  outputs: COSTPLUS_OUTPUTS,
+  planType: 'costplus' as const,
+  msfRate: 0,
+  surcharging: false,
+  surchargeRate: 0,
+};
+
 describe('AssumptionsPanel', () => {
   const user = userEvent.setup();
 
-  it('shows card mix rows with source labels when expanded', async () => {
-    render(
-      <AssumptionsPanel
-        outputs={MOCK_OUTPUTS}
-        passThrough={0}
-        resolutionTrace={MOCK_TRACE}
-      />,
-    );
+  it('toggle uses the new wording', () => {
+    render(<AssumptionsPanel {...FLAT_PROPS} />);
+    expect(
+      screen.getByText(/Show me exactly how this is calculated/i),
+    ).toBeInTheDocument();
+  });
 
-    // Expand the panel
-    await user.click(screen.getByText(/how we calculated this/i));
+  it('is collapsed by default — toggle shows ↓', () => {
+    render(<AssumptionsPanel {...FLAT_PROPS} />);
+    expect(
+      screen.getByText(/↓ Show me exactly how this is calculated/),
+    ).toBeInTheDocument();
+  });
 
-    // Card mix rows should render with percentages and source labels
+  it('does NOT embed the cost composition chart', () => {
+    render(<AssumptionsPanel {...FLAT_PROPS} />);
+    // The CostCompositionChart owns this testid; AssumptionsPanel must not.
+    expect(screen.queryByTestId('cost-composition-chart')).not.toBeInTheDocument();
+  });
+
+  it('shows formula rows for flat-rate when expanded', async () => {
+    render(<AssumptionsPanel {...FLAT_PROPS} />);
+    await user.click(screen.getByText(/Show me exactly how this is calculated/i));
+
+    // Flat rate first row
+    expect(screen.getByText(/What you pay Stripe today/i)).toBeInTheDocument();
+    expect(screen.getByText(/\$500,000 × 1\.40% flat rate/)).toBeInTheDocument();
+    expect(screen.getByText('$28,000')).toBeInTheDocument();
+
+    // Surcharge row
+    expect(screen.getByText(/Surcharge you currently recover/i)).toBeInTheDocument();
+    expect(screen.getByText('-$7,500')).toBeInTheDocument();
+
+    // Pass-through row
+    expect(screen.getByText(/Pass-through to your rate/i)).toBeInTheDocument();
+    expect(screen.getByText(/50% of total IC saving/)).toBeInTheDocument();
+  });
+
+  it('shows formula rows for cost-plus when expanded — no surcharge row, no pass-through row', async () => {
+    render(<AssumptionsPanel {...COSTPLUS_PROPS} />);
+    await user.click(screen.getByText(/Show me exactly how this is calculated/i));
+
+    expect(screen.getByText(/What you pay today/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Interchange \+ scheme fees \+ margin/i),
+    ).toBeInTheDocument();
+
+    // No surcharge row when not surcharging
+    expect(
+      screen.queryByText(/Surcharge you currently recover/i),
+    ).not.toBeInTheDocument();
+    // No pass-through row for cost-plus
+    expect(screen.queryByText(/Pass-through to your rate/i)).not.toBeInTheDocument();
+  });
+
+  it('shows the inline italic scheme-fees note', async () => {
+    render(<AssumptionsPanel {...FLAT_PROPS} />);
+    await user.click(screen.getByText(/Show me exactly how this is calculated/i));
+    expect(
+      screen.getByText(/Visa and Mastercard charge a separate network fee/i),
+    ).toBeInTheDocument();
+  });
+
+  it('still shows card mix rows from resolutionTrace', async () => {
+    render(<AssumptionsPanel {...FLAT_PROPS} />);
+    await user.click(screen.getByText(/Show me exactly how this is calculated/i));
+
     expect(screen.getByText('Visa debit')).toBeInTheDocument();
     expect(screen.getByText('35%')).toBeInTheDocument();
     expect(screen.getByText('eftpos')).toBeInTheDocument();
     expect(screen.getByText('8%')).toBeInTheDocument();
 
-    // Source labels from trace
     const rbaLabels = screen.getAllByText(/← RBA average/);
     expect(rbaLabels.length).toBeGreaterThanOrEqual(5);
 
@@ -76,45 +148,19 @@ describe('AssumptionsPanel', () => {
     expect(yourInputLabels.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('shows nothing when resolutionTrace is empty', async () => {
-    render(
-      <AssumptionsPanel
-        outputs={MOCK_OUTPUTS}
-        passThrough={0}
-        resolutionTrace={{}}
-      />,
-    );
+  it('shows nothing for card mix when resolutionTrace is empty', async () => {
+    render(<AssumptionsPanel {...FLAT_PROPS} resolutionTrace={{}} />);
+    await user.click(screen.getByText(/Show me exactly how this is calculated/i));
 
-    await user.click(screen.getByText(/how we calculated this/i));
-
-    // Card mix rows should NOT render (trace entries return null)
     expect(screen.queryByText('Visa debit')).not.toBeInTheDocument();
     expect(screen.queryByText('35%')).not.toBeInTheDocument();
   });
 
-  it('is collapsed by default', () => {
-    render(
-      <AssumptionsPanel
-        outputs={MOCK_OUTPUTS}
-        passThrough={0}
-        resolutionTrace={MOCK_TRACE}
-      />,
-    );
-
-    // Toggle shows expand arrow
-    expect(screen.getByText(/↓ How we calculated this/)).toBeInTheDocument();
-  });
-
   it('shows RBA source citation when expanded', async () => {
-    render(
-      <AssumptionsPanel
-        outputs={MOCK_OUTPUTS}
-        passThrough={0}
-        resolutionTrace={MOCK_TRACE}
-      />,
-    );
-
-    await user.click(screen.getByText(/how we calculated this/i));
-    expect(screen.getByText(/RBA Statistical Tables C1 and C2/)).toBeInTheDocument();
+    render(<AssumptionsPanel {...FLAT_PROPS} />);
+    await user.click(screen.getByText(/Show me exactly how this is calculated/i));
+    expect(
+      screen.getByText(/RBA Statistical Tables C1 and C2/),
+    ).toBeInTheDocument();
   });
 });

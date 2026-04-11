@@ -13,13 +13,11 @@ vi.mock('@nosurcharging/calculations/rules/resolver', () => ({
 vi.mock('@nosurcharging/calculations/calculations', () => ({
   calculateMetrics: vi.fn((resolved: { passThrough: number; planType: string }) => {
     calcCallCount++;
-    // Return different octNet based on planType and passThrough
     if (resolved.planType === 'costplus') {
       return { octNet: COST_PLUS_OCT_NET };
     }
-    // Flat rate: octNet depends on passThrough
-    const baseOctNet = resolved.passThrough === 0 ? 42000 : resolved.passThrough === 1 ? 26275.38 : 40000;
-    return { octNet: baseOctNet };
+    // Flat rate path — should not be hit by EscapeScenarioCard, but kept defensively
+    return { octNet: 28000 };
   }),
 }));
 
@@ -80,102 +78,51 @@ describe('EscapeScenarioCard', () => {
     expect(container.innerHTML).toBe('');
   });
 
-  it('visible for category 2', () => {
-    render(
-      <EscapeScenarioCard
-        category={2}
-        outputs={BASE_OUTPUTS}
-        passThrough={0}
-        originalRaw={BASE_RAW}
-        resolutionContext={BASE_CTX}
-        pspName="Stripe"
-      />,
-    );
-    expect(screen.getByText('Your current plan')).toBeInTheDocument();
-    expect(screen.getByText('Escape scenario')).toBeInTheDocument();
-  });
-
-  it('costPlusOctNet calculated on mount (calculateMetrics called)', () => {
-    render(
-      <EscapeScenarioCard
-        category={2}
-        outputs={BASE_OUTPUTS}
-        passThrough={0}
-        originalRaw={BASE_RAW}
-        resolutionContext={BASE_CTX}
-        pspName="Stripe"
-      />,
-    );
-
-    // calculateMetrics called for: costPlus escape (1), range at 0% (1), range at 100% (1) = 3 calls on mount
-    expect(calcCallCount).toBe(3);
-  });
-
-  it('left card value updates when passThrough prop changes', () => {
-    const { rerender } = render(
-      <EscapeScenarioCard
-        category={2}
-        outputs={{ ...BASE_OUTPUTS, octNet: 28000 }}
-        passThrough={0}
-        originalRaw={BASE_RAW}
-        resolutionContext={BASE_CTX}
-        pspName="Stripe"
-      />,
-    );
-
-    // Left card shows octNet at 0% PT
-    expect(screen.getByText('$28,000')).toBeInTheDocument();
-
-    // Rerender with different passThrough — left card value changes
-    rerender(
-      <EscapeScenarioCard
-        category={2}
-        outputs={{ ...BASE_OUTPUTS, octNet: 27223 }}
-        passThrough={0.45}
-        originalRaw={BASE_RAW}
-        resolutionContext={BASE_CTX}
-        pspName="Stripe"
-      />,
-    );
-
-    expect(screen.getByText('$27,223')).toBeInTheDocument();
-  });
-
-  it('right card value does NOT change when passThrough changes', () => {
-    const { rerender } = render(
-      <EscapeScenarioCard
-        category={2}
-        outputs={{ ...BASE_OUTPUTS, octNet: 28000 }}
-        passThrough={0}
-        originalRaw={BASE_RAW}
-        resolutionContext={BASE_CTX}
-        pspName="Stripe"
-      />,
-    );
-
-    // Right card shows costPlusOctNet — fixed
-    const costPlusFormatted = '$' + Math.abs(Math.round(COST_PLUS_OCT_NET)).toLocaleString('en-AU');
-    expect(screen.getByText(costPlusFormatted)).toBeInTheDocument();
-
-    // Rerender with different passThrough
-    rerender(
-      <EscapeScenarioCard
-        category={2}
-        outputs={{ ...BASE_OUTPUTS, octNet: 27223 }}
-        passThrough={0.45}
-        originalRaw={BASE_RAW}
-        resolutionContext={BASE_CTX}
-        pspName="Stripe"
-      />,
-    );
-
-    // Right card value unchanged
-    expect(screen.getByText(costPlusFormatted)).toBeInTheDocument();
-  });
-
-  it('right card has featured border (1.5px success)', () => {
+  it('hidden for category 3', () => {
     const { container } = render(
       <EscapeScenarioCard
+        category={3}
+        outputs={BASE_OUTPUTS}
+        passThrough={0}
+        originalRaw={BASE_RAW}
+        resolutionContext={BASE_CTX}
+        pspName="Stripe"
+      />,
+    );
+    expect(container.innerHTML).toBe('');
+  });
+
+  it('visible for category 2 with new section eyebrow', () => {
+    render(
+      <EscapeScenarioCard
+        category={2}
+        outputs={BASE_OUTPUTS}
+        passThrough={0}
+        originalRaw={BASE_RAW}
+        resolutionContext={BASE_CTX}
+        pspName="Stripe"
+      />,
+    );
+    expect(screen.getByText(/Is there a better option\?/i)).toBeInTheDocument();
+  });
+
+  it('visible for category 4', () => {
+    render(
+      <EscapeScenarioCard
+        category={4}
+        outputs={BASE_OUTPUTS}
+        passThrough={0}
+        originalRaw={BASE_RAW}
+        resolutionContext={BASE_CTX}
+        pspName="Tyro"
+      />,
+    );
+    expect(screen.getByText(/Is there a better option\?/i)).toBeInTheDocument();
+  });
+
+  it('costPlusOctNet calculated on mount (calculateMetrics called once)', () => {
+    render(
+      <EscapeScenarioCard
         category={2}
         outputs={BASE_OUTPUTS}
         passThrough={0}
@@ -185,13 +132,70 @@ describe('EscapeScenarioCard', () => {
       />,
     );
 
-    // Find the escape scenario card — it has the green badge
-    const escapeCard = screen.getByText('Escape scenario').closest('div[class*="rounded"]');
-    expect(escapeCard).toBeTruthy();
-    expect(escapeCard!.getAttribute('style')).toContain('1.5px');
+    // Single calc on mount for the cost-plus escape (twin-card range removed)
+    expect(calcCallCount).toBe(1);
   });
 
-  it('PSP name appears inline, not "your PSP"', () => {
+  it('intro mentions itemised plan with PSP name inline', () => {
+    render(
+      <EscapeScenarioCard
+        category={2}
+        outputs={BASE_OUTPUTS}
+        passThrough={0}
+        originalRaw={BASE_RAW}
+        resolutionContext={BASE_CTX}
+        pspName="Stripe"
+      />,
+    );
+
+    expect(
+      screen.getByText(/Stripe also offers an itemised plan/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/the reduction flows through automatically/i),
+    ).toBeInTheDocument();
+  });
+
+  it('green box shows saving heading and amount', () => {
+    render(
+      <EscapeScenarioCard
+        category={2}
+        outputs={{ ...BASE_OUTPUTS, octNet: 28000 }}
+        passThrough={0}
+        originalRaw={BASE_RAW}
+        resolutionContext={BASE_CTX}
+        pspName="Stripe"
+      />,
+    );
+
+    // Heading uses the PSP name inline
+    expect(
+      screen.getByText(/Switching to Stripe.s itemised plan saves you:/i),
+    ).toBeInTheDocument();
+
+    // Saving = |28000 - 7676.92| ≈ $20,323
+    expect(screen.getByText('$20,323/year')).toBeInTheDocument();
+  });
+
+  it('body shows comparison and 100% pass-through note', () => {
+    render(
+      <EscapeScenarioCard
+        category={2}
+        outputs={{ ...BASE_OUTPUTS, octNet: 28000 }}
+        passThrough={0}
+        originalRaw={BASE_RAW}
+        resolutionContext={BASE_CTX}
+        pspName="Stripe"
+      />,
+    );
+
+    expect(screen.getByText(/Your net cost would be/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/the full saving flows automatically at 100%/i),
+    ).toBeInTheDocument();
+  });
+
+  it('PSP name appears inline, never "your PSP" or banned phrases', () => {
     render(
       <EscapeScenarioCard
         category={4}
@@ -203,9 +207,11 @@ describe('EscapeScenarioCard', () => {
       />,
     );
 
-    expect(screen.getByText(/your volume and Tyro/)).toBeInTheDocument();
-    // Check the exact phrase "your PSP" doesn't appear anywhere
+    expect(screen.getByText(/Tyro also offers an itemised plan/i)).toBeInTheDocument();
+
     const allText = document.body.textContent ?? '';
-    expect(/your PSP/i.test(allText)).toBe(false);
+    expect(allText).not.toContain('your PSP');
+    expect(allText).not.toContain('your provider');
+    expect(allText).not.toContain('no negotiation needed');
   });
 });

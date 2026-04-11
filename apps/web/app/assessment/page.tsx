@@ -94,14 +94,18 @@ export default function AssessmentPage() {
     phase === 'step1' ? 1 : phase === 'step2' ? 2 : phase === 'step3' ? 3 : phase === 'step4' ? 4 : 0;
 
   return (
-    <main className="min-h-screen bg-white">
-      {/* Site-wide disclaimer */}
-      <div className="border-b border-gray-100 py-2 text-center">
-        <p className="text-micro text-gray-400">
-          nosurcharging.com.au provides general guidance only. Not financial advice.
-          Verify with your PSP before making business decisions.
-        </p>
-      </div>
+    <main className="min-h-screen bg-paper">
+      {/* Site-wide disclaimer (FR-02). Hidden during disclaimer phase —
+          the dedicated commitments screen is the disclaimer at that point. */}
+      {phase !== 'disclaimer' && (
+        <div className="border-b border-rule py-2 text-center">
+          <p className="text-micro text-ink-faint">
+            nosurcharging.com.au provides general guidance only. Not financial
+            advice. Verify with your payment provider before making business
+            decisions.
+          </p>
+        </div>
+      )}
 
       {/* Reveal screen is full-screen overlay */}
       {phase === 'reveal' && (
@@ -130,30 +134,32 @@ export default function AssessmentPage() {
         </div>
       )}
 
-      {/* Assessment steps */}
-      {phase !== 'reveal' && phase !== 'error' && (
+      {/* Disclaimer phase — DisclaimerConsent owns its own width and padding
+          (paper canvas, max-w 420). No outer wrapper needed. */}
+      {phase === 'disclaimer' && (
+        <div className="transition-opacity duration-200 ease-out">
+          <DisclaimerConsent
+            onAccept={() => {
+              trackEvent('Assessment started');
+              goToStep('step1');
+            }}
+          />
+        </div>
+      )}
+
+      {/* Assessment steps 1-4 */}
+      {phase !== 'reveal' && phase !== 'error' && phase !== 'disclaimer' && (
         <div className="mx-auto max-w-assessment px-5 py-8">
-          {/* Progress bar + step counter (hidden on disclaimer) */}
-          {phase !== 'disclaimer' && (
-            <div className="mb-8 flex items-center gap-4">
-              <div className="flex-1">
-                <ProgressBar currentStep={currentStep} />
-              </div>
-              <StepCounter current={currentStep} />
+          {/* Progress bar + step counter */}
+          <div className="mb-8 flex items-center gap-4">
+            <div className="flex-1">
+              <ProgressBar currentStep={currentStep} />
             </div>
-          )}
+            <StepCounter current={currentStep} />
+          </div>
 
           {/* Step content with opacity transition */}
           <div className="transition-opacity duration-200 ease-out">
-            {phase === 'disclaimer' && (
-              <DisclaimerConsent
-                onAccept={() => {
-                  trackEvent('Assessment started');
-                  goToStep('step1');
-                }}
-              />
-            )}
-
             {phase === 'step1' && (
               <Step1Volume
                 value={volume}
