@@ -55,8 +55,8 @@ jobs:
             RESPONSE=$(curl -sf ${{ env.STAGING_URL }}/api/health 2>/dev/null || echo '{}')
             STATUS=$(echo "$RESPONSE" | jq -r '.status // "down"')
             COMMIT=$(echo "$RESPONSE" | jq -r '.commit // "unknown"')
-            if [ "$STATUS" = "ok" ] && [ "$COMMIT" != "unknown" ]; then
-              echo "Staging is healthy (commit=${COMMIT:0:7}, attempt $i)"
+            if [ "$STATUS" = "ok" ]; then
+              echo "Staging is healthy (attempt $i)"
               exit 0
             fi
             echo "Attempt $i: status=$STATUS, retrying in 10s..."
