@@ -7,13 +7,10 @@ test.describe('Mobile 375px', () => {
     await page.goto('/');
 
     // Hero visible
-    await expect(page.getByText(/RBA banned surcharges/)).toBeVisible();
+    await expect(page.getByText(/RBA Surcharge Ban/)).toBeVisible();
 
     // CTA button visible
-    await expect(page.getByRole('link', { name: /start free assessment/i })).toBeVisible();
-
-    // Nav "Start assessment" button visible
-    await expect(page.getByRole('link', { name: /start assessment/i }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: /generate my free report/i })).toBeVisible();
   });
 
   test('assessment flow works on mobile', async ({ page }) => {
@@ -29,7 +26,7 @@ test.describe('Mobile 375px', () => {
 
     // Step 2 — plan cards should be single column
     await page.getByRole('radio', { name: /a single rate on every transaction/i }).click();
-    await page.getByRole('button', { name: 'Tyro' }).click();
+    await page.getByRole('radio', { name: 'Tyro' }).click();
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 3

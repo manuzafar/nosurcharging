@@ -22,7 +22,7 @@ test.describe('Wizard journey → Category 1', () => {
     const debitInput = page.getByPlaceholder('9');
     await debitInput.fill('8');
 
-    await page.getByRole('button', { name: 'ANZ' }).click();
+    await page.getByRole('radio', { name: 'ANZ' }).click();
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 3 — not surcharging
