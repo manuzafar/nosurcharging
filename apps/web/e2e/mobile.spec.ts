@@ -28,7 +28,7 @@ test.describe('Mobile 375px', () => {
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 2 — plan cards should be single column
-    await page.getByRole('radio', { name: /flat rate/i }).click();
+    await page.getByRole('radio', { name: /one percentage on every transaction/i }).click();
     await page.getByRole('button', { name: 'Tyro' }).click();
     await page.getByRole('button', { name: /next/i }).click();
 

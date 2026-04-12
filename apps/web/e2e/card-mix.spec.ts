@@ -13,7 +13,7 @@ test.describe('Card mix → confidence badge', () => {
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 2 — open card mix panel
-    await page.getByRole('radio', { name: /cost-plus/i }).click();
+    await page.getByRole('radio', { name: /list of separate charges/i }).click();
 
     // Open card mix input
     await page.getByText(/know your card mix/i).click();

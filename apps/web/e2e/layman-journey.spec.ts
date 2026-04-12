@@ -13,7 +13,7 @@ test.describe('Layman journey → Category 2', () => {
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 2 — select flat rate + PSP
-    await page.getByRole('radio', { name: /flat rate/i }).click();
+    await page.getByRole('radio', { name: /one percentage on every transaction/i }).click();
     await page.getByRole('button', { name: 'Stripe' }).click();
     await page.getByRole('button', { name: /next/i }).click();
 
@@ -42,7 +42,7 @@ test.describe('Layman journey → Category 2', () => {
     await page.getByRole('button', { name: /start assessment/i }).click();
     await page.getByRole('textbox').fill('2000000');
     await page.getByRole('button', { name: /next/i }).click();
-    await page.getByRole('radio', { name: /flat rate/i }).click();
+    await page.getByRole('radio', { name: /one percentage on every transaction/i }).click();
     await page.getByRole('button', { name: 'Square' }).click();
     await page.getByRole('button', { name: /next/i }).click();
     await page.getByRole('button', { name: /No.*customers/i }).click();
