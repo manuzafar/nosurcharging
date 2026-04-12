@@ -51,6 +51,7 @@ export interface AssessmentFormData {
   customMSFRate?: number;
   blendedDebitRate?: number;
   blendedCreditRate?: number;
+  planTypeUnknown?: boolean;
 }
 
 export interface AssessmentResult {
@@ -107,7 +108,9 @@ export async function submitAssessment(
 
   // 6. Strategic rate interception — before resolve/calculate pipeline
   const safePsp = sanitiseForHTML(formData.psp);
-  const strategicCheck = detectStrategicRate(formData.planType, formData.volume, formData.psp);
+  const strategicCheck = formData.planTypeUnknown
+    ? { detected: false, triggerReason: null as string | null }
+    : detectStrategicRate(formData.planType, formData.volume, formData.psp);
   if (strategicCheck.detected) {
     const { data: inserted } = await supabaseAdmin
       .from('assessments')

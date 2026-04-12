@@ -36,20 +36,20 @@ describe('Step2PlanType', () => {
 
   it('both plan type tiles render', () => {
     render(<Step2PlanType {...defaultProps} />);
-    expect(screen.getByRole('radio', { name: /one percentage on every transaction/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /a single rate on every transaction/i })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /list of separate charges/i })).toBeInTheDocument();
   });
 
   it('clicking flat rate tile selects it (aria-checked=true)', async () => {
     const { rerender } = render(<Step2PlanType {...defaultProps} />);
-    const flatTile = screen.getByRole('radio', { name: /one percentage on every transaction/i });
+    const flatTile = screen.getByRole('radio', { name: /a single rate on every transaction/i });
 
     await user.click(flatTile);
-    expect(onPlanTypeChange).toHaveBeenCalledWith('flat');
+    expect(onPlanTypeChange).toHaveBeenCalledWith('flat', false);
 
     // Rerender with flat selected to verify aria-checked
     rerender(<Step2PlanType {...defaultProps} planType="flat" />);
-    expect(screen.getByRole('radio', { name: /one percentage on every transaction/i })).toHaveAttribute(
+    expect(screen.getByRole('radio', { name: /a single rate on every transaction/i })).toHaveAttribute(
       'aria-checked',
       'true',
     );
@@ -63,14 +63,14 @@ describe('Step2PlanType', () => {
     const { rerender } = render(<Step2PlanType {...defaultProps} planType="flat" />);
 
     await user.click(screen.getByRole('radio', { name: /list of separate charges/i }));
-    expect(onPlanTypeChange).toHaveBeenCalledWith('costplus');
+    expect(onPlanTypeChange).toHaveBeenCalledWith('costplus', false);
 
     rerender(<Step2PlanType {...defaultProps} planType="costplus" />);
     expect(screen.getByRole('radio', { name: /list of separate charges/i })).toHaveAttribute(
       'aria-checked',
       'true',
     );
-    expect(screen.getByRole('radio', { name: /one percentage on every transaction/i })).toHaveAttribute(
+    expect(screen.getByRole('radio', { name: /a single rate on every transaction/i })).toHaveAttribute(
       'aria-checked',
       'false',
     );

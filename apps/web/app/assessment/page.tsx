@@ -43,6 +43,7 @@ export default function AssessmentPage() {
   const [blendedDebitRate, setBlendedDebitRate] = useState<number | null>(null);
   const [blendedCreditRate, setBlendedCreditRate] = useState<number | null>(null);
   const [strategicRateSelected, setStrategicRateSelected] = useState(false);
+  const [planTypeUnknown, setPlanTypeUnknown] = useState(false);
 
   // Tracking flags — fire once per session, not on every keystroke
   const expertModeTracked = useRef(false);
@@ -89,6 +90,7 @@ export default function AssessmentPage() {
     customMSFRate: planType === 'zero_cost' && msfRateMode === 'custom' ? customMSFRate ?? undefined : undefined,
     blendedDebitRate: planType === 'blended' ? blendedDebitRate ?? undefined : undefined,
     blendedCreditRate: planType === 'blended' ? blendedCreditRate ?? undefined : undefined,
+    planTypeUnknown: planTypeUnknown || undefined,
   });
 
   const handleRevealComplete = (result: AssessmentResult) => {
@@ -226,9 +228,10 @@ export default function AssessmentPage() {
                 psp={psp}
                 merchantInput={merchantInput}
                 volume={volume}
-                onPlanTypeChange={(type) => {
+                onPlanTypeChange={(type, unknown) => {
                   setPlanType(type);
-                  trackEvent('Plan type selected', { type });
+                  setPlanTypeUnknown(unknown ?? false);
+                  trackEvent('Plan type selected', { type: unknown ? 'dont_know' : type });
                 }}
                 onMsfRateModeChange={(mode) => {
                   setMsfRateMode(mode);

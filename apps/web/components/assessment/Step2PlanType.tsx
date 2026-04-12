@@ -30,7 +30,7 @@ interface Step2PlanTypeProps {
   psp: string | null;
   merchantInput: MerchantInputOverrides;
   volume?: number;
-  onPlanTypeChange: (pt: 'flat' | 'costplus' | 'blended' | 'zero_cost') => void;
+  onPlanTypeChange: (pt: 'flat' | 'costplus' | 'blended' | 'zero_cost', unknown?: boolean) => void;
   onMsfRateModeChange: (mode: 'unselected' | 'market_estimate' | 'custom') => void;
   onCustomMSFRateChange: (rate: number | null) => void;
   onBlendedRatesChange: (debit: number | null, credit: number | null) => void;
@@ -107,26 +107,43 @@ export function Step2PlanType({
 }: Step2PlanTypeProps) {
   // "Don't know" is a visual-only state — maps to planType='flat' internally
   const [isUnknown, setIsUnknown] = useState(false);
+  // Strategic rate is a visual selection — only fires exit on Next click
+  const [strategicSelected, setStrategicSelected] = useState(false);
 
   const zeroCostReady = planType !== 'zero_cost'
     || msfRateMode === 'market_estimate'
     || (msfRateMode === 'custom' && customMSFRate !== null && customMSFRate > 0);
-  const canProceed = planType !== null && psp !== null && zeroCostReady;
+  const canProceed = strategicSelected || (planType !== null && psp !== null && zeroCostReady);
 
   const handlePlanTypeSelect = (pt: 'flat' | 'costplus' | 'blended' | 'zero_cost') => {
     setIsUnknown(false);
-    onPlanTypeChange(pt);
+    setStrategicSelected(false);
+    onPlanTypeChange(pt, false);
   };
 
   const handleDontKnow = () => {
     setIsUnknown(true);
-    onPlanTypeChange('flat');
+    setStrategicSelected(false);
+    onPlanTypeChange('flat', true);
+  };
+
+  const handleStrategicSelect = () => {
+    setStrategicSelected(true);
+    setIsUnknown(false);
+  };
+
+  const handleNext = () => {
+    if (strategicSelected) {
+      onStrategicRateSelected();
+    } else {
+      onNext();
+    }
   };
 
   // Visual selection helpers
   const isSelected = (pt: 'flat' | 'costplus' | 'blended' | 'zero_cost') =>
-    planType === pt && !isUnknown;
-  const isDontKnowSelected = isUnknown && planType === 'flat';
+    planType === pt && !isUnknown && !strategicSelected;
+  const isDontKnowSelected = isUnknown && planType === 'flat' && !strategicSelected;
 
   return (
     <div>
@@ -164,7 +181,7 @@ export function Step2PlanType({
         <div
           role="radio"
           aria-checked={isSelected('flat')}
-          aria-label="I pay one percentage on every transaction"
+          aria-label="I pay a single rate on every transaction"
           tabIndex={0}
           onClick={() => handlePlanTypeSelect('flat')}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePlanTypeSelect('flat'); } }}
@@ -172,7 +189,7 @@ export function Step2PlanType({
           style={isSelected('flat') ? TILE_SELECTED : TILE_UNSELECTED}
         >
           <p className="text-body font-medium" style={{ color: 'var(--color-text-primary)' }}>
-            I pay one percentage on every transaction
+            I pay a single rate on every transaction
           </p>
           <p className="text-caption italic" style={{ color: 'var(--color-text-secondary)', marginTop: '2px' }}>
             One line — one percentage — covers everything
@@ -326,13 +343,13 @@ export function Step2PlanType({
       {/* ── Strategic rate tile (full-width, compact) ──────────── */}
       <div
         role="radio"
-        aria-checked={false}
+        aria-checked={strategicSelected}
         aria-label="My bank or PSP negotiated a custom rate for my business"
         tabIndex={0}
-        onClick={onStrategicRateSelected}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onStrategicRateSelected(); } }}
+        onClick={handleStrategicSelect}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleStrategicSelect(); } }}
         className="mt-3 flex cursor-pointer items-center justify-between rounded-xl px-4 py-3"
-        style={TILE_UNSELECTED}
+        style={strategicSelected ? TILE_SELECTED : TILE_UNSELECTED}
       >
         <div>
           <p className="text-body font-medium" style={{ color: 'var(--color-text-primary)' }}>
@@ -577,7 +594,7 @@ export function Step2PlanType({
 
       <div className="mt-8 flex items-center justify-between">
         <TextButton onClick={onBack}>Back</TextButton>
-        <AccentButton onClick={onNext} disabled={!canProceed}>
+        <AccentButton onClick={handleNext} disabled={!canProceed}>
           Next
         </AccentButton>
       </div>

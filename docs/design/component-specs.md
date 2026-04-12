@@ -49,7 +49,7 @@ selected:
 **Tile content:**
 
 Flat rate tile (planType = 'flat'):
-- Headline: "I pay one percentage on every transaction"
+- Headline: "I pay a single rate on every transaction"
 - Italic note: "One line — one percentage — covers everything"
 - Tech tag: `flat rate · blended MSF · single percentage`
 - Mock bill (structure only, grey bars, NO numbers):
