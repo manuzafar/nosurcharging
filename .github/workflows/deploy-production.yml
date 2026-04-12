@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 env:
-  PRODUCTION_URL: https://nosurcharging-staging.up.railway.app  # Update to production URL when custom domain is live
+  PRODUCTION_URL: https://nosurcharging.com.au
 
 jobs:
   deploy:
