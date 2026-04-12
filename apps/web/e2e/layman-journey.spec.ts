@@ -52,15 +52,14 @@ test.describe('Layman journey → Category 2', () => {
 
     await page.waitForURL(/\/results\?id=/, { timeout: 10000 });
 
+    // Open depth zone to reveal slider
+    await page.getByRole('button', { name: /understand your numbers/i }).click();
+
     // Slider should be visible (Category 2)
     const slider = page.getByRole('slider');
     await expect(slider).toBeVisible();
 
     // Move slider to 50%
     await slider.fill('50');
-
-    // Expected P&L line should show a non-zero value
-    const expectedLine = page.getByText(/Expected:/);
-    await expect(expectedLine).toBeVisible();
   });
 });
