@@ -14,7 +14,7 @@ test.describe('Amex carve-out', () => {
 
     // Step 2
     await page.getByRole('radio', { name: /a single rate on every transaction/i }).click();
-    await page.getByRole('button', { name: 'Stripe' }).click();
+    await page.getByRole('radio', { name: 'Stripe' }).click();
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 3 — Yes surcharging

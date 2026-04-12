@@ -14,7 +14,7 @@ test.describe('Layman journey → Category 2', () => {
 
     // Step 2 — select flat rate + PSP
     await page.getByRole('radio', { name: /a single rate on every transaction/i }).click();
-    await page.getByRole('button', { name: 'Stripe' }).click();
+    await page.getByRole('radio', { name: 'Stripe' }).click();
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 3 — not surcharging
@@ -43,7 +43,7 @@ test.describe('Layman journey → Category 2', () => {
     await page.getByRole('textbox').fill('2000000');
     await page.getByRole('button', { name: /next/i }).click();
     await page.getByRole('radio', { name: /a single rate on every transaction/i }).click();
-    await page.getByRole('button', { name: 'Square' }).click();
+    await page.getByRole('radio', { name: 'Square' }).click();
     await page.getByRole('button', { name: /next/i }).click();
     await page.getByRole('button', { name: /No.*customers/i }).click();
     await page.getByRole('button', { name: /next/i }).click();
