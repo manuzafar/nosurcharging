@@ -6,7 +6,7 @@ test.describe('Wizard journey → Category 1', () => {
 
     // Disclaimer
     await page.getByRole('checkbox').check();
-    await page.getByRole('button', { name: /start assessment/i }).click();
+    await page.getByRole('button', { name: /start my assessment/i }).click();
 
     // Step 1 — $5M volume
     await page.getByRole('textbox').fill('5000000');
