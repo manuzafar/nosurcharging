@@ -6,7 +6,7 @@ test.describe('Layman journey → Category 2', () => {
 
     // Disclaimer — check checkbox and start
     await page.getByRole('checkbox').check();
-    await page.getByRole('button', { name: /start assessment/i }).click();
+    await page.getByRole('button', { name: /start my assessment/i }).click();
 
     // Step 1 — enter volume
     await page.getByRole('textbox').fill('2000000');
@@ -39,7 +39,7 @@ test.describe('Layman journey → Category 2', () => {
 
     // Quick flow through
     await page.getByRole('checkbox').check();
-    await page.getByRole('button', { name: /start assessment/i }).click();
+    await page.getByRole('button', { name: /start my assessment/i }).click();
     await page.getByRole('textbox').fill('2000000');
     await page.getByRole('button', { name: /next/i }).click();
     await page.getByRole('radio', { name: /a single rate on every transaction/i }).click();

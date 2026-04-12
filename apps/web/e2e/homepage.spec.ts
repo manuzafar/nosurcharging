@@ -5,7 +5,7 @@ test.describe('Homepage', () => {
     await page.goto('/');
 
     await expect(page.getByText(/RBA Surcharge Ban/)).toBeVisible();
-    await expect(page.getByRole('link', { name: /generate my free report/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /generate my free report/i }).first()).toBeVisible();
     // Proof row items
     await expect(page.getByText('No account required').first()).toBeVisible();
     await expect(page.getByText('No Stripe or Square affiliation').first()).toBeVisible();

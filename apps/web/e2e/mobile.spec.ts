@@ -10,7 +10,7 @@ test.describe('Mobile 375px', () => {
     await expect(page.getByText(/RBA Surcharge Ban/)).toBeVisible();
 
     // CTA button visible
-    await expect(page.getByRole('link', { name: /generate my free report/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /generate my free report/i }).first()).toBeVisible();
   });
 
   test('assessment flow works on mobile', async ({ page }) => {
@@ -18,7 +18,7 @@ test.describe('Mobile 375px', () => {
 
     // Disclaimer
     await page.getByRole('checkbox').check();
-    await page.getByRole('button', { name: /start assessment/i }).click();
+    await page.getByRole('button', { name: /start my assessment/i }).click();
 
     // Step 1
     await page.getByRole('textbox').fill('500000');
