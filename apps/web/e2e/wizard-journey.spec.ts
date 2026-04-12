@@ -13,7 +13,7 @@ test.describe('Wizard journey → Category 1', () => {
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 2 — cost-plus + expert rates
-    await page.getByRole('radio', { name: /cost-plus/i }).click();
+    await page.getByRole('radio', { name: /list of separate charges/i }).click();
 
     // Open expert panel
     await page.getByText(/payment wizard/i).click();

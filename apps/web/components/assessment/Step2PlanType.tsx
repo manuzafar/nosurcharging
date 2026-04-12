@@ -1,15 +1,16 @@
 'use client';
 
-// Step 2: Plan type selection.
-// CB-01: Four visual mock statement cards (flat, cost-plus, blended, zero-cost).
-// CB-03: PSP pill selector (single select, always selected after first pick).
-// CB-02: Expert panel + card mix input (optional).
+// Step 2: Plan type selection — structure-recognition tiles.
+// CB-01: Six tiles (flat, costplus, zero_cost, blended, strategic, don't-know).
+//        Mocks use grey bars to show bill STRUCTURE, not specific rates.
+// CB-03: PSP pill selector (single select, below tiles).
+// CB-02: Expert panel + card mix input (optional, bottom).
 // Plan type + PSP must be selected to enable Next.
 // Zero-cost requires msfRateMode confirmed before proceeding.
-// Strategic rate text link exits to inline StrategicRateExitPage.
+// Strategic rate tile triggers onStrategicRateSelected — UNCHANGED.
+// "Don't know" maps internally to planType='flat' with isUnknown visual state.
 
-import { Card } from '@/components/ui/Card';
-import { PillBadge } from '@/components/ui/PillBadge';
+import { useState } from 'react';
 import { AccentButton } from '@/components/ui/AccentButton';
 import { TextButton } from '@/components/ui/TextButton';
 import { ExpertPanel } from './ExpertPanel';
@@ -29,7 +30,7 @@ interface Step2PlanTypeProps {
   psp: string | null;
   merchantInput: MerchantInputOverrides;
   volume?: number;
-  onPlanTypeChange: (pt: 'flat' | 'costplus' | 'blended' | 'zero_cost') => void;
+  onPlanTypeChange: (pt: 'flat' | 'costplus' | 'blended' | 'zero_cost', unknown?: boolean) => void;
   onMsfRateModeChange: (mode: 'unselected' | 'market_estimate' | 'custom') => void;
   onCustomMSFRateChange: (rate: number | null) => void;
   onBlendedRatesChange: (debit: number | null, credit: number | null) => void;
@@ -39,6 +40,51 @@ interface Step2PlanTypeProps {
   onNext: () => void;
   onBack: () => void;
 }
+
+// ── Grey bar mock component ──────────────────────────────────────
+function MockBar({ width, green }: { width: number; green?: boolean }) {
+  return (
+    <div
+      style={{
+        width: `${width}px`,
+        height: '8px',
+        borderRadius: '3px',
+        background: green ? '#C0DD97' : 'var(--color-border-secondary)',
+        flexShrink: 0,
+      }}
+    />
+  );
+}
+
+// ── Tech tag (muted, small) ──────────────────────────────────────
+function TechTag({ children }: { children: string }) {
+  return (
+    <p
+      className="font-mono"
+      style={{
+        fontSize: '10px',
+        color: 'var(--color-text-tertiary)',
+        marginTop: '8px',
+        letterSpacing: '0.3px',
+      }}
+    >
+      {children}
+    </p>
+  );
+}
+
+// ── Selection state styles ───────────────────────────────────────
+const TILE_SELECTED = {
+  border: '1.5px solid #1A6B5A',
+  background: '#EBF6F3',
+  transition: 'border 120ms ease, background 120ms ease',
+} as const;
+
+const TILE_UNSELECTED = {
+  border: '0.5px solid var(--color-border-secondary)',
+  background: 'var(--color-background-primary)',
+  transition: 'border 120ms ease, background 120ms ease',
+} as const;
 
 export function Step2PlanType({
   planType,
@@ -59,159 +105,310 @@ export function Step2PlanType({
   onNext,
   onBack,
 }: Step2PlanTypeProps) {
+  // "Don't know" is a visual-only state — maps to planType='flat' internally
+  const [isUnknown, setIsUnknown] = useState(false);
+  // Strategic rate is a visual selection — only fires exit on Next click
+  const [strategicSelected, setStrategicSelected] = useState(false);
+
   const zeroCostReady = planType !== 'zero_cost'
     || msfRateMode === 'market_estimate'
     || (msfRateMode === 'custom' && customMSFRate !== null && customMSFRate > 0);
-  const canProceed = planType !== null && psp !== null && zeroCostReady;
+  const canProceed = strategicSelected || (planType !== null && psp !== null && zeroCostReady);
+
+  const handlePlanTypeSelect = (pt: 'flat' | 'costplus' | 'blended' | 'zero_cost') => {
+    setIsUnknown(false);
+    setStrategicSelected(false);
+    onPlanTypeChange(pt, false);
+  };
+
+  const handleDontKnow = () => {
+    setIsUnknown(true);
+    setStrategicSelected(false);
+    onPlanTypeChange('flat', true);
+  };
+
+  const handleStrategicSelect = () => {
+    setStrategicSelected(true);
+    setIsUnknown(false);
+  };
+
+  const handleNext = () => {
+    if (strategicSelected) {
+      onStrategicRateSelected();
+    } else {
+      onNext();
+    }
+  };
+
+  // Visual selection helpers
+  const isSelected = (pt: 'flat' | 'costplus' | 'blended' | 'zero_cost') =>
+    planType === pt && !isUnknown && !strategicSelected;
+  const isDontKnowSelected = isUnknown && planType === 'flat' && !strategicSelected;
 
   return (
     <div>
       <p className="text-label tracking-widest text-accent">Step 2</p>
       <h2 className="mt-2 font-serif text-heading-lg">
-        What does your card statement look like?
+        How do you pay for card acceptance?
       </h2>
-      <p className="mt-2 text-body-sm text-gray-500">
-        Pick the card that looks most like your PSP statement.
+      <p className="mt-2 text-body-sm" style={{ color: 'var(--color-text-secondary)' }}>
+        Pick the description that sounds most like your situation —
+        you don&apos;t need your statement in front of you.
       </p>
 
-      {/* CB-01: Plan type cards — 2×2 grid.
-          a11y: role="radiogroup" with aria-label. Cards are role="radio" + aria-checked. */}
+      {/* Section label */}
+      <p
+        className="font-medium uppercase"
+        style={{
+          fontSize: '11px',
+          letterSpacing: '2px',
+          color: 'var(--color-text-tertiary)',
+          marginTop: '24px',
+          marginBottom: '12px',
+        }}
+      >
+        Your plan type
+      </p>
+
+      {/* ── Row 1: Flat + Cost-plus (primary grid) ─────────────── */}
       <div
         role="radiogroup"
         aria-label="Plan type"
-        className="mt-6 grid gap-3"
+        className="grid gap-3"
         style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}
       >
-        {/* Flat rate card */}
-        <Card
-          selected={planType === 'flat'}
-          onClick={() => onPlanTypeChange('flat')}
+        {/* Flat rate tile */}
+        <div
           role="radio"
-          ariaChecked={planType === 'flat'}
-          ariaLabel="Flat rate plan"
+          aria-checked={isSelected('flat')}
+          aria-label="I pay a single rate on every transaction"
+          tabIndex={0}
+          onClick={() => handlePlanTypeSelect('flat')}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePlanTypeSelect('flat'); } }}
+          className="cursor-pointer rounded-xl p-4"
+          style={isSelected('flat') ? TILE_SELECTED : TILE_UNSELECTED}
         >
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-body font-medium">One blended rate</p>
-              <p className="text-caption text-gray-500">Stripe, Square, Tyro default</p>
-            </div>
-            <PillBadge variant={planType === 'flat' ? 'amber' : 'grey'}>
-              Flat rate
-            </PillBadge>
-          </div>
-          <div className="mt-3 rounded-lg bg-gray-50 p-3 font-mono text-caption leading-relaxed">
-            <div className="flex justify-between">
+          <p className="text-body font-medium" style={{ color: 'var(--color-text-primary)' }}>
+            I pay a single rate on every transaction
+          </p>
+          <p className="text-caption italic" style={{ color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+            One line — one percentage — covers everything
+          </p>
+          <TechTag>flat rate · blended MSF · single percentage</TechTag>
+
+          {/* Mock bill — structure only */}
+          <div
+            className="mt-3 rounded-lg p-3"
+            style={{ background: 'var(--color-background-secondary)' }}
+          >
+            <div className="flex items-center justify-between" style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>
               <span>Merchant service fee</span>
-              <span className="font-medium">1.40%</span>
+              <MockBar width={60} />
             </div>
-            <div className="mt-1 flex justify-between">
+            <div style={{ borderTop: '0.5px solid var(--color-border-tertiary)', margin: '6px 0' }} />
+            <div className="flex items-center justify-between" style={{ fontSize: '11px', fontWeight: 500, color: 'var(--color-text-primary)' }}>
               <span>Total charged</span>
-              <span className="font-medium">$1,400.00</span>
+              <MockBar width={52} />
             </div>
           </div>
-        </Card>
+        </div>
 
-        {/* Cost-plus card */}
-        <Card
-          selected={planType === 'costplus'}
-          onClick={() => onPlanTypeChange('costplus')}
+        {/* Cost-plus tile */}
+        <div
           role="radio"
-          ariaChecked={planType === 'costplus'}
-          ariaLabel="Cost-plus plan"
+          aria-checked={isSelected('costplus')}
+          aria-label="I see a list of separate charges on my bill"
+          tabIndex={0}
+          onClick={() => handlePlanTypeSelect('costplus')}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePlanTypeSelect('costplus'); } }}
+          className="cursor-pointer rounded-xl p-4"
+          style={isSelected('costplus') ? TILE_SELECTED : TILE_UNSELECTED}
         >
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-body font-medium">Itemised breakdown</p>
-              <p className="text-caption text-gray-500">IC++ or cost-plus</p>
-            </div>
-            <PillBadge variant={planType === 'costplus' ? 'amber' : 'grey'}>
-              Cost-plus
-            </PillBadge>
-          </div>
-          <div className="mt-3 rounded-lg bg-gray-50 p-3 font-mono text-caption leading-relaxed">
-            <div className="flex justify-between text-gray-500">
-              <span>Debit interchange</span>
-              <span>$312</span>
-            </div>
-            <div className="mt-0.5 flex justify-between text-gray-500">
-              <span>Credit interchange</span>
-              <span>$280</span>
-            </div>
-            <div className="mt-0.5 flex justify-between text-gray-500">
-              <span>Scheme fees</span>
-              <span>$88</span>
-            </div>
-            <div className="mt-0.5 flex justify-between text-chart-surcharge">
-              <span>PSP margin</span>
-              <span>$95</span>
-            </div>
-          </div>
-        </Card>
+          <p className="text-body font-medium" style={{ color: 'var(--color-text-primary)' }}>
+            I see a list of separate charges on my bill
+          </p>
+          <p className="text-caption italic" style={{ color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+            Multiple line items — different amounts for different costs
+          </p>
+          <TechTag>IC++ · cost-plus · interchange-plus</TechTag>
 
-        {/* Blended rate card */}
-        <Card
-          selected={planType === 'blended'}
-          onClick={() => onPlanTypeChange('blended')}
-          role="radio"
-          ariaChecked={planType === 'blended'}
-          ariaLabel="Blended rate plan"
-        >
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-body font-medium">Different rates for different cards</p>
-              <p className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
-                Westpac, Airwallex, some banks
-              </p>
+          <div
+            className="mt-3 rounded-lg p-3"
+            style={{ background: 'var(--color-background-secondary)' }}
+          >
+            <div className="flex items-center justify-between" style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>
+              <span>Payment processing costs</span>
+              <MockBar width={60} />
             </div>
-            <PillBadge variant={planType === 'blended' ? 'amber' : 'grey'}>
-              Blended
-            </PillBadge>
-          </div>
-          <div className="mt-3 rounded-lg bg-gray-50 p-3 font-mono text-caption leading-relaxed">
-            <div className="flex justify-between text-gray-500">
-              <span>Debit</span>
-              <span>0.90%</span>
+            <div className="mt-1 flex items-center justify-between" style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>
+              <span>Payment method costs</span>
+              <MockBar width={52} />
             </div>
-            <div className="mt-0.5 flex justify-between text-gray-500">
-              <span>Credit</span>
-              <span>1.60%</span>
+            <div className="mt-1 flex items-center justify-between" style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>
+              <span>Card scheme fees</span>
+              <MockBar width={36} />
+            </div>
+            <div className="mt-1 flex items-center justify-between" style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>
+              <span>Provider margin</span>
+              <MockBar width={28} green />
             </div>
           </div>
-        </Card>
+        </div>
 
-        {/* Zero-cost card */}
-        <Card
-          selected={planType === 'zero_cost'}
-          onClick={() => onPlanTypeChange('zero_cost')}
+        {/* Zero-cost tile */}
+        <div
           role="radio"
-          ariaChecked={planType === 'zero_cost'}
-          ariaLabel="Zero-cost EFTPOS plan"
+          aria-checked={isSelected('zero_cost')}
+          aria-label="I pass the fee to my customers and keep my full margin"
+          tabIndex={0}
+          onClick={() => handlePlanTypeSelect('zero_cost')}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePlanTypeSelect('zero_cost'); } }}
+          className="cursor-pointer rounded-xl p-4"
+          style={isSelected('zero_cost') ? TILE_SELECTED : TILE_UNSELECTED}
         >
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-body font-medium">Zero-cost — I pay nothing</p>
-              <p className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
-                Smartpay / Shift4, Tyro zero-cost
-              </p>
+          <p className="text-body font-medium" style={{ color: 'var(--color-text-primary)' }}>
+            I pass the fee to my customers and keep my full margin
+          </p>
+          <TechTag>no-cost EFTPOS · fee-free · surcharge model</TechTag>
+
+          <div
+            className="mt-3 rounded-lg p-3"
+            style={{ background: 'var(--color-background-secondary)' }}
+          >
+            <div className="flex items-center gap-2" style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>
+              <span
+                className="flex items-center justify-center rounded-full"
+                style={{ width: '18px', height: '18px', background: 'var(--color-border-secondary)', fontSize: '9px', flexShrink: 0 }}
+              >
+                C
+              </span>
+              <span>Customer pays sale price</span>
             </div>
-            <PillBadge variant={planType === 'zero_cost' ? 'amber' : 'grey'}>
-              Zero-cost
-            </PillBadge>
+            <div className="my-1 flex items-center gap-2" style={{ fontSize: '10px', color: 'var(--color-text-tertiary)' }}>
+              <span style={{ width: '18px', textAlign: 'center', flexShrink: 0 }}>↓</span>
+              <span>card fee passed through</span>
+            </div>
+            <div style={{ borderTop: '0.5px solid var(--color-border-tertiary)', margin: '4px 0' }} />
+            <div className="flex items-center gap-2" style={{ fontSize: '11px' }}>
+              <span
+                className="flex items-center justify-center rounded-full"
+                style={{ width: '18px', height: '18px', background: '#EBF6F3', color: '#0D3D32', fontSize: '9px', flexShrink: 0 }}
+              >
+                M
+              </span>
+              <span style={{ fontWeight: 500, color: '#0D3D32' }}>
+                I receive the full sale price
+              </span>
+            </div>
           </div>
-          <div className="mt-3 rounded-lg bg-gray-50 p-3 font-mono text-caption leading-relaxed">
-            <div className="flex justify-between">
-              <span>Your payment cost</span>
-              <span style={{ color: 'var(--color-text-success)' }}>$0.00</span>
+        </div>
+
+        {/* Blended tile */}
+        <div
+          role="radio"
+          aria-checked={isSelected('blended')}
+          aria-label="I pay different amounts for debit vs credit cards"
+          tabIndex={0}
+          onClick={() => handlePlanTypeSelect('blended')}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePlanTypeSelect('blended'); } }}
+          className="cursor-pointer rounded-xl p-4"
+          style={isSelected('blended') ? TILE_SELECTED : TILE_UNSELECTED}
+        >
+          <p className="text-body font-medium" style={{ color: 'var(--color-text-primary)' }}>
+            I pay different amounts for debit vs credit cards
+          </p>
+          <TechTag>blended · tiered rates</TechTag>
+
+          <div
+            className="mt-3 rounded-lg p-3"
+            style={{ background: 'var(--color-background-secondary)' }}
+          >
+            <div className="flex items-center justify-between" style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>
+              <span>Debit card transactions</span>
+              <MockBar width={36} />
             </div>
-            <div className="mt-1 text-xs" style={{ color: '#BA7517' }}>
-              Most affected by October reform
+            <div className="mt-1 flex items-center justify-between" style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>
+              <span>Credit card transactions</span>
+              <MockBar width={52} />
+            </div>
+            <div style={{ borderTop: '0.5px solid var(--color-border-tertiary)', margin: '6px 0' }} />
+            <div className="flex items-center justify-between" style={{ fontSize: '11px', fontWeight: 500, color: 'var(--color-text-primary)' }}>
+              <span>Total charged</span>
+              <MockBar width={60} />
             </div>
           </div>
-        </Card>
+        </div>
       </div>
 
-      {/* Zero-cost warning panel — three-state msfRateMode */}
-      {planType === 'zero_cost' && (
+      {/* ── Strategic rate tile (full-width, compact) ──────────── */}
+      <div
+        role="radio"
+        aria-checked={strategicSelected}
+        aria-label="My bank or PSP negotiated a custom rate for my business"
+        tabIndex={0}
+        onClick={handleStrategicSelect}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleStrategicSelect(); } }}
+        className="mt-3 flex cursor-pointer items-center justify-between rounded-xl px-4 py-3"
+        style={strategicSelected ? TILE_SELECTED : TILE_UNSELECTED}
+      >
+        <div>
+          <p className="text-body font-medium" style={{ color: 'var(--color-text-primary)' }}>
+            My bank or PSP negotiated a custom rate for my business
+          </p>
+          <p
+            className="font-mono"
+            style={{ fontSize: '10px', color: 'var(--color-text-tertiary)', marginTop: '2px', letterSpacing: '0.3px' }}
+          >
+            strategic · custom pricing · bespoke
+          </p>
+        </div>
+        <span
+          className="ml-4 flex-shrink-0 text-caption"
+          style={{ color: 'var(--color-text-tertiary)' }}
+        >
+          $50M+ · individually negotiated
+        </span>
+      </div>
+
+      {/* ── Don't know tile (dashed escape hatch) ──────────────── */}
+      <div
+        role="radio"
+        aria-checked={isDontKnowSelected}
+        aria-label="I'm not sure how I pay for card acceptance"
+        tabIndex={0}
+        onClick={handleDontKnow}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleDontKnow(); } }}
+        className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl px-4 py-3"
+        style={{
+          ...(isDontKnowSelected ? TILE_SELECTED : TILE_UNSELECTED),
+          borderStyle: isDontKnowSelected ? 'solid' : 'dashed',
+        }}
+      >
+        <span
+          className="flex items-center justify-center rounded-full flex-shrink-0"
+          style={{
+            width: '28px',
+            height: '28px',
+            background: isDontKnowSelected ? '#1A6B5A' : 'var(--color-background-secondary)',
+            color: isDontKnowSelected ? '#fff' : 'var(--color-text-tertiary)',
+            fontSize: '14px',
+            fontWeight: 500,
+          }}
+        >
+          ?
+        </span>
+        <div>
+          <p className="text-body font-medium" style={{ color: 'var(--color-text-primary)' }}>
+            I&apos;m not sure how I pay for card acceptance
+          </p>
+          <p className="text-caption" style={{ color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+            We&apos;ll use smart defaults and flag every assumption clearly on your results
+          </p>
+        </div>
+      </div>
+
+      {/* ── Zero-cost msfRateMode sub-panel (UNCHANGED logic) ── */}
+      {planType === 'zero_cost' && !isUnknown && (
         <div
           className="mt-4 rounded-lg"
           style={{
@@ -294,8 +491,8 @@ export function Step2PlanType({
         </div>
       )}
 
-      {/* Blended optional rate panel */}
-      {planType === 'blended' && (
+      {/* ── Blended optional rate panel (UNCHANGED logic) ──── */}
+      {planType === 'blended' && !isUnknown && (
         <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
           <p className="text-body-sm font-medium">
             Optional: enter your rates for a more accurate estimate
@@ -338,13 +535,56 @@ export function Step2PlanType({
         </div>
       )}
 
-      {/* CB-02: Expert panel */}
+      {/* ── Hairline divider ───────────────────────────────────── */}
+      <div style={{ borderTop: '0.5px solid var(--color-border-tertiary)', marginTop: '24px', marginBottom: '20px' }} />
+
+      {/* ── PSP selector (BELOW tiles) ─────────────────────────── */}
+      <p
+        className="font-medium uppercase"
+        style={{
+          fontSize: '11px',
+          letterSpacing: '2px',
+          color: 'var(--color-text-tertiary)',
+          marginBottom: '10px',
+        }}
+      >
+        Who processes your payments?
+      </p>
+      <div
+        role="radiogroup"
+        aria-label="Payment processor"
+        className="flex flex-wrap gap-2"
+      >
+        {PSP_OPTIONS.map((name) => {
+          const selected = psp === name;
+          return (
+            <button
+              key={name}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              tabIndex={selected || (psp === null && name === PSP_OPTIONS[0]) ? 0 : -1}
+              onClick={() => onPspChange(name)}
+              className="flex min-h-[44px] items-center justify-center rounded-pill px-4 text-caption cursor-pointer"
+              style={{
+                border: selected ? '1px solid #1A6B5A' : '0.5px solid var(--color-border-secondary)',
+                background: selected ? '#EBF6F3' : 'var(--color-background-primary)',
+                color: selected ? '#0D3D32' : 'var(--color-text-secondary)',
+                transition: 'all 100ms ease',
+              }}
+            >
+              {name}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Expert panel + Card mix (at bottom, before nav) ──── */}
       <ExpertPanel
         expertRates={merchantInput.expertRates}
         onChange={(rates) => onMerchantInputChange({ ...merchantInput, expertRates: rates })}
       />
 
-      {/* Card mix input */}
       <CardMixInput
         value={merchantInput.cardMix ?? {}}
         onChange={(mix: CardMixInputType) =>
@@ -352,55 +592,9 @@ export function Step2PlanType({
         }
       />
 
-      {/* CB-03: PSP selector */}
-      <div className="mt-6">
-        <p id="psp-selector-label" className="text-body-sm font-medium tracking-wide">
-          Who processes your payments?
-        </p>
-        <div
-          role="radiogroup"
-          aria-labelledby="psp-selector-label"
-          className="mt-2 flex flex-wrap gap-2"
-        >
-          {PSP_OPTIONS.map((name) => {
-            const selected = psp === name;
-            return (
-              <button
-                key={name}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                tabIndex={selected || (psp === null && name === PSP_OPTIONS[0]) ? 0 : -1}
-                onClick={() => onPspChange(name)}
-                className={`flex min-h-[44px] items-center justify-center rounded-lg px-4 text-caption transition-all duration-100 ${
-                  selected
-                    ? 'border border-accent bg-accent-light text-accent-dark'
-                    : 'border border-gray-200 text-gray-500 hover:border-gray-300'
-                }`}
-                style={{ borderWidth: selected ? '1px' : '0.5px' }}
-              >
-                {name}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Strategic rate text link */}
-      <div className="mt-3">
-        <button
-          type="button"
-          onClick={onStrategicRateSelected}
-          className="text-caption underline underline-offset-2"
-          style={{ color: 'var(--color-text-tertiary)' }}
-        >
-          Processing $50M+ in card payments? You may have a strategic rate
-        </button>
-      </div>
-
       <div className="mt-8 flex items-center justify-between">
         <TextButton onClick={onBack}>Back</TextButton>
-        <AccentButton onClick={onNext} disabled={!canProceed}>
+        <AccentButton onClick={handleNext} disabled={!canProceed}>
           Next
         </AccentButton>
       </div>
