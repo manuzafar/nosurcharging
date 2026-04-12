@@ -5,48 +5,107 @@ Detailed behaviour specs for every interactive component. Use alongside ux-desig
 
 ---
 
-## CB-01 — Plan Type Cards (Step 2)
+## CB-01 — Plan Type Tiles (Step 2)
 
-**Purpose:** Allow merchants to identify their pricing plan by recognising a statement format — not by knowing the jargon term.
+**Purpose:** Allow merchants to identify their pricing plan by recognising
+the STRUCTURE of their statement — not by knowing the jargon term.
+No specific rates, percentages, or dollar amounts appear in the mocks.
 
-**States:**
+**Layout:**
+```
+Row 1: 2-column primary grid
+  [Flat rate tile]          [Cost-plus tile]
+
+Row 2: 2-column secondary grid
+  [Zero-cost tile]          [Blended tile]
+
+Row 3: Full-width compact
+  [Strategic rate tile]
+
+Row 4: Dashed escape hatch
+  [Don't know tile]
+```
+
+**Selection states (ALL tiles, ALL PSP pills):**
 ```
 unselected:
   border: 0.5px solid var(--color-border-secondary)
   background: var(--color-background-primary)
-  badge: secondary background, secondary text
+  hover: border-color shifts to var(--color-border-primary)
 
 selected:
-  border: 1px solid #BA7517
-  background: var(--color-background-primary) [NO bg change]
-  badge: #FAEEDA background, #633806 text
+  border: 1.5px solid #1A6B5A (emerald)
+  background: #EBF6F3 (light emerald tint)
+  transition: border 120ms ease, background 120ms ease
 ```
 
-**Interaction:**
-- Click anywhere on the card to select
-- Only one card can be selected at a time
-- Selecting one deselects the other
-- Transition: 150ms ease on border-color and border-width
-
-**Mock statement content (verbatim):**
-
-Flat rate card:
+**PSP pill selected state:**
 ```
-Merchant service fee    1.40%       ← weight 500
-Total charged          $1,400.00    ← weight 500
+  border: 1px solid #1A6B5A
+  background: #EBF6F3
+  text colour: #0D3D32
 ```
 
-Cost-plus card:
-```
-Debit interchange      $312        ← secondary colour
-Credit interchange     $280        ← secondary colour
-Scheme fees             $88        ← secondary colour
-PSP margin              $95        ← green: #3B6D11 (negotiable)
-```
+**Tile content:**
+
+Flat rate tile (planType = 'flat'):
+- Headline: "I pay one percentage on every transaction"
+- Italic note: "One line — one percentage — covers everything"
+- Tech tag: `flat rate · blended MSF · single percentage`
+- Mock bill (structure only, grey bars, NO numbers):
+  - Row: "Merchant service fee" + grey bar (60px)
+  - Divider
+  - Row bold: "Total charged" + grey bar (52px)
+
+Cost-plus tile (planType = 'costplus'):
+- Headline: "I see a list of separate charges on my bill"
+- Italic note: "Multiple line items — different amounts for different costs"
+- Tech tag: `IC++ · cost-plus · interchange-plus`
+- Mock bill (grey bars, NO numbers):
+  - Row: "Payment processing costs" + grey bar (60px, widest)
+  - Row: "Payment method costs" + grey bar (52px)
+  - Row: "Card scheme fees" + grey bar (36px)
+  - Row: "Provider margin" + green bar (28px, #C0DD97)
+
+Zero-cost tile (planType = 'zero_cost'):
+- Headline: "I pass the fee to my customers and keep my full margin"
+- Tech tag: `no-cost EFTPOS · fee-free · surcharge model`
+- Mock (pass-through mechanic):
+  - Row [C avatar]: "Customer pays sale price"
+  - Row [arrow]: "card fee passed through" (muted)
+  - Divider
+  - Row [M avatar]: "I receive the full sale price" (bold, #0D3D32)
+
+Blended tile (planType = 'blended'):
+- Headline: "I pay different amounts for debit vs credit cards"
+- Tech tag: `blended · tiered rates`
+- Mock bill (grey bars, NO numbers):
+  - Row: "Debit card transactions" + grey bar (36px)
+  - Row: "Credit card transactions" + grey bar (52px)
+  - Divider
+  - Row bold: "Total charged" + grey bar (60px)
+
+Strategic rate tile (planType = 'strategic_rate'):
+- Full width, compact horizontal layout
+- Left: "My bank or PSP negotiated a custom rate for my business"
+- Left subtag: `strategic · custom pricing · bespoke`
+- Right: "$50M+ · individually negotiated" (muted)
+
+Don't know tile (maps internally to planType = 'flat'):
+- Dashed border (0.5px dashed)
+- [?] circle avatar
+- Main text: "I'm not sure how I pay for card acceptance"
+- Sub text: "We'll use smart defaults and flag every assumption"
+
+**Mock bar visual rules:**
+- All bars: height 8px, border-radius 3px
+- Colour: var(--color-border-secondary) for grey bars
+- Exception: "Provider margin" bar uses #C0DD97 (light green)
+- NO percentages, NO dollar amounts anywhere in any mock
 
 **Accessibility:**
 - `role="radio"`, `aria-checked`, keyboard navigable
-- Card title reads as the aria-label
+- Tile headline reads as the aria-label
 
 ---
 
@@ -96,7 +155,7 @@ All fields empty:
 **States:**
 ```
 default: 0.5px border-secondary, secondary text, primary bg
-selected: 1px #BA7517 border, #633806 text, #FAEEDA bg
+selected: 1px solid #1A6B5A, #0D3D32 text, #EBF6F3 bg
 ```
 
 **Validation:** Both plan type AND PSP must be selected to enable the Next button.
