@@ -16,9 +16,10 @@ import { TextButton } from '@/components/ui/TextButton';
 import { ExpertPanel } from './ExpertPanel';
 import { CardMixInput } from './CardMixInput';
 import type { MerchantInputOverrides, CardMixInput as CardMixInputType } from '@nosurcharging/calculations/types';
+import { PSP_PUBLISHED_RATES, PSP_RATES_AS_OF } from '@nosurcharging/calculations/constants/psp-rates';
 
 const PSP_OPTIONS = [
-  'Stripe', 'Square', 'Tyro', 'CommBank', 'ANZ', 'Westpac', 'eWAY', 'Adyen', 'Other',
+  'Stripe', 'Square', 'Tyro', 'CommBank', 'ANZ', 'Westpac', 'Zeller', 'eWAY', 'Adyen', 'Other',
 ] as const;
 
 interface Step2PlanTypeProps {
@@ -30,6 +31,11 @@ interface Step2PlanTypeProps {
   psp: string | null;
   merchantInput: MerchantInputOverrides;
   volume?: number;
+  // SPRINT_BRIEF.md Sprint 2 UX-06: flat-rate MSF is pre-filled from
+  // PSP_PUBLISHED_RATES when the merchant selects a PSP. Displayed in an
+  // inline editable field for the flat plan tile only.
+  msfRate: number;
+  onMsfRateChange: (rate: number) => void;
   onPlanTypeChange: (pt: 'flat' | 'costplus' | 'blended' | 'zero_cost', unknown?: boolean) => void;
   onMsfRateModeChange: (mode: 'unselected' | 'market_estimate' | 'custom') => void;
   onCustomMSFRateChange: (rate: number | null) => void;
@@ -95,6 +101,8 @@ export function Step2PlanType({
   psp,
   merchantInput,
   volume,
+  msfRate,
+  onMsfRateChange,
   onPlanTypeChange,
   onMsfRateModeChange,
   onCustomMSFRateChange,
@@ -578,6 +586,62 @@ export function Step2PlanType({
           );
         })}
       </div>
+
+      {/* ── Flat-rate MSF pre-fill (SPRINT_BRIEF.md Sprint 2 UX-06) ──────
+          Shown only for flat plans once the merchant picks a PSP. The rate
+          is pre-filled from PSP_PUBLISHED_RATES — the merchant confirms or
+          edits. Editing switches the source badge to "Your input" and locks
+          out subsequent PSP-driven overwrites (handled in parent state). */}
+      {planType === 'flat' && !isUnknown && psp && PSP_PUBLISHED_RATES[psp] && (
+        <div
+          className="mt-4 rounded-lg"
+          style={{
+            border: '0.5px solid var(--color-border-secondary)',
+            background: 'var(--color-background-secondary)',
+            padding: '16px',
+          }}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-body-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
+              Your {psp} rate
+            </p>
+            <span
+              className="inline-block rounded-pill text-micro font-medium"
+              style={{
+                padding: '2px 8px',
+                background: 'var(--color-background-primary)',
+                color: 'var(--color-text-tertiary)',
+                border: '0.5px solid var(--color-border-tertiary)',
+              }}
+            >
+              {psp} standard rate — confirm or update
+            </span>
+          </div>
+          <p className="mt-1 text-caption" style={{ color: 'var(--color-text-secondary)' }}>
+            Published {PSP_RATES_AS_OF}. Verify with your PSP for your specific rate.
+          </p>
+          <div className="mt-3 flex items-center gap-2">
+            <input
+              type="number"
+              step="0.01"
+              min="0.1"
+              max="5"
+              value={Number((msfRate * 100).toFixed(2))}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                if (!isNaN(v) && v > 0) onMsfRateChange(v / 100);
+              }}
+              className="w-24 rounded-lg px-2 py-1 font-mono text-body-sm outline-none min-h-[40px]"
+              style={{
+                border: '0.5px solid var(--color-border-secondary)',
+                background: 'var(--color-background-primary)',
+                color: 'var(--color-text-primary)',
+              }}
+            />
+            <span className="text-body-sm" style={{ color: 'var(--color-text-tertiary)' }}>%</span>
+          </div>
+        </div>
+      )}
 
       {/* ── Expert panel + Card mix (at bottom, before nav) ──── */}
       <ExpertPanel

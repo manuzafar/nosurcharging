@@ -19,6 +19,8 @@ describe('Step2PlanType', () => {
     blendedCreditRate: null as number | null,
     psp: null as string | null,
     merchantInput: {},
+    msfRate: 0.014,
+    onMsfRateChange: vi.fn(),
     onPlanTypeChange,
     onMsfRateModeChange: vi.fn(),
     onCustomMSFRateChange: vi.fn(),
@@ -99,9 +101,9 @@ describe('Step2PlanType', () => {
     expect(onPspChange).toHaveBeenCalledWith('Stripe');
   });
 
-  it('all 9 PSP options render', () => {
+  it('all 10 PSP options render', () => {
     render(<Step2PlanType {...defaultProps} />);
-    const psps = ['Stripe', 'Square', 'Tyro', 'CommBank', 'ANZ', 'Westpac', 'eWAY', 'Adyen', 'Other'];
+    const psps = ['Stripe', 'Square', 'Tyro', 'CommBank', 'ANZ', 'Westpac', 'Zeller', 'eWAY', 'Adyen', 'Other'];
     for (const psp of psps) {
       expect(screen.getByRole('radio', { name: psp })).toBeInTheDocument();
     }
