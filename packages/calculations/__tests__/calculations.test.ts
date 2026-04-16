@@ -41,7 +41,7 @@ function makeInputs(overrides: Partial<ResolvedAssessmentInputs>): ResolvedAsses
     avgTransactionValue: 65,
     expertRates: {
       debitCents: 9,   // 9 cents
-      creditPct: 0.52, // 0.52%
+      creditPct: 0.47, // 0.47% (RBA confirmed market average, Conclusions Paper March 2026)
       marginPct: 0.10, // 0.10%
     },
     resolutionTrace: {},
@@ -52,7 +52,7 @@ function makeInputs(overrides: Partial<ResolvedAssessmentInputs>): ResolvedAsses
 
 // ══════════════════════════════════════════════════════════════════
 // Scenario 1 — Category 1: $2M, cost-plus, not surcharging
-// Ground truth: plSwing = +$1,724.62
+// Ground truth (creditPct default = 0.47%): plSwing = +$1,350.00
 // ══════════════════════════════════════════════════════════════════
 
 describe('Scenario 1 — Cat 1: $2M, cost-plus, not surcharging', () => {
@@ -72,28 +72,28 @@ describe('Scenario 1 — Cat 1: $2M, cost-plus, not surcharging', () => {
     expect(result.debitSaving).toBeCloseTo(160.00, 1);
   });
 
-  it('calculates creditSaving = $1,540.00', () => {
-    expect(result.creditSaving).toBeCloseTo(1540.0, 1);
+  it('calculates creditSaving = $1,190.00', () => {
+    expect(result.creditSaving).toBeCloseTo(1190.0, 1);
   });
 
-  it('calculates icSaving = $1,700.00', () => {
-    expect(result.icSaving).toBeCloseTo(1700.00, 1);
+  it('calculates icSaving = $1,350.00', () => {
+    expect(result.icSaving).toBeCloseTo(1350.00, 1);
   });
 
-  it('calculates grossCOA = $9,401.54 (UNCHANGED)', () => {
-    expect(result.grossCOA).toBeCloseTo(9401.54, 1);
+  it('calculates grossCOA = $9,051.54', () => {
+    expect(result.grossCOA).toBeCloseTo(9051.54, 1);
   });
 
-  it('calculates netToday = $9,401.54', () => {
-    expect(result.netToday).toBeCloseTo(9401.54, 1);
+  it('calculates netToday = $9,051.54', () => {
+    expect(result.netToday).toBeCloseTo(9051.54, 1);
   });
 
   it('calculates octNet = $7,701.54', () => {
     expect(result.octNet).toBeCloseTo(7701.54, 1);
   });
 
-  it('calculates plSwing = +$1,700.00', () => {
-    expect(result.plSwing).toBeCloseTo(1700.00, 1);
+  it('calculates plSwing = +$1,350.00', () => {
+    expect(result.plSwing).toBeCloseTo(1350.00, 1);
   });
 
   it('calculates todayScheme = $2,100.00', () => {
@@ -128,9 +128,9 @@ describe('Scenario 2 — Cat 2: $2M, flat rate, not surcharging', () => {
     expect(result.category).toBe(2);
   });
 
-  it('icSaving = $1,700.00 (same as Scenario 1)', () => {
+  it('icSaving = $1,350.00 (same as Scenario 1)', () => {
     const result = calculateMetrics({ ...baseInputs, passThrough: 0 }, PRE_REFORM);
-    expect(result.icSaving).toBeCloseTo(1700.00, 1);
+    expect(result.icSaving).toBeCloseTo(1350.00, 1);
   });
 
   it('at 0% pass-through: plSwing = $0.00', () => {
@@ -138,14 +138,14 @@ describe('Scenario 2 — Cat 2: $2M, flat rate, not surcharging', () => {
     expect(result.plSwing).toBeCloseTo(0.0, 1);
   });
 
-  it('at 45% pass-through: plSwing = +$765.00', () => {
+  it('at 45% pass-through: plSwing = +$607.50', () => {
     const result = calculateMetrics({ ...baseInputs, passThrough: 0.45 }, PRE_REFORM);
-    expect(result.plSwing).toBeCloseTo(765.00, 1);
+    expect(result.plSwing).toBeCloseTo(607.50, 1);
   });
 
-  it('at 100% pass-through: plSwing = +$1,700.00', () => {
+  it('at 100% pass-through: plSwing = +$1,350.00', () => {
     const result = calculateMetrics({ ...baseInputs, passThrough: 1.0 }, PRE_REFORM);
-    expect(result.plSwing).toBeCloseTo(1700.00, 1);
+    expect(result.plSwing).toBeCloseTo(1350.00, 1);
   });
 
   it('at 100% pass-through: plSwing === icSaving (mathematical invariant)', () => {
@@ -156,7 +156,7 @@ describe('Scenario 2 — Cat 2: $2M, flat rate, not surcharging', () => {
 
 // ══════════════════════════════════════════════════════════════════
 // Scenario 3 — Category 3: $10M, cost-plus, surcharging 1.2%
-// Ground truth: plSwing = -$111,376.92
+// Ground truth (creditPct default = 0.47%): plSwing = -$101,250.00
 // ══════════════════════════════════════════════════════════════════
 
 describe('Scenario 3 — Cat 3: $10M, cost-plus, surcharging 1.2%', () => {
@@ -176,28 +176,28 @@ describe('Scenario 3 — Cat 3: $10M, cost-plus, surcharging 1.2%', () => {
     expect(result.debitSaving).toBeCloseTo(800.00, 1);
   });
 
-  it('calculates icSaving = $8,500.00', () => {
-    expect(result.icSaving).toBeCloseTo(8500.00, 1);
+  it('calculates icSaving = $6,750.00', () => {
+    expect(result.icSaving).toBeCloseTo(6750.00, 1);
   });
 
-  it('calculates grossCOA = $47,007.69 (UNCHANGED)', () => {
-    expect(result.grossCOA).toBeCloseTo(47007.69, 1);
+  it('calculates grossCOA = $45,257.69', () => {
+    expect(result.grossCOA).toBeCloseTo(45257.69, 1);
   });
 
   it('calculates surchargeRevenue = $108,000', () => {
     expect(result.surchargeRevenue).toBeCloseTo(108000.00, 1);
   });
 
-  it('calculates netToday = -$60,992.31', () => {
-    expect(result.netToday).toBeCloseTo(-60992.31, 1);
+  it('calculates netToday = -$62,742.31', () => {
+    expect(result.netToday).toBeCloseTo(-62742.31, 1);
   });
 
   it('calculates octNet = $38,507.69', () => {
     expect(result.octNet).toBeCloseTo(38507.69, 1);
   });
 
-  it('calculates plSwing = -$99,500.00', () => {
-    expect(result.plSwing).toBeCloseTo(-99500.00, 1);
+  it('calculates plSwing = -$101,250.00', () => {
+    expect(result.plSwing).toBeCloseTo(-101250.00, 1);
   });
 
   it('scheme fees invariant: todayScheme === oct2026Scheme', () => {
@@ -208,7 +208,7 @@ describe('Scenario 3 — Cat 3: $10M, cost-plus, surcharging 1.2%', () => {
 
 // ══════════════════════════════════════════════════════════════════
 // Scenario 4 — Category 4: $3M, flat rate, surcharging 1.2%, 45% PT
-// Ground truth: plSwing = -$34,835.89
+// Ground truth (creditPct default = 0.47%): plSwing = -$31,488.75
 // ══════════════════════════════════════════════════════════════════
 
 describe('Scenario 4 — Cat 4: $3M, flat rate, surcharging 1.2%, 45% PT', () => {
@@ -230,8 +230,8 @@ describe('Scenario 4 — Cat 4: $3M, flat rate, surcharging 1.2%, 45% PT', () =>
     expect(result.debitSaving).toBeCloseTo(240.00, 1);
   });
 
-  it('calculates icSaving = $2,550.00', () => {
-    expect(result.icSaving).toBeCloseTo(2550.00, 1);
+  it('calculates icSaving = $2,025.00', () => {
+    expect(result.icSaving).toBeCloseTo(2025.00, 1);
   });
 
   it('calculates surchargeRevenue = $32,400', () => {
@@ -242,12 +242,12 @@ describe('Scenario 4 — Cat 4: $3M, flat rate, surcharging 1.2%, 45% PT', () =>
     expect(result.netToday).toBeCloseTo(9600.00, 1);
   });
 
-  it('calculates octNet = $40,852.50', () => {
-    expect(result.octNet).toBeCloseTo(40852.50, 1);
+  it('calculates octNet = $41,088.75', () => {
+    expect(result.octNet).toBeCloseTo(41088.75, 1);
   });
 
-  it('calculates plSwing = -$31,252.50', () => {
-    expect(result.plSwing).toBeCloseTo(-31252.50, 1);
+  it('calculates plSwing = -$31,488.75', () => {
+    expect(result.plSwing).toBeCloseTo(-31488.75, 1);
   });
 });
 
@@ -354,6 +354,57 @@ describe('Scenario 6 — Surcharge network share', () => {
     });
     const result = calculateMetrics(inputs, PRE_REFORM);
     expect(result.surchargeRevenue).toBe(0);
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════
+// Scenario 6b — Café AVT=$35 lower-of clause
+// Confirms lower-of formula produces material debit saving for cafés
+// At AVT=$35: projected rate = min(8c, 0.16% × 35) = min(8c, 5.6c) = 5.6c
+//             current rate   = min(9c, 0.20% × 35) = min(9c, 7.0c) = 7.0c
+//             saving per txn = 1.4c (not the flat 1c at AVT≥$50)
+// ══════════════════════════════════════════════════════════════════
+
+describe('Scenario 6b — Café AVT=$35 lower-of clause', () => {
+  const inputs = makeInputs({
+    volume: 6_000_000,
+    planType: 'costplus',
+    surcharging: false,
+    surchargeRate: 0,
+    avgTransactionValue: 35,
+    industry: 'cafe',
+  });
+  const result = calculateMetrics(inputs, PRE_REFORM);
+
+  it('debitSaving > $1,100 (confirms lower-of active, not flat 1c saving)', () => {
+    expect(result.debitSaving).toBeGreaterThan(1100);
+  });
+
+  it('debitSaving ≈ $1,248.00 (6M × 0.52/35 × 1.4c)', () => {
+    // visaMcDebitTxns = 6,000,000 × 0.52 / 35 = 89,142.86
+    // saving/txn = 0.014
+    // debitSaving = 89,142.86 × 0.014 = $1,248.00
+    expect(result.debitSaving).toBeCloseTo(1248.00, 0);
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════
+// Lower-of kink invariants — verify formula behaves correctly around $50
+// ══════════════════════════════════════════════════════════════════
+
+describe('Lower-of kink invariants', () => {
+  it('debitSaving at AVT=$25 > debitSaving at AVT=$65 (kink active below $50)', () => {
+    const below = calculateMetrics(makeInputs({ avgTransactionValue: 25 }), PRE_REFORM);
+    const above = calculateMetrics(makeInputs({ avgTransactionValue: 65 }), PRE_REFORM);
+    expect(below.debitSaving).toBeGreaterThan(above.debitSaving);
+  });
+
+  it('at AVT=$50, per-txn saving equals above-kink (both yield 1c per txn)', () => {
+    const atKink = calculateMetrics(makeInputs({ avgTransactionValue: 50 }), PRE_REFORM);
+    const above  = calculateMetrics(makeInputs({ avgTransactionValue: 65 }), PRE_REFORM);
+    // At AVT≥$50 the lower-of is not binding (cents caps win).
+    // Saving/txn is 1c in both cases; total debitSaving scales inversely with AVT.
+    expect(atKink.debitSaving).toBeCloseTo(above.debitSaving * (65 / 50), 0);
   });
 });
 

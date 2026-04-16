@@ -6,7 +6,7 @@
 // It never decides where values come from.
 
 import { RULE_SCHEMA } from './schema';
-import { AU_SCHEME_CARD_MIX_DEFAULTS, AU_INDUSTRY_CARD_MIX } from '../constants/au';
+import { AU_SCHEME_CARD_MIX_DEFAULTS, AU_INDUSTRY_CARD_MIX, AU_AVG_TXN_BY_INDUSTRY } from '../constants/au';
 import type {
   RuleSource,
   ResolutionTrace,
@@ -207,6 +207,7 @@ export function resolveAssessmentInputs(
     { source: 'invoice_parsed', value: ctx.invoiceParsed?.avgTransactionValue },
     { source: 'env_var', value: parseEnvFloat(`CALC_AVG_TXN_${raw.industry.toUpperCase()}`) },
     { source: 'env_var', value: parseEnvFloat('CALC_AVG_TXN_DEFAULT') },
+    { source: 'industry_default', value: AU_AVG_TXN_BY_INDUSTRY[raw.industry] ?? null },
     { source: 'regulatory_constant', value: 65 },
   ]);
   trace.avgTransactionValue = {
@@ -216,7 +217,7 @@ export function resolveAssessmentInputs(
   };
 
   // Resolve expert interchange rates
-  // Default debitCents = 9 (RBA current average), creditPct = 0.52 (RBA current)
+  // Default debitCents = 9 (RBA current average), creditPct = 0.47 (RBA confirmed market average)
   // marginPct = 0.10 (10bps assumed PSP margin)
   const debitCents = resolveValue('expertRates.debitCents', [
     { source: 'merchant_input', value: ctx.merchantInput?.expertRates?.debitCents },
@@ -224,7 +225,7 @@ export function resolveAssessmentInputs(
   ]);
   const creditPct = resolveValue('expertRates.creditPct', [
     { source: 'merchant_input', value: ctx.merchantInput?.expertRates?.creditPct },
-    { source: 'regulatory_constant', value: 0.52 },
+    { source: 'regulatory_constant', value: 0.47 },
   ]);
   const marginPct = resolveValue('expertRates.marginPct', [
     { source: 'merchant_input', value: ctx.merchantInput?.expertRates?.marginPct },
