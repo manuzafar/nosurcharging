@@ -201,6 +201,7 @@ function ResultsContent() {
             msfRate={originalRaw.msfRate}
             surcharging={originalRaw.surcharging}
             surchargeRate={originalRaw.surchargeRate}
+            assessmentId={assessmentId ?? undefined}
           />
         </div>
 

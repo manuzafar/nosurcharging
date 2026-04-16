@@ -103,15 +103,21 @@ export function AssumptionsPanel({
   if (outputs.debitSaving > 0) {
     formulaRows.push({
       label: 'Debit IC saving (October)',
-      formula: '9c → 8c per debit transaction',
+      // Lower-of clause: the new cap is min(8c, 0.16% × avg sale) — accurate
+      // both above and below the $50 kink point.
+      formula: 'min(8c, 0.16% × avg sale) per debit transaction',
       value: formatCurrency(outputs.debitSaving, '+'),
       valueColour: 'var(--color-text-success)',
     });
   }
   if (outputs.creditSaving > 0) {
+    // Derive current credit rate from the resolution trace so the formula
+    // row reflects the actual rate used in the calculation.
+    const creditTrace = resolutionTrace['expertRates.creditPct'];
+    const creditPct = creditTrace?.value ?? 0.47;
     formulaRows.push({
       label: 'Credit IC saving (October)',
-      formula: '0.52% → 0.30% on credit volume',
+      formula: `${formatPct(creditPct / 100)} → 0.30% on credit volume`,
       value: formatCurrency(outputs.creditSaving, '+'),
       valueColour: 'var(--color-text-success)',
     });
