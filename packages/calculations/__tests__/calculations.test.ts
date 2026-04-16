@@ -645,3 +645,63 @@ describe('Edge cases and invariants', () => {
     }
   });
 });
+
+// ══════════════════════════════════════════════════════════════════
+// Sprint 3 — Minimum monthly fee floor
+// Many PSP contracts include a minimum monthly charge. For low-volume
+// merchants, this floor is what they actually pay — not volume × rate.
+// ══════════════════════════════════════════════════════════════════
+
+describe('Sprint 3 — minMonthlyFee floor on annualMSF', () => {
+  const LOW_VOLUME = 100_000;  // $100k × 1.4% = $1,400/year without floor
+
+  it('no floor: annualMSF = volume × rate', () => {
+    const inputs = makeInputs({
+      volume: LOW_VOLUME,
+      planType: 'flat',
+      msfRate: 0.014,
+    });
+    const result = calculateMetrics(inputs, PRE_REFORM);
+    expect(result.annualMSF).toBeCloseTo(1400.0, 1);
+  });
+
+  it('floor above base: annualMSF = minMonthlyFee × 12', () => {
+    const inputs = makeInputs({
+      volume: LOW_VOLUME,
+      planType: 'flat',
+      msfRate: 0.014,
+      minMonthlyFee: 200, // $200/month × 12 = $2,400/year > $1,400 base
+    });
+    const result = calculateMetrics(inputs, PRE_REFORM);
+    expect(result.annualMSF).toBeCloseTo(2400.0, 1);
+  });
+
+  it('floor below base: annualMSF = volume × rate (base wins)', () => {
+    const inputs = makeInputs({
+      volume: LOW_VOLUME,
+      planType: 'flat',
+      msfRate: 0.014,
+      minMonthlyFee: 50, // $600/year < $1,400 base
+    });
+    const result = calculateMetrics(inputs, PRE_REFORM);
+    expect(result.annualMSF).toBeCloseTo(1400.0, 1);
+  });
+
+  it('floor with zero volume: annualMSF = minMonthlyFee × 12', () => {
+    const inputs = makeInputs({
+      volume: 0,
+      planType: 'flat',
+      msfRate: 0.014,
+      minMonthlyFee: 30,
+    });
+    const result = calculateMetrics(inputs, PRE_REFORM);
+    expect(result.annualMSF).toBeCloseTo(360.0, 1);
+  });
+
+  it('undefined minMonthlyFee behaves identically to absent (no floor applied)', () => {
+    const baseInputs = makeInputs({ volume: LOW_VOLUME, planType: 'flat', msfRate: 0.014 });
+    const a = calculateMetrics(baseInputs, PRE_REFORM);
+    const b = calculateMetrics({ ...baseInputs, minMonthlyFee: undefined }, PRE_REFORM);
+    expect(a.annualMSF).toBe(b.annualMSF);
+  });
+});

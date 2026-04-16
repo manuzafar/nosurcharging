@@ -159,6 +159,15 @@ function resolveCardMix(
       label: sourceLabel(components[key].source),
     };
   }
+  // Commercial has no merchant_input source in the Phase 1 card mix form —
+  // always 0 from the regulatory default. Tracked so AssumptionsPanel can
+  // render the CALC-04 copy advising B2B merchants to input their actual
+  // commercial share via the RefinementPanel.
+  trace['cardMix.commercial'] = {
+    source: 'regulatory_constant',
+    value: raw.commercial,
+    label: sourceLabel('regulatory_constant'),
+  };
 
   // Aggregate into the high-level shares the engine expects
   return {
@@ -276,6 +285,17 @@ export function resolveAssessmentInputs(
   // Normalise planType: strategic_rate should never reach here, but defensive
   const resolvedPlanType = raw.planType === 'strategic_rate' ? 'flat' as const : raw.planType;
 
+  // Min monthly fee — merchant_input only (Phase 1). Trace recorded so
+  // AssumptionsPanel / RefinementPanel know whether the floor was user-supplied.
+  const minMonthlyFee = ctx.merchantInput?.minMonthlyFee;
+  if (minMonthlyFee !== undefined && minMonthlyFee > 0) {
+    trace['minMonthlyFee'] = {
+      source: 'merchant_input',
+      value: minMonthlyFee,
+      label: sourceLabel('merchant_input'),
+    };
+  }
+
   return {
     volume: raw.volume,
     planType: resolvedPlanType,
@@ -298,5 +318,6 @@ export function resolveAssessmentInputs(
     estimatedMSFRate,
     debitRate,
     creditRate,
+    minMonthlyFee,
   };
 }

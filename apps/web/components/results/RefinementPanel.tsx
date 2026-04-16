@@ -35,6 +35,7 @@ interface EditState {
   creditPct?: number;          // percentage points (e.g. 0.47 means 0.47%)
   commercialShare?: number;    // proportion (e.g. 0.30 means 30%)
   monthlyDebitTxns?: number;
+  minMonthlyFee?: number;      // dollars/month — flat-rate merchants only
 }
 
 type EditKey = keyof EditState;
@@ -93,11 +94,19 @@ function applyEdits(
     };
   }
 
+  // Min monthly fee — flat-rate floor on annualMSF. Undefined when the merchant
+  // hasn't entered one; engine then uses volume × rate without a floor.
+  const minMonthlyFee =
+    edits.minMonthlyFee !== undefined && edits.minMonthlyFee > 0
+      ? edits.minMonthlyFee
+      : inputs.minMonthlyFee;
+
   return {
     ...inputs,
     avgTransactionValue,
     expertRates: { ...inputs.expertRates, creditPct },
     cardMix,
+    minMonthlyFee,
   };
 }
 
@@ -294,6 +303,17 @@ export function RefinementPanel({
   const monthlyTxnsDelta = monthlyTxnsEdited
     ? computeFieldDelta('monthlyDebitTxns', Number(monthlyTxnsValue) || 0, initialResult, inputs)
     : { label: '', positive: true };
+
+  // ── Min monthly fee field (flat/blended only) ──
+  // Lots of PSP contracts include a minimum monthly charge. When volume × rate
+  // is below that floor, the merchant pays the minimum instead. Surfacing this
+  // sharpens the annualMSF number for low-volume merchants.
+  const showMinFeeField = inputs.planType === 'flat' || inputs.planType === 'blended';
+  const minFeeEdited = edits.minMonthlyFee !== undefined;
+  const minFeeValue = edits.minMonthlyFee ?? '';
+  const minFeeBadge = minFeeEdited
+    ? { label: 'Your input', emerald: true }
+    : { label: 'Not set', emerald: false };
 
   // ── Helpers to update edits ───────────────────────────────────
   const updateEdit = <K extends EditKey>(key: K, value: EditState[K]) => {
@@ -505,6 +525,40 @@ export function RefinementPanel({
           <span className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>per month</span>
         </div>
       </FieldCard>
+
+      {/* ── Field 5: Minimum monthly fee (flat/blended only) ─── */}
+      {showMinFeeField && (
+        <FieldCard
+          label="Minimum monthly fee (optional)"
+          badge={minFeeBadge}
+          chip={<ImpactChip label="Floors your annual MSF" tone="neutral" />}
+          delta={{ label: '', positive: true }}
+          hint="Many PSP contracts include a minimum monthly charge. Check your last few statements for a line like 'Minimum monthly fee'."
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-body-sm" style={{ color: 'var(--color-text-tertiary)' }}>$</span>
+            <input
+              type="number"
+              min={0}
+              step={1}
+              value={minFeeValue}
+              placeholder="e.g. 25"
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                if (isNaN(v) || v <= 0) clearEdit('minMonthlyFee');
+                else updateEdit('minMonthlyFee', v);
+              }}
+              className="w-24 rounded-lg px-2 py-1 font-mono text-body-sm outline-none min-h-[40px]"
+              style={{
+                border: '0.5px solid var(--color-border-secondary)',
+                background: 'var(--color-background-primary)',
+                color: 'var(--color-text-primary)',
+              }}
+            />
+            <span className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>per month</span>
+          </div>
+        </FieldCard>
+      )}
 
       <p className="mt-4 text-micro" style={{ color: 'var(--color-text-tertiary)' }}>
         Your edits update this page only. We never share or store what you type here.

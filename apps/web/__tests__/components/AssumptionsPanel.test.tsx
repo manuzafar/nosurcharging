@@ -167,4 +167,46 @@ describe('AssumptionsPanel', () => {
       screen.getByText(/RBA Statistical Tables C1 and C2/),
     ).toBeInTheDocument();
   });
+
+  // ── Sprint 3 — commercial card share + surcharge conservative note ──
+
+  it('shows commercial-share copy when commercial is 0 and default', async () => {
+    const trace: ResolutionTrace = {
+      ...MOCK_TRACE,
+      'cardMix.commercial': { source: 'regulatory_constant', value: 0, label: 'RBA average' },
+    };
+    render(<AssumptionsPanel {...FLAT_PROPS} resolutionTrace={trace} />);
+    await user.click(screen.getByText(/Show me exactly how this is calculated/i));
+    expect(
+      screen.getByText(/Commercial card share assumed 0%/i),
+    ).toBeInTheDocument();
+  });
+
+  it('hides commercial-share copy when merchant supplied a non-zero share', async () => {
+    const trace: ResolutionTrace = {
+      ...MOCK_TRACE,
+      'cardMix.commercial': { source: 'merchant_input', value: 0.2, label: 'Your input' },
+    };
+    render(<AssumptionsPanel {...FLAT_PROPS} resolutionTrace={trace} />);
+    await user.click(screen.getByText(/Show me exactly how this is calculated/i));
+    expect(
+      screen.queryByText(/Commercial card share assumed 0%/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows surcharge conservative note for Cat 4 (flat + surcharging)', async () => {
+    render(<AssumptionsPanel {...FLAT_PROPS} />); // Cat 4
+    await user.click(screen.getByText(/Show me exactly how this is calculated/i));
+    expect(
+      screen.getByText(/Your result is therefore a conservative estimate/i),
+    ).toBeInTheDocument();
+  });
+
+  it('hides surcharge conservative note for Cat 1 / Cat 2', async () => {
+    render(<AssumptionsPanel {...COSTPLUS_PROPS} />); // Cat 1
+    await user.click(screen.getByText(/Show me exactly how this is calculated/i));
+    expect(
+      screen.queryByText(/Your result is therefore a conservative estimate/i),
+    ).not.toBeInTheDocument();
+  });
 });
