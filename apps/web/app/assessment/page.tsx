@@ -19,6 +19,7 @@ import { RevealScreen } from '@/components/assessment/RevealScreen';
 import { trackEvent } from '@/lib/analytics';
 import type { MerchantInputOverrides } from '@nosurcharging/calculations/types';
 import type { AssessmentFormData, AssessmentResult } from '@/actions/submitAssessment';
+import { PSP_PUBLISHED_RATES } from '@nosurcharging/calculations/constants/psp-rates';
 
 type Phase = 'disclaimer' | 'step1' | 'step2' | 'step3' | 'step4' | 'reveal' | 'error';
 
@@ -44,6 +45,14 @@ export default function AssessmentPage() {
   const [blendedCreditRate, setBlendedCreditRate] = useState<number | null>(null);
   const [strategicRateSelected, setStrategicRateSelected] = useState(false);
   const [planTypeUnknown, setPlanTypeUnknown] = useState(false);
+
+  // Flat-rate MSF — SPRINT_BRIEF.md Sprint 2 UX-06. Default 1.4% (market
+  // average) until the merchant picks a PSP, at which point we pre-fill
+  // from PSP_PUBLISHED_RATES. Merchant can confirm or override.
+  // `msfRateUserEdited` stays true once the merchant types a value so that
+  // subsequent PSP changes don't overwrite their input.
+  const [msfRate, setMsfRate] = useState(0.014);
+  const [msfRateUserEdited, setMsfRateUserEdited] = useState(false);
 
   // Tracking flags — fire once per session, not on every keystroke
   const expertModeTracked = useRef(false);
@@ -78,7 +87,7 @@ export default function AssessmentPage() {
   const buildFormData = (): AssessmentFormData => ({
     volume,
     planType: planType!,
-    msfRate: 0.014,
+    msfRate,
     surcharging: surcharging!,
     surchargeRate,
     surchargeNetworks,
@@ -252,7 +261,19 @@ export default function AssessmentPage() {
                 }}
                 onPspChange={(name) => {
                   setPsp(name);
+                  // SPRINT_BRIEF.md Sprint 2 UX-06: pre-fill flat-rate MSF
+                  // from published rates. Only overwrite if the merchant
+                  // hasn't manually edited the field — their input wins.
+                  if (!msfRateUserEdited) {
+                    const published = PSP_PUBLISHED_RATES[name];
+                    if (published) setMsfRate(published.standardMsf);
+                  }
                   trackEvent('PSP selected', { psp: name });
+                }}
+                msfRate={msfRate}
+                onMsfRateChange={(rate) => {
+                  setMsfRate(rate);
+                  setMsfRateUserEdited(true);
                 }}
                 onMerchantInputChange={(input) => {
                   // FIX 5: Expert mode activated — fire once when expert rates first provided

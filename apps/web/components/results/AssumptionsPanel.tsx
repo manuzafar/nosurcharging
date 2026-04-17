@@ -103,15 +103,21 @@ export function AssumptionsPanel({
   if (outputs.debitSaving > 0) {
     formulaRows.push({
       label: 'Debit IC saving (October)',
-      formula: '9c → 8c per debit transaction',
+      // Lower-of clause: the new cap is min(8c, 0.16% × avg sale) — accurate
+      // both above and below the $50 kink point.
+      formula: 'min(8c, 0.16% × avg sale) per debit transaction',
       value: formatCurrency(outputs.debitSaving, '+'),
       valueColour: 'var(--color-text-success)',
     });
   }
   if (outputs.creditSaving > 0) {
+    // Derive current credit rate from the resolution trace so the formula
+    // row reflects the actual rate used in the calculation.
+    const creditTrace = resolutionTrace['expertRates.creditPct'];
+    const creditPct = creditTrace?.value ?? 0.47;
     formulaRows.push({
       label: 'Credit IC saving (October)',
-      formula: '0.52% → 0.30% on credit volume',
+      formula: `${formatPct(creditPct / 100)} → 0.30% on credit volume`,
       value: formatCurrency(outputs.creditSaving, '+'),
       valueColour: 'var(--color-text-success)',
     });
@@ -226,6 +232,52 @@ export function AssumptionsPanel({
             regulated by the RBA reform. Already included in your {pspName}{' '}
             {isFlatRate ? 'flat rate today' : 'bill today'}.
           </p>
+
+          {/* CALC-05: surcharge conservative note — Cat 3/4 only */}
+          {(outputs.category === 3 || outputs.category === 4) && (
+            <p
+              className="mt-2"
+              style={{
+                fontSize: '11px',
+                color: 'var(--color-text-tertiary)',
+                fontStyle: 'italic',
+                lineHeight: 1.6,
+              }}
+            >
+              Surcharge revenue estimated from total card volume at your
+              surcharge rate. Your actual loss may be slightly smaller — some
+              customers may avoid the surcharge by paying cash, so actual
+              surcharge revenue is slightly less than the arithmetic. Your
+              result is therefore a conservative estimate.
+            </p>
+          )}
+
+          {/* CALC-04: commercial card share copy — shown when default (0%) */}
+          {(() => {
+            const commercial = resolutionTrace['cardMix.commercial'];
+            if (
+              commercial &&
+              commercial.source === 'regulatory_constant' &&
+              commercial.value === 0
+            ) {
+              return (
+                <p
+                  className="mt-2"
+                  style={{
+                    fontSize: '11px',
+                    color: 'var(--color-text-tertiary)',
+                    fontStyle: 'italic',
+                    lineHeight: 1.6,
+                  }}
+                >
+                  Commercial card share assumed 0%. If your customers use
+                  corporate or business cards, enter your actual share above —
+                  corporate interchange is unchanged by the reform.
+                </p>
+              );
+            }
+            return null;
+          })()}
 
           {/* Card mix section */}
           <div

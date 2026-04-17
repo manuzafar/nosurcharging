@@ -63,15 +63,40 @@ describe('Source priority', () => {
     expect(resolved.resolutionTrace['cardMix.visa_debit']!.source).toBe('industry_default');
   });
 
-  it('falls to regulatory constant when no env var and no industry match for avgTransactionValue', () => {
-    // avgTransactionValue does NOT have industry_default source, so it still falls through
+  it('avgTransactionValue resolves to industry_default when no env var for a known industry', () => {
+    // AU_AVG_TXN_BY_INDUSTRY['retail'] = 65 — wins over regulatory_constant
     vi.stubEnv('CALC_AVG_TXN_RETAIL', '');
     vi.stubEnv('CALC_AVG_TXN_DEFAULT', '');
     const resolved = resolveAssessmentInputs(baseRaw, {
       country: 'AU',
       industry: 'retail',
     });
+    expect(resolved.resolutionTrace['avgTransactionValue']!.source).toBe('industry_default');
+    expect(resolved.resolutionTrace['avgTransactionValue']!.value).toBe(65);
+  });
+
+  it('avgTransactionValue falls to regulatory_constant when industry has no default', () => {
+    vi.stubEnv('CALC_AVG_TXN_UNKNOWNINDUSTRY', '');
+    vi.stubEnv('CALC_AVG_TXN_DEFAULT', '');
+    const rawUnknown = { ...baseRaw, industry: 'unknownIndustry' };
+    const resolved = resolveAssessmentInputs(rawUnknown, {
+      country: 'AU',
+      industry: 'unknownIndustry',
+    });
     expect(resolved.resolutionTrace['avgTransactionValue']!.source).toBe('regulatory_constant');
+    expect(resolved.resolutionTrace['avgTransactionValue']!.value).toBe(65);
+  });
+
+  it('avgTransactionValue resolves to café-specific default ($35) for cafe industry', () => {
+    vi.stubEnv('CALC_AVG_TXN_CAFE', '');
+    vi.stubEnv('CALC_AVG_TXN_DEFAULT', '');
+    const rawCafe = { ...baseRaw, industry: 'cafe' };
+    const resolved = resolveAssessmentInputs(rawCafe, {
+      country: 'AU',
+      industry: 'cafe',
+    });
+    expect(resolved.resolutionTrace['avgTransactionValue']!.source).toBe('industry_default');
+    expect(resolved.resolutionTrace['avgTransactionValue']!.value).toBe(35);
   });
 });
 

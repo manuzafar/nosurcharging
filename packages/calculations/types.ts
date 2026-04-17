@@ -115,6 +115,10 @@ export interface ResolvedAssessmentInputs {
   estimatedMSFRate?: number;  // zero-cost: resolved post-reform rate
   debitRate?: number;         // blended: debit rate as proportion (e.g. 0.009)
   creditRate?: number;        // blended: credit rate as proportion (e.g. 0.018)
+  // Minimum monthly fee (flat-rate merchants only). If set, annualMSF is
+  // floored at minMonthlyFee × 12 — low-volume merchants on a minimum-fee
+  // contract don't benefit as much from rate cuts.
+  minMonthlyFee?: number;
 }
 
 // ── Assessment outputs ───────────────────────────────────────────
@@ -229,6 +233,7 @@ export interface MerchantInputOverrides {
     debitRate?: number;
     creditRate?: number;
   };
+  minMonthlyFee?: number;
 }
 
 // ── Invoice parsed values (Phase 2) ──────────────────────────────

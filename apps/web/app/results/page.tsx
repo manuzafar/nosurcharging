@@ -18,14 +18,16 @@
 //
 // Staggered reveal via CSS animation-delay, NOT setTimeout.
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getAssessment } from '@/actions/getAssessment';
 import type { StoredAssessment } from '@/actions/getAssessment';
 import type { AssessmentOutputs, ZeroCostOutputs, RawAssessmentData, ResolutionContext, ResolutionTrace, ActionItem } from '@nosurcharging/calculations/types';
+import { resolveAssessmentInputs } from '@nosurcharging/calculations/rules/resolver';
 import { sanitiseForHTML } from '@/lib/sanitise';
 
 import { VerdictSection } from '@/components/results/VerdictSection';
+import { RefinementPanel } from '@/components/results/RefinementPanel';
 import { MetricCards } from '@/components/results/MetricCards';
 import { ProblemsBlock } from '@/components/results/ProblemsBlock';
 import { DepthToggle } from '@/components/results/DepthToggle';
@@ -53,6 +55,7 @@ const REVEAL_STYLE: Record<number, React.CSSProperties> = {
   120: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '120ms' },
   180: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '180ms' },
   240: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '240ms' },
+  300: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '300ms' },
   360: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '360ms' },
   540: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '540ms' },
   600: { opacity: 0, animation: 'fadeUp 0.4s ease forwards', animationDelay: '600ms' },
@@ -123,6 +126,37 @@ function ResultsContent() {
     });
   }, [assessmentId, router]);
 
+  // Resolved inputs for the RefinementPanel. Memoised on `assessment` so
+  // it runs once per page load. Must live above the conditional returns
+  // below — React's Rules of Hooks require unconditional ordering.
+  // Returns null when the assessment hasn't arrived or is a variant that
+  // never renders the refinement panel (zero-cost, strategic exit).
+  const resolvedInputs = useMemo(() => {
+    if (!assessment) return null;
+    const stored = assessment.inputs as Record<string, unknown>;
+    const rawPlanType = (stored.planType as RawAssessmentData['planType']) ?? 'flat';
+    // Refinement only applies to the standard Cat 1-4 flow.
+    if (rawPlanType === 'zero_cost' || rawPlanType === 'strategic_rate') return null;
+    const rawForResolve: RawAssessmentData = {
+      volume: (stored.volume as number) ?? 0,
+      planType: rawPlanType,
+      msfRate: (stored.msfRate as number) ?? 0.014,
+      surcharging: (stored.surcharging as boolean) ?? false,
+      surchargeRate: (stored.surchargeRate as number) ?? 0,
+      surchargeNetworks: (stored.surchargeNetworks as string[]) ?? [],
+      industry: (stored.industry as string) ?? 'other',
+      psp: sanitiseForHTML((stored.psp as string) ?? 'Unknown'),
+      passThrough: 0,
+      country: 'AU',
+    };
+    const ctx: ResolutionContext = {
+      country: 'AU',
+      industry: rawForResolve.industry,
+      merchantInput: stored.merchantInput as ResolutionContext['merchantInput'],
+    };
+    return resolveAssessmentInputs(rawForResolve, ctx);
+  }, [assessment]);
+
   if (loading) {
     return <SkeletonLoader />;
   }
@@ -183,6 +217,14 @@ function ResultsContent() {
     setPassThrough(pt);
   };
 
+  // ── RefinementPanel callback — updates headline P&L outputs only ──
+  // Deliberately does NOT touch `actions` or `passThrough` — refinements
+  // reshape the estimate, they don't change which action list applies or
+  // the merchant's pass-through assumption.
+  const handleRefinedResult = (newOutputs: AssessmentOutputs) => {
+    setOutputs(newOutputs);
+  };
+
   // Normalise blended → flat for components that only accept flat|costplus
   const verdictPlanType = planType === 'blended' ? 'blended' : planType === 'costplus' ? 'costplus' : 'flat';
 
@@ -201,16 +243,33 @@ function ResultsContent() {
             msfRate={originalRaw.msfRate}
             surcharging={originalRaw.surcharging}
             surchargeRate={originalRaw.surchargeRate}
+            assessmentId={assessmentId ?? undefined}
           />
         </div>
 
-        {/* 2. Metric cards */}
-        <div style={REVEAL_STYLE[120]}>
+        {/* 2. RefinementPanel — SPRINT_BRIEF.md Sprint 2. Pre-populated fields
+            that re-estimate the headline P&L live (150ms debounce).
+            Sits directly below the verdict so merchants can sharpen the
+            estimate before scrolling further. */}
+        {resolvedInputs && (
+          <div className="mt-6" style={REVEAL_STYLE[120]}>
+            <RefinementPanel
+              initialResult={outputs}
+              resolutionTrace={resolvedInputs.resolutionTrace}
+              inputs={resolvedInputs}
+              industry={originalRaw.industry}
+              onRefinedResult={handleRefinedResult}
+            />
+          </div>
+        )}
+
+        {/* 3. Metric cards */}
+        <div className="mt-6" style={REVEAL_STYLE[180]}>
           <MetricCards outputs={outputs} />
         </div>
 
-        {/* 3. ProblemsBlock */}
-        <div className="mt-6" style={REVEAL_STYLE[180]}>
+        {/* 4. ProblemsBlock */}
+        <div className="mt-6" style={REVEAL_STYLE[240]}>
           <ProblemsBlock
             category={category}
             pspName={pspName}
@@ -219,8 +278,8 @@ function ResultsContent() {
           />
         </div>
 
-        {/* 4. ActionList */}
-        <div className="mt-6" style={REVEAL_STYLE[240]}>
+        {/* 5. ActionList */}
+        <div className="mt-6" style={REVEAL_STYLE[300]}>
           <ActionList actions={actions} />
         </div>
 

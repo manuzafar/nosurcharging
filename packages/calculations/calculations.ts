@@ -99,8 +99,15 @@ export function calculateMetrics(
       + msfRate           * unknownShare
     );
   })();
-  // round2() applied only to the dollar amount:
-  const annualMSF = round2(volume * effectiveMSFRate);
+  // round2() applied only to the dollar amount.
+  // Sprint 3 / UX-04: min-monthly-fee floor — low-volume merchants on a
+  // contract that specifies a minimum monthly charge pay at least
+  // minMonthlyFee × 12 per year, regardless of volume × rate.
+  const annualMSFBase = round2(volume * effectiveMSFRate);
+  const annualMSF =
+    inputs.minMonthlyFee && inputs.minMonthlyFee > 0
+      ? Math.max(annualMSFBase, round2(inputs.minMonthlyFee * 12))
+      : annualMSFBase;
 
   // ── Surcharge revenue (actual card mix designated share) ───────
   // Map each surcharged network to its card mix breakdown share.

@@ -103,8 +103,41 @@ vi.mock('@/actions/getAssessment', () => ({
 // is the root cause of the original bug. The fix must ensure the page
 // keeps actions in separate state so this "clean" return does not wipe
 // them from the UI.
+//
+// resolveAssessmentInputs — returns a minimal ResolvedAssessmentInputs
+// shape. The page now calls this once on mount to seed the RefinementPanel
+// (Sprint 2), and also on every slider change via PassThroughSlider. The
+// actions-persistence regression check doesn't care about field values —
+// it only needs the structure to survive a render + slider interaction.
 vi.mock('@nosurcharging/calculations/rules/resolver', () => ({
-  resolveAssessmentInputs: vi.fn((raw: unknown) => raw),
+  resolveAssessmentInputs: vi.fn((raw: { volume?: number; planType?: string; passThrough?: number; industry?: string; psp?: string } = {}) => ({
+    volume: raw.volume ?? 2_000_000,
+    planType: raw.planType ?? 'flat',
+    msfRate: 0.014,
+    surcharging: false,
+    surchargeRate: 0,
+    surchargeNetworks: [],
+    industry: raw.industry ?? 'retail',
+    psp: raw.psp ?? 'Stripe',
+    passThrough: raw.passThrough ?? 0,
+    cardMix: {
+      debitShare: 0.60,
+      consumerCreditShare: 0.35,
+      foreignShare: 0.05,
+      amexShare: 0.0,
+      commercialShare: 0.0,
+      breakdown: {
+        visa_debit: 0.35, visa_credit: 0.18,
+        mastercard_debit: 0.17, mastercard_credit: 0.12,
+        eftpos: 0.08, amex: 0.05, foreign: 0.05,
+        commercial: 0,
+      },
+    },
+    avgTransactionValue: 65,
+    expertRates: { debitCents: 9, creditPct: 0.47, marginPct: 0.10 },
+    resolutionTrace: {},
+    confidence: 'low',
+  })),
 }));
 
 vi.mock('@nosurcharging/calculations/calculations', () => ({
