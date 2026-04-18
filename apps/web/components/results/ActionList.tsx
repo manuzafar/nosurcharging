@@ -1,11 +1,9 @@
 'use client';
 
-// ActionList — per ux-spec §3.4.
-// Each action renders as a card with four parts:
-//   1. Header row    — tier chip + monospace date
-//   2. What text     — the instruction itself (13px, 500, primary)
-//   3. Script block  — italic, paper background, accent border-left
-//   4. Why text      — small, tertiary
+// ActionList — per ux-spec §3.4, updated for Results Redesign M2.
+// Left-border urgency stripes instead of full card borders.
+// Summary bar with urgent/plan/monitor counts above the list.
+// "Exact script" label on script blocks. 14px task text.
 //
 // Actions come from buildActions() in @nosurcharging/calculations.
 // PSP name is inline in the action text. Never "your PSP".
@@ -18,23 +16,25 @@ interface ActionListProps {
 
 const TIER_CONFIG: Record<
   ActionPriority,
-  { label: string; pillBg: string; pillColor: string }
+  { label: string; pillBg: string; pillColor: string; borderColor: string }
 > = {
   urgent: {
     label: 'URGENT',
     pillBg: 'var(--color-background-danger)',
     pillColor: 'var(--color-text-danger)',
+    borderColor: '#A32D2D',
   },
   plan: {
     label: 'PLAN',
-    // accent-light bg + accent text (no CSS var; matches DepthToggle / ProblemsBlock)
-    pillBg: '#EBF6F3',
-    pillColor: '#1A6B5A',
+    pillBg: '#FEF3C7',
+    pillColor: '#854F0B',
+    borderColor: '#854F0B',
   },
   monitor: {
     label: 'MONITOR',
     pillBg: 'var(--color-background-secondary)',
     pillColor: 'var(--color-text-tertiary)',
+    borderColor: 'var(--color-border-secondary)',
   },
 };
 
@@ -48,16 +48,14 @@ function sortByTier(actions: ActionItem[]): ActionItem[] {
 
 export function ActionList({ actions }: ActionListProps) {
   const sorted = sortByTier(actions);
+  const urgentCount = actions.filter((a) => a.priority === 'urgent').length;
+  const planCount = actions.filter((a) => a.priority === 'plan').length;
+  const monitorCount = actions.filter((a) => a.priority === 'monitor').length;
 
-  // The section is semantically an ordered list of prioritised actions —
-  // the visible eyebrow "What to do, in order" communicates ordering to
-  // sighted users; screen readers get the same signal via <ol>. aria-labelledby
-  // ties the section to its eyebrow so AT announces "region: What to do, in
-  // order" instead of just an anonymous list.
   const eyebrowId = 'action-list-eyebrow';
 
   return (
-    <section className="py-6" aria-labelledby={eyebrowId}>
+    <section aria-labelledby={eyebrowId}>
       {/* Section eyebrow */}
       <p
         id={eyebrowId}
@@ -66,14 +64,55 @@ export function ActionList({ actions }: ActionListProps) {
           fontSize: '9px',
           letterSpacing: '2.5px',
           color: 'var(--color-text-tertiary)',
-          marginBottom: '16px',
+          marginBottom: '12px',
         }}
       >
         What to do, in order
       </p>
 
-      {/* list-none strips the default marker so the visual is unchanged;
-          role is still list + listitem for AT. */}
+      {/* Summary bar */}
+      <div className="flex gap-2 mb-4 flex-wrap">
+        {urgentCount > 0 && (
+          <span
+            className="font-medium rounded-pill"
+            style={{
+              fontSize: '10px',
+              padding: '3px 10px',
+              background: 'var(--color-background-danger)',
+              color: 'var(--color-text-danger)',
+            }}
+          >
+            {urgentCount} urgent
+          </span>
+        )}
+        {planCount > 0 && (
+          <span
+            className="font-medium rounded-pill"
+            style={{
+              fontSize: '10px',
+              padding: '3px 10px',
+              background: '#FEF3C7',
+              color: '#854F0B',
+            }}
+          >
+            {planCount} to plan
+          </span>
+        )}
+        {monitorCount > 0 && (
+          <span
+            className="font-medium rounded-pill"
+            style={{
+              fontSize: '10px',
+              padding: '3px 10px',
+              background: 'var(--color-background-secondary)',
+              color: 'var(--color-text-tertiary)',
+            }}
+          >
+            {monitorCount} to monitor
+          </span>
+        )}
+      </div>
+
       <ol className="list-none space-y-2 p-0">
         {sorted.map((action, i) => {
           const config = TIER_CONFIG[action.priority];
@@ -83,9 +122,9 @@ export function ActionList({ actions }: ActionListProps) {
                 aria-label={`${config.label} — ${action.timeAnchor} — ${action.text}`}
                 style={{
                   background: 'var(--color-background-primary)',
-                  border: '1px solid var(--color-border-secondary)',
-                  padding: '16px',
-                  borderRadius: '8px',
+                  borderLeft: `3px solid ${config.borderColor}`,
+                  padding: '14px 16px',
+                  marginBottom: '2px',
                 }}
               >
                 {/* Header row — tier chip + date */}
@@ -107,7 +146,7 @@ export function ActionList({ actions }: ActionListProps) {
                     className="font-mono"
                     style={{
                       fontSize: '10px',
-                      color: '#1A6B5A',
+                      color: 'var(--color-accent)',
                       letterSpacing: '0.3px',
                     }}
                   >
@@ -115,11 +154,10 @@ export function ActionList({ actions }: ActionListProps) {
                   </span>
                 </div>
 
-                {/* What — the instruction */}
+                {/* What — the instruction (14px) */}
                 <p
-                  className="font-medium"
+                  className="font-medium text-body"
                   style={{
-                    fontSize: '13px',
                     color: 'var(--color-text-primary)',
                     lineHeight: 1.5,
                     marginBottom: action.script || action.why ? '8px' : 0,
@@ -128,28 +166,38 @@ export function ActionList({ actions }: ActionListProps) {
                   {action.text}
                 </p>
 
-                {/* Script — only when present. <blockquote> is the correct
-                    element for a verbatim quote the merchant will read aloud. */}
+                {/* Script — "Exact script" label + italic quote */}
                 {action.script && (
-                  <blockquote
-                    style={{
-                      background: '#FAF7F2',
-                      borderLeft: '2px solid #72C4B0',
-                      padding: '10px 12px',
-                      fontSize: '12px',
-                      color: 'var(--color-text-secondary)',
-                      fontStyle: 'italic',
-                      lineHeight: 1.7,
-                      margin: 0,
-                      marginBottom: action.why ? '8px' : 0,
-                      borderRadius: '8px',
-                    }}
-                  >
-                    {action.script}
-                  </blockquote>
+                  <div style={{ marginBottom: action.why ? '8px' : 0 }}>
+                    <p
+                      className="uppercase font-medium"
+                      style={{
+                        fontSize: '9px',
+                        letterSpacing: '1px',
+                        color: 'var(--color-accent)',
+                        marginBottom: '4px',
+                      }}
+                    >
+                      Exact script
+                    </p>
+                    <blockquote
+                      style={{
+                        background: 'var(--color-background-secondary)',
+                        borderLeft: '2px solid var(--color-accent-border)',
+                        padding: '10px 12px',
+                        fontSize: '13px',
+                        color: 'var(--color-text-secondary)',
+                        fontStyle: 'italic',
+                        lineHeight: 1.7,
+                        margin: 0,
+                      }}
+                    >
+                      {action.script}
+                    </blockquote>
+                  </div>
                 )}
 
-                {/* Why — only when present */}
+                {/* Why */}
                 {action.why && (
                   <p
                     style={{

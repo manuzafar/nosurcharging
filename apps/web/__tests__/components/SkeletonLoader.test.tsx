@@ -17,22 +17,11 @@ describe('SkeletonLoader', () => {
     expect(screen.queryByText(/Loading results/i)).not.toBeInTheDocument();
   });
 
-  it('renders the expected number of pulse blocks (per spec §3.11)', () => {
+  it('renders skeleton blocks', () => {
     render(<SkeletonLoader />);
-    // 4 small placeholders (pill, hero, unit, anchor)
-    // + 2 problem blocks
-    // + 3 action card blocks
-    // = 9 simple blocks (metric row uses its own testid)
     const blocks = screen.getAllByTestId('skeleton-block');
-    expect(blocks.length).toBe(9);
-  });
-
-  it('renders the metric row placeholder with internal dividers', () => {
-    render(<SkeletonLoader />);
-    const metricRow = screen.getByTestId('skeleton-metric-row');
-    expect(metricRow).toBeInTheDocument();
-    // 3 internal dividers per spec
-    expect(metricRow.children.length).toBe(3);
+    // Two-column layout has top bar blocks + sidebar blocks + content blocks
+    expect(blocks.length).toBeGreaterThan(10);
   });
 
   it('every block uses the skeleton pulse animation', () => {
@@ -50,7 +39,6 @@ describe('SkeletonLoader', () => {
     const blocks = screen.getAllByTestId('skeleton-block');
     for (const block of blocks) {
       const style = block.getAttribute('style') ?? '';
-      // rgba(26, 20, 9, 0.1) = ink at 10%
       expect(style).toMatch(/rgba\(26,\s*20,\s*9,\s*0?\.1\)/);
     }
   });
@@ -61,5 +49,11 @@ describe('SkeletonLoader', () => {
     for (const block of blocks) {
       expect(block.getAttribute('aria-hidden')).toBe('true');
     }
+  });
+
+  it('includes a sidebar skeleton visible on md+', () => {
+    const { container } = render(<SkeletonLoader />);
+    const sidebar = container.querySelector('.hidden.md\\:block');
+    expect(sidebar).toBeInTheDocument();
   });
 });

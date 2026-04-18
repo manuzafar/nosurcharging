@@ -1,11 +1,9 @@
 'use client';
 
-// ConsultingCTA — per ux-spec §3.10.
-// Single Reform Ready engagement offer. Ink background, accent button.
-// PSP name interpolated into the headline. No category-specific rewrites
-// — single voice, single price, single conversion goal.
-//
-// Banned: "your PSP" / "your provider". Use: explicit pspName.
+// ConsultingCTA — category-specific headline, body, and pricing.
+// Cat 1-2: $2,500 Payments Health Check
+// Cat 3-4: $3,500 Reform Ready
+// PSP name interpolated into the headline. No "your PSP".
 
 import { trackEvent } from '@/lib/analytics';
 
@@ -14,8 +12,40 @@ interface ConsultingCTAProps {
   pspName: string;
 }
 
+const CTA_CONFIG: Record<
+  1 | 2 | 3 | 4,
+  { eyebrow: string; title: string; price: string; priceNum: number }
+> = {
+  1: {
+    eyebrow: 'Payments Health Check',
+    title: 'Your plan is solid — let\u2019s confirm the saving arrives',
+    price: '$2,500',
+    priceNum: 2500,
+  },
+  2: {
+    eyebrow: 'Payments Health Check',
+    title: '{psp} needs to change your rate — let\u2019s get it in writing',
+    price: '$2,500',
+    priceNum: 2500,
+  },
+  3: {
+    eyebrow: 'Reform Ready',
+    title: 'Your repricing strategy needs to be set before October',
+    price: '$3,500',
+    priceNum: 3500,
+  },
+  4: {
+    eyebrow: 'Reform Ready',
+    title: 'Two problems, one October deadline — let\u2019s fix both',
+    price: '$3,500',
+    priceNum: 3500,
+  },
+};
+
 export function ConsultingCTA({ category, pspName }: ConsultingCTAProps) {
   const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL ?? '#';
+  const config = CTA_CONFIG[category];
+  const title = config.title.replace('{psp}', pspName);
 
   const handleClick = () => {
     trackEvent('CTA clicked', { category: String(category) });
@@ -23,63 +53,61 @@ export function ConsultingCTA({ category, pspName }: ConsultingCTAProps) {
 
   return (
     <div
-      className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
       style={{
         background: '#1A1409',
         padding: '24px',
       }}
     >
-      {/* Left — headline + sub */}
-      <div className="sm:flex-1 sm:pr-4">
-        <h3
-          className="font-serif font-medium"
-          style={{
-            fontSize: '17px',
-            color: '#FFFFFF',
-            lineHeight: 1.45,
-          }}
-        >
-          Walk into October knowing exactly what to say to {pspName}, what to
-          charge customers, and whether your rate is fair.
-        </h3>
-        <p
-          className="mt-2"
-          style={{
-            fontSize: '12px',
-            color: 'rgba(255, 255, 255, 0.32)',
-            lineHeight: 1.5,
-          }}
-        >
-          Reform Ready · one engagement · fixed price · April–September 2026
-        </p>
-      </div>
+      {/* Eyebrow */}
+      <p
+        className="uppercase font-medium"
+        style={{
+          fontSize: '9px',
+          letterSpacing: '1.5px',
+          color: 'rgba(255, 255, 255, 0.4)',
+          marginBottom: '10px',
+        }}
+      >
+        {config.eyebrow}
+      </p>
 
-      {/* Right — button + price note */}
-      <div className="flex flex-col items-stretch sm:items-center sm:shrink-0">
+      {/* Headline */}
+      <h3
+        className="font-serif font-medium"
+        style={{
+          fontSize: '17px',
+          color: '#FFFFFF',
+          lineHeight: 1.45,
+          marginBottom: '16px',
+        }}
+      >
+        {title}
+      </h3>
+
+      {/* Bottom bar — CTA + detail */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <a
           href={calendlyUrl}
           target="_blank"
           rel="noopener noreferrer"
           onClick={handleClick}
-          className="font-medium text-center transition-opacity duration-150 hover:opacity-90"
+          className="font-medium text-center transition-opacity duration-150 hover:opacity-90 rounded-pill"
           style={{
             background: '#1A6B5A',
             color: '#FFFFFF',
-            fontSize: '12px',
-            padding: '11px 18px',
+            fontSize: '13px',
+            padding: '11px 20px',
           }}
         >
-          Book discovery call →
+          Book a call · {config.price}
         </a>
         <p
-          className="text-center"
           style={{
-            fontSize: '10px',
-            color: 'rgba(255, 255, 255, 0.18)',
-            marginTop: '5px',
+            fontSize: '11px',
+            color: 'rgba(255, 255, 255, 0.25)',
           }}
         >
-          $3,500 · Reform Ready
+          30-minute call · Fixed price · No retainer
         </p>
       </div>
     </div>

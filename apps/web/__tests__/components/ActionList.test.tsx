@@ -48,13 +48,13 @@ describe('ActionList', () => {
     expect(style).toContain('--color-text-danger');
   });
 
-  it('plan chip uses accent-light background and accent text', () => {
+  it('plan chip uses amber background and amber text', () => {
     render(<ActionList actions={cat2Actions} />);
     const planChip = screen.getAllByText('PLAN')[0]!;
     const style = planChip.getAttribute('style') ?? '';
-    // jsdom converts #EBF6F3 → rgb(235, 246, 243), #1A6B5A → rgb(26, 107, 90)
-    expect(style).toMatch(/#EBF6F3|rgb\(235, 246, 243\)/);
-    expect(style).toMatch(/#1A6B5A|rgb\(26, 107, 90\)/);
+    // jsdom converts #FEF3C7 → rgb(254, 243, 199), #854F0B → rgb(133, 79, 11)
+    expect(style).toMatch(/#FEF3C7|rgb\(254, 243, 199\)/);
+    expect(style).toMatch(/#854F0B|rgb\(133, 79, 11\)/);
   });
 
   it('monitor chip uses tertiary text token', () => {
@@ -68,7 +68,7 @@ describe('ActionList', () => {
     render(<ActionList actions={cat2Actions} />);
     const dateChip = screen.getAllByText('BEFORE END OF APRIL')[0]!;
     const style = dateChip.getAttribute('style') ?? '';
-    expect(style).toMatch(/#1A6B5A|rgb\(26, 107, 90\)/);
+    expect(style).toMatch(/--color-accent|#1A6B5A|rgb\(26, 107, 90\)/);
     expect(dateChip.className).toContain('font-mono');
   });
 
@@ -95,6 +95,25 @@ describe('ActionList', () => {
     expect(
       screen.getByText(/Flat rate adjustments aren&#x27;t automatic|Flat rate adjustments aren't automatic/),
     ).toBeInTheDocument();
+  });
+
+  it('renders summary bar with counts', () => {
+    render(<ActionList actions={cat4Actions} />);
+    expect(screen.getByText(/urgent/)).toBeInTheDocument();
+    expect(screen.getByText(/to plan/)).toBeInTheDocument();
+    expect(screen.getByText(/to monitor/)).toBeInTheDocument();
+  });
+
+  it('renders "Exact script" label on script blocks', () => {
+    render(<ActionList actions={cat4Actions} />);
+    expect(screen.getAllByText('Exact script').length).toBeGreaterThan(0);
+  });
+
+  it('action items have left-border stripe', () => {
+    const { container } = render(<ActionList actions={cat2Actions} />);
+    const articles = container.querySelectorAll('article');
+    const firstStyle = articles[0]?.getAttribute('style') ?? '';
+    expect(firstStyle).toContain('border-left');
   });
 
   it('actions render in tier order: urgent → plan → monitor', () => {

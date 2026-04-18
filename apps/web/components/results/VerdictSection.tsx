@@ -27,7 +27,7 @@ interface VerdictSectionProps {
 }
 
 // Situation pill variants — 20px pill radius under the Modern Fintech Hierarchy
-const SITUATION_PILLS: Record<
+export const SITUATION_PILLS: Record<
   1 | 2 | 3 | 4,
   { background: string; color: string }
 > = {
