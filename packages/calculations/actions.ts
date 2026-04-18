@@ -87,7 +87,7 @@ function buildCat2Actions(psp: string, isBlended: boolean = false): ActionItem[]
   const actions: ActionItem[] = [
     {
       priority: 'urgent',
-      timeAnchor: 'BEFORE END OF APRIL',
+      timeAnchor: 'BEFORE 1 OCTOBER',
       text: `Ask ${psp} whether your rate will change after October`,
       script: `${psp} is reducing wholesale interchange costs from 1 October. I'd like to understand whether my ${psp} flat rate will be adjusted to reflect that change — and by how much. Can you confirm in writing?`,
       why: `Flat rate adjustments aren't automatic. Written confirmation now means you'll know what to expect — and have time to act if needed.`,
@@ -138,7 +138,7 @@ function buildCat3Actions(psp: string, ctx: ActionContext): ActionItem[] {
   return [
     {
       priority: 'urgent',
-      timeAnchor: 'BEFORE END OF APRIL',
+      timeAnchor: 'BEFORE 1 OCTOBER',
       text: `Plan how you'll replace the ${surchargeRev} in surcharge revenue`,
       script: `Raise prices by approximately ${ratePct} across all card transactions before 1 October — or identify ${surchargeRev} in cost savings elsewhere. Both require planning time.`,
       why: `The surcharge ban applies from 1 October regardless of your ${psp} plan. This part of your situation is certain.`,
@@ -171,14 +171,14 @@ function buildCat4Actions(psp: string, ctx: ActionContext, isBlended: boolean = 
   const actions: ActionItem[] = [
     {
       priority: 'urgent',
-      timeAnchor: 'BEFORE END OF APRIL',
+      timeAnchor: 'BEFORE 1 OCTOBER',
       text: `Ask ${psp} whether your rate will change after October`,
       script: `${psp} is reducing wholesale interchange costs from 1 October. I'd like to understand whether my ${psp} flat rate will be adjusted to reflect that change — and by how much. Can you confirm in writing?`,
       why: `Flat rate adjustments aren't automatic. Written confirmation now means you'll know what to expect — and have time to act if needed.`,
     },
     {
       priority: 'urgent',
-      timeAnchor: 'BEFORE END OF APRIL',
+      timeAnchor: 'BEFORE 1 OCTOBER',
       text: `Plan how you'll replace the ${surchargeRev} in surcharge revenue`,
       script: `Raise prices by approximately ${ratePct} across all card transactions before 1 October — or identify ${surchargeRev} in cost savings elsewhere. Both require planning time.`,
       why: `The surcharge ban applies from 1 October regardless of your ${psp} plan. This part of your situation is certain.`,

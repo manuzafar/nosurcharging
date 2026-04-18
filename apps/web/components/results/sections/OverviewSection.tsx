@@ -14,12 +14,11 @@ interface OverviewSectionProps {
   msfRate: number;
   surcharging: boolean;
   surchargeRate: number;
-  assessmentId?: string;
 }
 
 export const OverviewSection = forwardRef<HTMLElement, OverviewSectionProps>(
   function OverviewSection(props, ref) {
-    const { outputs, volume, pspName, planType, msfRate, surcharging, surchargeRate, assessmentId } = props;
+    const { outputs, volume, pspName, planType, msfRate, surcharging, surchargeRate } = props;
     const verdictPlanType = planType === 'blended' ? 'blended' : planType === 'costplus' ? 'costplus' : 'flat';
 
     return (
@@ -32,7 +31,6 @@ export const OverviewSection = forwardRef<HTMLElement, OverviewSectionProps>(
           msfRate={msfRate}
           surcharging={surcharging}
           surchargeRate={surchargeRate}
-          assessmentId={assessmentId}
         />
 
         <div className="mt-6">

@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import type { SectionId, SectionMeta } from './types';
 import { SECTIONS } from './types';
 
@@ -30,7 +29,6 @@ export function ResultsSidebar({
   urgentCount,
   category,
 }: ResultsSidebarProps) {
-  const [hoveredSection, setHoveredSection] = useState<SectionId | null>(null);
   let currentGroup: SectionMeta['group'] | null = null;
 
   return (
@@ -49,12 +47,7 @@ export function ResultsSidebar({
           const showGroupLabel = section.group !== currentGroup;
           if (showGroupLabel) currentGroup = section.group;
           const isActive = activeSection === section.id;
-          const isHovered = hoveredSection === section.id;
           const isFirstGroup = i === 0 || (showGroupLabel && currentGroup === 'result');
-
-          let bg = 'transparent';
-          if (isActive) bg = 'rgba(26, 107, 90, 0.06)';
-          else if (isHovered) bg = 'rgba(26, 20, 9, 0.04)';
 
           return (
             <div key={section.id}>
@@ -85,11 +78,9 @@ export function ResultsSidebar({
               <button
                 type="button"
                 onClick={() => onNavClick(section.id)}
-                onMouseEnter={() => setHoveredSection(section.id)}
-                onMouseLeave={() => setHoveredSection(null)}
                 className="flex items-center justify-between w-full text-left cursor-pointer"
                 style={{
-                  background: bg,
+                  background: 'transparent',
                   border: 'none',
                   borderLeft: isActive ? '2px solid var(--color-accent)' : '2px solid transparent',
                   padding: '6px 10px',

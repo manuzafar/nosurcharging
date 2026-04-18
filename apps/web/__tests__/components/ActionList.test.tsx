@@ -66,7 +66,7 @@ describe('ActionList', () => {
 
   it('date chips render in accent mono', () => {
     render(<ActionList actions={cat2Actions} />);
-    const dateChip = screen.getAllByText('BEFORE END OF APRIL')[0]!;
+    const dateChip = screen.getAllByText('BEFORE 1 OCTOBER')[0]!;
     const style = dateChip.getAttribute('style') ?? '';
     expect(style).toMatch(/--color-accent|#1A6B5A|rgb\(26, 107, 90\)/);
     expect(dateChip.className).toContain('font-mono');

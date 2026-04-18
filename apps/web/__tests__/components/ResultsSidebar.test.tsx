@@ -32,10 +32,10 @@ describe('ResultsSidebar', () => {
     expect(actionsBtn?.style.borderLeft).toContain('2px solid');
   });
 
-  it('active section has background tint', () => {
+  it('active section has transparent background (no fill)', () => {
     render(<ResultsSidebar {...defaultProps} activeSection="actions" />);
     const actionsBtn = screen.getByText('Actions').closest('button');
-    expect(actionsBtn?.style.background).toContain('rgba');
+    expect(actionsBtn?.style.background).toBe('transparent');
   });
 
   it('fires onNavClick when clicked', () => {

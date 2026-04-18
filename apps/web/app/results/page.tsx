@@ -206,7 +206,7 @@ function ResultsContent() {
 
   return (
     <div className="min-h-screen bg-paper">
-      <ResultsTopBar category={category} plSwing={outputs.plSwing} accuracy={accuracy} />
+      <ResultsTopBar category={category} plSwing={outputs.plSwing} accuracy={accuracy} volume={volume} assessmentId={assessmentId ?? undefined} />
 
       <MobileMiniNav
         activeSection={activeSection}
@@ -222,7 +222,7 @@ function ResultsContent() {
           category={category}
         />
 
-        <main className="flex-1 min-w-0 px-5 pb-20 md:pb-12 mx-auto max-w-results">
+        <main className="flex-1 min-w-0 px-8 pb-20 md:pb-12 max-w-4xl">
           <OverviewSection
             outputs={outputs}
             volume={volume}
@@ -231,7 +231,6 @@ function ResultsContent() {
             msfRate={originalRaw.msfRate}
             surcharging={originalRaw.surcharging}
             surchargeRate={originalRaw.surchargeRate}
-            assessmentId={assessmentId ?? undefined}
           />
 
           <ActionsSection actions={actions} />

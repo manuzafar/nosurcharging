@@ -13,7 +13,6 @@
 
 import { CATEGORY_VERDICTS } from '@nosurcharging/calculations/categories';
 import type { AssessmentOutputs } from '@nosurcharging/calculations/types';
-import { FeedbackToggle } from './FeedbackToggle';
 
 interface VerdictSectionProps {
   outputs: AssessmentOutputs;
@@ -23,7 +22,6 @@ interface VerdictSectionProps {
   msfRate: number;
   surcharging: boolean;
   surchargeRate: number;
-  assessmentId?: string;
 }
 
 // Situation pill variants — 20px pill radius under the Modern Fintech Hierarchy
@@ -118,7 +116,6 @@ export function VerdictSection({
   msfRate,
   surcharging,
   surchargeRate,
-  assessmentId,
 }: VerdictSectionProps) {
   const { category, plSwing, plSwingLow, plSwingHigh, rangeDriver, rangeNote } = outputs;
   const isNegative = plSwing < 0;
@@ -222,7 +219,7 @@ export function VerdictSection({
         // Range display — overrides CLAUDE.md Rule 2 (44px) for the pair
         <div>
           <div className="mt-3">
-            <p className="font-mono" style={{ fontSize: 'clamp(24px, 7vw, 32px)', color: rangeColour }}>
+            <p className="font-mono text-financial-hero" style={{ color: rangeColour }}>
               {formatSignedDollar(plSwingLow)}
               <span className="font-sans mx-2" style={{ fontSize: '14px', color: 'var(--color-text-tertiary)' }}>
                 to
@@ -293,10 +290,6 @@ export function VerdictSection({
         {getCategoryBody(category, pspName)}
       </p>
 
-      {/* Quiet feedback link — SPRINT_BRIEF.md Sprint 1 / RESULTS-03 */}
-      <div className="mt-4">
-        <FeedbackToggle category={category} volume={volume} assessmentId={assessmentId} />
-      </div>
     </div>
   );
 }

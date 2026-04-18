@@ -55,7 +55,7 @@ const BASE_OUTPUTS: AssessmentOutputs = {
 const FIXTURE_ACTIONS: ActionItem[] = [
   {
     priority: 'urgent',
-    timeAnchor: 'BEFORE END OF APRIL',
+    timeAnchor: 'BEFORE 1 OCTOBER',
     text: 'Ask Stripe whether your rate will change on 1 October 2026.',
     script: 'Stripe is reducing wholesale interchange costs from 1 October.',
     why: "Flat rate adjustments aren't automatic — you must ask.",

@@ -1,15 +1,16 @@
 'use client';
 
-// FeedbackToggle — small quiet link under the P&L number.
-// SPRINT_BRIEF.md Sprint 1 / RESULTS-03.
-// Expands inline (not a modal). Email optional. Textarea required.
-// No "beta" label anywhere.
+// FeedbackModal — portal-based overlay for "Result looks off?" feedback.
+// Triggered from ResultsTopBar. Email optional. Textarea required.
 
-import { useId, useState } from 'react';
+import { useId, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { submitFeedback } from '@/actions/submitFeedback';
 import { trackEvent } from '@/lib/analytics';
 
-interface FeedbackToggleProps {
+interface FeedbackModalProps {
+  open: boolean;
+  onClose: () => void;
   category: 1 | 2 | 3 | 4;
   volume: number;
   assessmentId?: string;
@@ -17,8 +18,7 @@ interface FeedbackToggleProps {
 
 type FormState = 'default' | 'loading' | 'success' | 'error';
 
-export function FeedbackToggle({ category, volume, assessmentId }: FeedbackToggleProps) {
-  const [expanded, setExpanded] = useState(false);
+export function FeedbackModal({ open, onClose, category, volume, assessmentId }: FeedbackModalProps) {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [state, setState] = useState<FormState>('default');
@@ -27,12 +27,24 @@ export function FeedbackToggle({ category, volume, assessmentId }: FeedbackToggl
   const emailId = useId();
   const messageId = useId();
 
-  const handleToggle = () => {
-    if (!expanded) {
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [open, onClose]);
+
+  // Track open
+  useEffect(() => {
+    if (open) {
       trackEvent('Feedback opened', { category: String(category) });
     }
-    setExpanded((v) => !v);
-  };
+  }, [open, category]);
+
+  if (!open) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,28 +70,62 @@ export function FeedbackToggle({ category, volume, assessmentId }: FeedbackToggl
     }
   };
 
-  return (
-    <div>
-      <button
-        type="button"
-        data-feedback-toggle
-        onClick={handleToggle}
-        className="text-caption cursor-pointer"
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) onClose();
+  };
+
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Send feedback"
+      onClick={handleBackdropClick}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 100,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(26, 20, 9, 0.5)',
+      }}
+    >
+      <div
+        className="rounded-lg"
         style={{
-          color: 'var(--color-text-secondary)',
-          background: 'none',
-          border: 'none',
-          padding: 0,
+          background: 'var(--color-background-primary)',
+          width: '100%',
+          maxWidth: '440px',
+          margin: '16px',
+          padding: '24px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
         }}
       >
-        Does your result look off? Tell us {expanded ? '↑' : '→'}
-      </button>
+        <div className="flex items-center justify-between mb-4">
+          <h3
+            className="font-medium"
+            style={{ fontSize: '15px', color: 'var(--color-text-primary)' }}
+          >
+            Result looks off?
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="cursor-pointer"
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: '4px',
+              fontSize: '18px',
+              lineHeight: 1,
+              color: 'var(--color-text-tertiary)',
+            }}
+            aria-label="Close"
+          >
+            &times;
+          </button>
+        </div>
 
-      <div
-        className={`overflow-hidden transition-all duration-200 ease-out ${
-          expanded ? 'mt-3 max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
-        }`}
-      >
         {state === 'success' ? (
           <div
             className="rounded-lg p-4"
@@ -93,11 +139,7 @@ export function FeedbackToggle({ category, volume, assessmentId }: FeedbackToggl
             </p>
           </div>
         ) : (
-          <form
-            onSubmit={handleSubmit}
-            className="p-4"
-            style={{ border: '0.5px solid var(--color-border-secondary)' }}
-          >
+          <form onSubmit={handleSubmit}>
             <label
               htmlFor={messageId}
               className="text-caption"
@@ -162,6 +204,7 @@ export function FeedbackToggle({ category, volume, assessmentId }: FeedbackToggl
           </form>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
