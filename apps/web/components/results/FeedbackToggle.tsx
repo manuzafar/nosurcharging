@@ -62,6 +62,7 @@ export function FeedbackToggle({ category, volume, assessmentId }: FeedbackToggl
     <div>
       <button
         type="button"
+        data-feedback-toggle
         onClick={handleToggle}
         className="text-caption cursor-pointer"
         style={{

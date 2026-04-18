@@ -17,6 +17,7 @@ import type {
   ResolutionTrace,
   CardMixBreakdown,
 } from '@nosurcharging/calculations/types';
+import { computeAccuracy } from '@/lib/accuracy';
 
 // ── Props ───────────────────────────────────────────────────────
 
@@ -26,6 +27,7 @@ interface RefinementPanelProps {
   inputs: ResolvedAssessmentInputs;
   industry: string;
   onRefinedResult: (result: AssessmentOutputs) => void;
+  onAccuracyChange?: (accuracy: number) => void;
 }
 
 // ── Edit state ──────────────────────────────────────────────────
@@ -108,38 +110,6 @@ function applyEdits(
     cardMix,
     minMonthlyFee,
   };
-}
-
-// Accuracy score: base 20; +25 AVT; +25 credit; +15 commercial; +15 monthly txns.
-function computeAccuracy(
-  trace: ResolutionTrace,
-  edits: EditState,
-): number {
-  let score = 20;
-
-  const hasUserSource = (key: string) => {
-    const s = trace[key]?.source;
-    return s === 'merchant_input' || s === 'invoice_parsed';
-  };
-
-  if (edits.avgTransactionValue !== undefined || hasUserSource('avgTransactionValue')) {
-    score += 25;
-  }
-  if (edits.creditPct !== undefined || hasUserSource('expertRates.creditPct')) {
-    score += 25;
-  }
-  if (
-    edits.commercialShare !== undefined ||
-    hasUserSource('cardMix.visa_credit') ||
-    hasUserSource('cardMix.mastercard_credit')
-  ) {
-    score += 15;
-  }
-  if (edits.monthlyDebitTxns !== undefined) {
-    score += 15;
-  }
-
-  return Math.min(100, score);
 }
 
 // Apply only one edit and compute the impact on the specific metric.
@@ -229,12 +199,17 @@ export function RefinementPanel({
   inputs,
   industry,
   onRefinedResult,
+  onAccuracyChange,
 }: RefinementPanelProps) {
   const [edits, setEdits] = useState<EditState>({});
   const onRefinedResultRef = useRef(onRefinedResult);
+  const onAccuracyChangeRef = useRef(onAccuracyChange);
   useEffect(() => {
     onRefinedResultRef.current = onRefinedResult;
   }, [onRefinedResult]);
+  useEffect(() => {
+    onAccuracyChangeRef.current = onAccuracyChange;
+  }, [onAccuracyChange]);
 
   // Debounced recalc — pushes a refined result upward so the headline P&L
   // animates smoothly without thrashing on every keystroke.
@@ -251,6 +226,11 @@ export function RefinementPanel({
     () => computeAccuracy(resolutionTrace, edits),
     [resolutionTrace, edits],
   );
+
+  // Push accuracy changes up to the page (for TopBar)
+  useEffect(() => {
+    onAccuracyChangeRef.current?.(accuracy);
+  }, [accuracy]);
 
   // ── Field pre-fills ───────────────────────────────────────────
   const avtPrefill = Math.round(inputs.avgTransactionValue);

@@ -187,10 +187,8 @@ describe('ResultsPage — actions persistence regression', () => {
     expect(screen.getByText(/Compare quotes from two competitors/)).toBeInTheDocument();
     expect(screen.getByText(/Check your October statement/)).toBeInTheDocument();
 
-    // Expand the depth zone to mount the slider.
-    fireEvent.click(screen.getByRole('button', { name: /Understand your numbers/i }));
-
-    // Fire a slider change. This calls calculateMetrics() → clean outputs.
+    // With the new scroll-based layout, the slider is always mounted
+    // (no DepthToggle to expand first). Fire a slider change directly.
     const slider = screen.getByRole('slider');
     fireEvent.change(slider, { target: { value: '50' } });
 
@@ -209,7 +207,6 @@ describe('ResultsPage — actions persistence regression', () => {
       expect(screen.getByText(/What to do, in order/i)).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /Understand your numbers/i }));
     const slider = screen.getByRole('slider');
 
     fireEvent.change(slider, { target: { value: '25' } });
@@ -220,5 +217,20 @@ describe('ResultsPage — actions persistence regression', () => {
     expect(screen.getByText(/Ask Stripe whether your rate will change/)).toBeInTheDocument();
     expect(screen.getByText(/Compare quotes from two competitors/)).toBeInTheDocument();
     expect(screen.getByText(/Check your October statement/)).toBeInTheDocument();
+  });
+
+  it('renders all five sections in the new layout', async () => {
+    render(<ResultsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/What to do, in order/i)).toBeInTheDocument();
+    });
+
+    // All section wrappers should be present
+    expect(document.querySelector('[data-section="overview"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-section="actions"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-section="values"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-section="refine"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-section="help"]')).toBeInTheDocument();
   });
 });

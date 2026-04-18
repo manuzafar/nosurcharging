@@ -8,8 +8,9 @@ export default defineConfig({
     globals: true,
     include: ['__tests__/**/*.test.{ts,tsx}'],
     environmentMatchGlobs: [
-      // Component tests need jsdom for DOM APIs
+      // Component and hook tests need jsdom for DOM APIs
       ['__tests__/components/**', 'jsdom'],
+      ['__tests__/hooks/**', 'jsdom'],
       // Server action tests run in node
       ['__tests__/actions/**', 'node'],
     ],
