@@ -66,7 +66,8 @@ export function ResultsSidebar({
                   className="uppercase tracking-widest mb-1.5"
                   style={{
                     color: 'var(--color-text-tertiary)',
-                    fontSize: '9px',
+                    fontSize: '11px',
+                    fontWeight: 500,
                     letterSpacing: '1.5px',
                     marginTop: isFirstGroup ? 0 : '0',
                     paddingLeft: '10px',
@@ -81,7 +82,9 @@ export function ResultsSidebar({
                 className="flex items-center justify-between w-full text-left cursor-pointer"
                 style={{
                   background: 'transparent',
-                  border: 'none',
+                  borderTop: 'none',
+                  borderRight: 'none',
+                  borderBottom: 'none',
                   borderLeft: isActive ? '2px solid var(--color-accent)' : '2px solid transparent',
                   padding: '6px 10px',
                   color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
@@ -98,8 +101,8 @@ export function ResultsSidebar({
                     style={{
                       background: 'var(--color-background-danger)',
                       color: 'var(--color-text-danger)',
-                      fontSize: '9px',
-                      padding: '1px 6px',
+                      fontSize: '11px',
+                      padding: '2px 7px',
                     }}
                   >
                     {urgentCount}
@@ -111,8 +114,8 @@ export function ResultsSidebar({
                     style={{
                       background: '#EBF6F3',
                       color: 'var(--color-accent)',
-                      fontSize: '9px',
-                      padding: '1px 6px',
+                      fontSize: '11px',
+                      padding: '2px 7px',
                     }}
                   >
                     {CTA_PRICE[category]}
