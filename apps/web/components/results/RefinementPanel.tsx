@@ -322,7 +322,7 @@ export function RefinementPanel({
           <h3 className="text-body font-medium" style={{ color: 'var(--color-text-primary)' }}>
             Make it yours
           </h3>
-          <p className="mt-1 text-caption" style={{ color: 'var(--color-text-secondary)' }}>
+          <p className="mt-1 text-body-sm" style={{ color: 'var(--color-text-secondary)' }}>
             Fill in what you know — the estimate sharpens as you go.
           </p>
         </div>

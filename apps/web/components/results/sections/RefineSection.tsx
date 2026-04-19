@@ -39,11 +39,12 @@ export const RefineSection = forwardRef<HTMLElement, RefineSectionProps>(
     return (
       <section id="refine" data-section="refine" ref={ref} className="pt-8">
         <p
-          className="text-micro uppercase tracking-widest pb-3 mb-6"
+          className="uppercase tracking-widest pb-3 mb-6"
           style={{
             color: 'var(--color-text-tertiary)',
             letterSpacing: '1.5px',
-            fontSize: '9px',
+            fontSize: '11px',
+            fontWeight: 500,
             borderBottom: '1px solid var(--color-border-secondary)',
           }}
         >

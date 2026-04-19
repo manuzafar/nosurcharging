@@ -281,7 +281,7 @@ export function VerdictSection({
 
       {/* Body paragraph — category-specific narrative */}
       <p
-        className="mt-4 text-body-sm"
+        className="mt-4 text-body"
         style={{
           color: 'var(--color-text-secondary)',
           lineHeight: '1.65',

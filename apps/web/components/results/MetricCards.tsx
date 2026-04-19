@@ -1,7 +1,7 @@
 'use client';
 
 // 2x2 semantic metric grid — IC saving, P&L impact, Surcharge, Cost today.
-// Values at 22px mono (text-financial-standard). Labels at 9px uppercase.
+// Values at 22px mono (text-financial-standard). Labels at 11px uppercase.
 
 import type { AssessmentOutputs } from '@nosurcharging/calculations/types';
 
@@ -70,7 +70,8 @@ export function MetricCards({ outputs, planType = 'flat' }: MetricCardsProps) {
           <p
             className="uppercase"
             style={{
-              fontSize: '9px',
+              fontSize: '11px',
+              fontWeight: 500,
               letterSpacing: '1.2px',
               color: 'var(--color-text-tertiary)',
             }}

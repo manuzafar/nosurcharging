@@ -59,7 +59,7 @@
   --color-border-info: #85B7EB;
 
   --color-text-primary: #111111;
-  --color-text-secondary: #6B7280;
+  --color-text-secondary: #374151;
   /* Tertiary used to be rgba(0,0,0,0.35), which is ~#A6A6A6 on white and
      computes to ~2.5:1 contrast — failing WCAG AA for the 9-11px labels,
      eyebrows, slider help text, and caption copy that use it. Setting it
