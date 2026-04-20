@@ -33,10 +33,10 @@ test.describe('Wizard journey → Category 1', () => {
     await page.getByText('Hospitality group').click();
     await page.getByRole('button', { name: /see my results/i }).click();
 
-    await page.waitForURL(/\/results\?id=/, { timeout: 10000 });
+    await page.waitForURL(/\/results\?id=/, { timeout: 15000 });
 
-    // Category 1 — costs fall automatically
-    await expect(page.getByText('Situation 1')).toBeVisible();
+    // Category 1 — costs fall automatically (explicit timeout for remote DB fetch)
+    await expect(page.getByText('Situation 1')).toBeVisible({ timeout: 10000 });
 
     // Slider should NOT be visible (Category 1)
     await expect(page.getByRole('slider')).not.toBeVisible();

@@ -26,10 +26,10 @@ test.describe('Layman journey → Category 2', () => {
     await page.getByRole('button', { name: /see my results/i }).click();
 
     // Wait for reveal screen to complete and navigate to results
-    await page.waitForURL(/\/results\?id=/, { timeout: 10000 });
+    await page.waitForURL(/\/results\?id=/, { timeout: 15000 });
 
-    // Results page assertions
-    await expect(page.getByText('Situation 2')).toBeVisible();
+    // Results page assertions — explicit timeout for data fetch from remote DB
+    await expect(page.getByText('Situation 2')).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(/per year from 1 October/)).toBeVisible();
   });
 
@@ -50,7 +50,10 @@ test.describe('Layman journey → Category 2', () => {
     await page.getByText('Cafe / Restaurant').click();
     await page.getByRole('button', { name: /see my results/i }).click();
 
-    await page.waitForURL(/\/results\?id=/, { timeout: 10000 });
+    await page.waitForURL(/\/results\?id=/, { timeout: 15000 });
+
+    // Wait for results content to load before interacting
+    await expect(page.getByText(/Situation \d/)).toBeVisible({ timeout: 10000 });
 
     // Open depth zone to reveal slider
     await page.getByRole('button', { name: /understand your numbers/i }).click();

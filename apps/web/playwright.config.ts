@@ -5,7 +5,7 @@ const isRemote = !!process.env.PLAYWRIGHT_BASE_URL;
 
 export default defineConfig({
   testDir: './e2e',
-  timeout: 15000,
+  timeout: isCI ? 30000 : 15000,
   globalTimeout: isCI ? 300_000 : undefined, // 5-minute hard ceiling in CI
   retries: isCI ? 1 : 0,
   workers: isCI ? 1 : undefined,
