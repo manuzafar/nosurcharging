@@ -9,11 +9,13 @@ interface UseScrollSpyReturn {
   scrollToSection: (id: SectionId) => void;
 }
 
-export function useScrollSpy(): UseScrollSpyReturn {
+export function useScrollSpy(enabled = true): UseScrollSpyReturn {
   const [activeSection, setActiveSection] = useState<SectionId>('overview');
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
+    if (!enabled) return;
+
     // Map to track how much of each section is visible — never delete,
     // only overwrite. This avoids the "empty map" gap that caused the
     // previous implementation to get stuck.
@@ -57,7 +59,7 @@ export function useScrollSpy(): UseScrollSpyReturn {
     return () => {
       observerRef.current?.disconnect();
     };
-  }, []);
+  }, [enabled]);
 
   const scrollToSection = useCallback((id: SectionId) => {
     const el = document.getElementById(id);
