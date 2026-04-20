@@ -71,8 +71,9 @@ function ResultsContent() {
   // Accuracy — base 20%, updated live by RefinementPanel via onAccuracyChange
   const [accuracy, setAccuracy] = useState(20);
 
-  // Scroll spy — must be unconditional (Rules of Hooks)
-  const { activeSection, scrollToSection } = useScrollSpy();
+  // Scroll spy — must be unconditional (Rules of Hooks).
+  // Pass !loading so the observer starts AFTER sections are in the DOM.
+  const { activeSection, scrollToSection } = useScrollSpy(!loading);
 
   useEffect(() => {
     if (!assessmentId) {
