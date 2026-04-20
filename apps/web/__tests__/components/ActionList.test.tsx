@@ -68,7 +68,7 @@ describe('ActionList', () => {
     render(<ActionList actions={cat2Actions} />);
     const dateChip = screen.getAllByText('BEFORE 1 OCTOBER')[0]!;
     const style = dateChip.getAttribute('style') ?? '';
-    expect(style).toMatch(/--color-accent|#1A6B5A|rgb\(26, 107, 90\)/);
+    expect(style).toMatch(/--color-text-success|--color-accent|#1A6B5A|rgb\(26, 107, 90\)/);
     expect(dateChip.className).toContain('font-mono');
   });
 

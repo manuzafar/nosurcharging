@@ -179,7 +179,7 @@ describe('ResultsPage — actions persistence regression', () => {
     // Wait for the initial getAssessment promise to resolve and the page
     // to swap out of the SkeletonLoader.
     await waitFor(() => {
-      expect(screen.getByText(/What to do, in order/i)).toBeInTheDocument();
+      expect(screen.getByText(/Ask Stripe whether your rate will change/)).toBeInTheDocument();
     });
 
     // Initial load: all three fixture actions should be visible.
@@ -204,7 +204,7 @@ describe('ResultsPage — actions persistence regression', () => {
     render(<ResultsPage />);
 
     await waitFor(() => {
-      expect(screen.getByText(/What to do, in order/i)).toBeInTheDocument();
+      expect(screen.getByText(/Ask Stripe whether your rate will change/)).toBeInTheDocument();
     });
 
     const slider = screen.getByRole('slider');
@@ -223,7 +223,7 @@ describe('ResultsPage — actions persistence regression', () => {
     render(<ResultsPage />);
 
     await waitFor(() => {
-      expect(screen.getByText(/What to do, in order/i)).toBeInTheDocument();
+      expect(screen.getByText(/Ask Stripe whether your rate will change/)).toBeInTheDocument();
     });
 
     // All section wrappers should be present

@@ -12,6 +12,7 @@ interface ResultsSidebarProps {
 
 const GROUP_LABELS: Record<SectionMeta['group'], string> = {
   result: 'Result',
+  prepare: 'Prepare',
   understand: 'Understand',
   next: 'Next step',
 };
@@ -81,7 +82,7 @@ export function ResultsSidebar({
                 onClick={() => onNavClick(section.id)}
                 className="flex items-center justify-between w-full text-left cursor-pointer"
                 style={{
-                  background: 'transparent',
+                  background: isActive ? 'var(--color-accent-light)' : 'transparent',
                   borderTop: 'none',
                   borderRight: 'none',
                   borderBottom: 'none',
@@ -94,7 +95,22 @@ export function ResultsSidebar({
                   transition: 'background 150ms ease, color 150ms ease',
                 }}
               >
-                <span className="flex-1">{section.label}</span>
+                <span className="flex-1">
+                  {section.label}
+                  {section.sublabel && (
+                    <span
+                      className="block"
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: 400,
+                        color: 'var(--color-text-tertiary)',
+                        marginTop: '1px',
+                      }}
+                    >
+                      {section.sublabel}
+                    </span>
+                  )}
+                </span>
                 {section.id === 'actions' && urgentCount > 0 && (
                   <span
                     className="font-medium rounded-pill"

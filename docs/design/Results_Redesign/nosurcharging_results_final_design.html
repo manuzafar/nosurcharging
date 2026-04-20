@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>nosurcharging.com.au — Results Page Design</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --emerald: #1A6B5A;
+    --emerald-light: #EBF6F3;
+    --emerald-border: #72C4B0;
+    --emerald-dark: #0D3D32;
+    --red: #E24B4A;
+    --red-light: #FDECEA;
+    --red-dark: #A32D2D;
+    --amber: #BA7517;
+    --amber-light: #FEF3E0;
+    --amber-dark: #854F0B;
+    --gray-50: #F8F8F7;
+    --gray-100: #F1EFE8;
+    --gray-200: #E2E0D8;
+    --gray-300: #C8C6BC;
+    --gray-400: #9B9990;
+    --gray-500: #6B6963;
+    --gray-600: #4A4845;
+    --gray-700: #2E2D2A;
+    --gray-900: #111110;
+    --border: rgba(0,0,0,0.1);
+    --border-light: rgba(0,0,0,0.06);
+    --mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --serif: Georgia, 'Times New Roman', serif;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--gray-100);
+    color: var(--gray-900);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* ── CONTROLS BAR ── */
+  .controls-bar {
+    background: var(--gray-900);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .controls-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--gray-400);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-right: 4px;
+  }
+  .ctrl-btn {
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    background: transparent;
+    color: rgba(255,255,255,0.5);
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .ctrl-btn:hover { color: white; border-color: rgba(255,255,255,0.4); }
+  .ctrl-btn.on { background: var(--emerald); color: white; border-color: var(--emerald); }
+  .ctrl-sep { width: 1px; height: 20px; background: rgba(255,255,255,0.1); margin: 0 4px; }
+  .view-indicator {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--gray-400);
+    letter-spacing: .5px;
+  }
+
+  /* ── DESKTOP SHELL ── */
+  #desktop-view { display: block; }
+  #mobile-view  { display: none; }
+
+  .page-shell {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: white;
+    min-height: calc(100vh - 44px);
+    box-shadow: 0 0 0 1px var(--border-light);
+  }
+
+  /* ── STICKY TOP BAR ── */
+  .top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: white;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 16px;
+    height: 46px;
+  }
+  .tb-brand {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--emerald);
+    letter-spacing: -.3px;
+    flex-shrink: 0;
+  }
+  .tb-vdiv { width: 1px; height: 16px; background: var(--border); flex-shrink: 0; }
+  .tb-pill {
+    font-size: 9px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    flex-shrink: 0;
+  }
+  .tb-pnl {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: -1px;
+  }
+  .tb-acc-wrap {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-left: 4px;
+  }
+  .tb-acc-label { font-size: 10px; color: var(--gray-400); }
+  .tb-acc-bar {
+    width: 56px; height: 4px;
+    background: var(--gray-200);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .tb-acc-fill {
+    height: 100%;
+    background: var(--emerald);
+    border-radius: 2px;
+    transition: width .4s;
+  }
+  .tb-acc-pct {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--emerald);
+    font-family: var(--mono);
+    min-width: 28px;
+  }
+  .tb-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tb-feedback {
+    font-size: 10px;
+    color: var(--gray-400);
+    text-decoration: underline;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .tb-share {
+    font-size: 10px;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--gray-600);
+    background: white;
+  }
+
+  /* ── TWO-COLUMN LAYOUT ── */
+  .two-col { display: flex; min-height: calc(100vh - 46px); }
+
+  /* ── LEFT SIDEBAR — ultra-light, Tailwind/Linear Docs pattern ── */
+  .sidebar {
+    width: 200px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border-light);
+    padding: 12px 0;
+    position: sticky;
+    top: 46px;
+    height: calc(100vh - 46px);
+    overflow-y: auto;
+  }
+  .sb-group {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--gray-400);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 10px 16px 4px;
+  }
+  .sb-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: background .1s, border-color .1s;
+    user-select: none;
+  }
+  .sb-item:hover { background: var(--gray-50); }
+  .sb-item.active { border-left-color: var(--emerald); }
+  .sb-item.active .sb-text { font-weight: 600; color: var(--gray-900); }
+  .sb-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .sb-text { font-size: 12px; color: var(--gray-500); flex: 1; }
+  .sb-badge {
+    font-size: 9px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 8px;
+  }
+  .sb-badge.urgent { background: #FCEBEB; color: #791F1F; }
+  .sb-badge.green  { background: var(--emerald-light); color: var(--emerald-dark); }
+  .sb-badge.gray   { background: var(--gray-100); color: var(--gray-500); border: 1px solid var(--border-light); }
+
+  /* ── RIGHT CONTENT — scrollable ── */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    min-width: 0;
+  }
+  .section { padding: 0 28px 32px; max-width: 620px; }
+
+  /* Section eyebrow — Linear Docs pattern */
+  .eyebrow {
+    display: block;
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--gray-400);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 18px 0 12px;
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: 18px;
+  }
+
+  /* ── OVERVIEW SECTION ── */
+  .hero-pill-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .pill-sub { font-size: 11px; color: var(--gray-400); }
+  .verdict-headline {
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.3;
+    margin-bottom: 16px;
+    font-family: var(--serif);
+    color: var(--gray-900);
+    max-width: 480px;
+  }
+  .hero-num {
+    font-family: var(--mono);
+    font-size: 48px;
+    font-weight: 500;
+    letter-spacing: -3px;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .hero-unit { font-size: 12px; color: var(--gray-400); margin-bottom: 12px; }
+  .daily-anchor { font-size: 15px; color: var(--gray-600); line-height: 1.6; margin-bottom: 6px; }
+  .daily-anchor strong { font-weight: 600; }
+  .ctx-line { font-size: 11px; color: var(--gray-400); margin-bottom: 20px; }
+
+  /* Metric grid — larger numbers, cleaner */
+  .metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 22px;
+  }
+  .metric {
+    background: var(--gray-50);
+    border-radius: 10px;
+    padding: 14px;
+    border: 1px solid var(--border-light);
+  }
+  .metric-label {
+    font-size: 10px;
+    color: var(--gray-400);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .metric-value {
+    font-family: var(--mono);
+    font-size: 24px;
+    font-weight: 500;
+    letter-spacing: -1px;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .metric-sub { font-size: 10px; color: var(--gray-400); }
+
+  /* Verdict body */
+  .verdict-body { font-size: 14px; color: var(--gray-600); line-height: 1.75; margin-bottom: 20px; }
+
+  /* Problems */
+  .problem-row { padding: 12px 14px; margin-bottom: 8px; border-left: 3px solid transparent; }
+  .problem-row.certain { background: #FDECEA; border-left-color: #A32D2D; }
+  .problem-row.depends { background: #FEF3E0; border-left-color: #854F0B; }
+  .prob-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .prob-title { font-size: 13px; font-weight: 600; color: var(--gray-900); }
+  .prob-chip { font-size: 8px; font-weight: 700; padding: 2px 7px; text-transform: uppercase; letter-spacing: .8px; }
+  .prob-body { font-size: 12px; color: var(--gray-600); line-height: 1.65; }
+  .prob-figure { font-weight: 600; color: var(--gray-900); }
+
+  /* ── ACTIONS SECTION — Todoist/Linear pattern ── */
+  .action-summary { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+  .a-chip { font-size: 10px; font-weight: 600; padding: 4px 12px; border-radius: 20px; }
+  .a-chip.urgent { background: #FCEBEB; color: #791F1F; }
+  .a-chip.plan   { background: #FAEEDA; color: #633806; }
+  .a-chip.monitor{ background: var(--gray-100); color: var(--gray-500); border: 1px solid var(--border); }
+
+  /* Action rows — no card border, left-border = urgency */
+  .action-item {
+    border-left: 3px solid var(--gray-200);
+    padding: 14px 16px;
+    margin-bottom: 2px;
+    background: white;
+    cursor: pointer;
+    transition: background .1s;
+  }
+  .action-item:hover { background: var(--gray-50); }
+  .action-item.urgent { border-left-color: #A32D2D; }
+  .action-item.plan   { border-left-color: #854F0B; }
+  .action-item.monitor{ border-left-color: var(--gray-300); }
+
+  .action-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+  .urgency-chip {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+  }
+  .urgency-chip.urgent  { background: #FCEBEB; color: #791F1F; }
+  .urgency-chip.plan    { background: #FAEEDA; color: #633806; }
+  .urgency-chip.monitor { background: var(--gray-100); color: var(--gray-500); }
+  .action-deadline { font-size: 10px; color: var(--gray-400); font-family: var(--mono); }
+
+  /* Task text — primary, 14px */
+  .action-text { font-size: 14px; color: var(--gray-900); line-height: 1.55; }
+
+  /* Script — inline callout */
+  .action-script {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: var(--gray-50);
+    border-left: 2px solid var(--emerald);
+    font-size: 12px;
+    color: var(--gray-600);
+    font-style: italic;
+    line-height: 1.65;
+  }
+  .script-label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--emerald);
+    font-style: normal;
+    display: block;
+    margin-bottom: 5px;
+  }
+
+  /* ── VALUES SECTION ── */
+  .rate-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--gray-50);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    border: 1px solid var(--border-light);
+  }
+  .rate-label-block { flex: 1; }
+  .rate-label { font-size: 12px; color: var(--gray-700); }
+  .rate-note  { font-size: 10px; color: var(--gray-400); margin-top: 2px; }
+  .rate-before {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--gray-400);
+    text-decoration: line-through;
+    min-width: 48px;
+    text-align: right;
+  }
+  .rate-arrow { font-size: 14px; color: var(--gray-300); }
+  .rate-after {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 600;
+    min-width: 48px;
+  }
+  .rate-saving {
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--mono);
+    margin-left: auto;
+    min-width: 60px;
+    text-align: right;
+  }
+
+  /* P&L table */
+  .pl-table {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 14px 0;
+  }
+  .pl-row {
+    display: flex;
+    align-items: center;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .pl-row:last-child { border-bottom: none; background: var(--gray-50); }
+  .pl-item-col { flex: 1; }
+  .pl-item { font-size: 12px; color: var(--gray-700); }
+  .pl-item.total { font-size: 13px; font-weight: 600; color: var(--gray-900); }
+  .pl-formula { font-size: 10px; color: var(--gray-400); font-family: var(--mono); margin-top: 2px; }
+  .pl-val { font-family: var(--mono); font-size: 13px; font-weight: 600; flex-shrink: 0; }
+
+  /* ── HELP / CTA ── */
+  .cta-block {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .cta-top { padding: 20px; border-bottom: 1px solid var(--border-light); }
+  .cta-eyebrow {
+    display: block;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--emerald);
+    margin-bottom: 10px;
+  }
+  .cta-title { font-size: 16px; font-weight: 600; color: var(--gray-900); margin-bottom: 10px; line-height: 1.3; }
+  .cta-body  { font-size: 13px; color: var(--gray-600); line-height: 1.7; }
+  .cta-bottom {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--gray-50);
+  }
+  .cta-btn {
+    background: var(--emerald);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .cta-btn:hover { background: var(--emerald-dark); }
+  .cta-detail { font-size: 11px; color: var(--gray-400); line-height: 1.6; }
+
+  .email-block {
+    background: var(--gray-50);
+    border-radius: 10px;
+    padding: 16px;
+    border: 1px solid var(--border-light);
+  }
+  .email-title { font-size: 13px; font-weight: 600; color: var(--gray-900); margin-bottom: 4px; }
+  .email-sub   { font-size: 12px; color: var(--gray-500); margin-bottom: 12px; line-height: 1.5; }
+  .email-row   { display: flex; gap: 8px; }
+  .email-input {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: white;
+    color: var(--gray-900);
+    outline: none;
+  }
+  .email-input:focus { border-color: var(--emerald); }
+  .email-btn {
+    background: var(--emerald);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .feedback-link {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 11px;
+    color: var(--gray-400);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  /* ── MOBILE VIEW ── */
+  .mobile-shell {
+    max-width: 390px;
+    margin: 20px auto;
+    background: white;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px var(--border), 0 20px 60px rgba(0,0,0,.1);
+  }
+
+  .mob-topbar {
+    background: white;
+    border-bottom: 1px solid var(--border-light);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .mob-pnl {
+    font-family: var(--mono);
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -1px;
+    flex-shrink: 0;
+  }
+  .mob-vdiv { width: 1px; height: 16px; background: var(--border); flex-shrink: 0; }
+  .mob-tabs {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    flex: 1;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 1px;
+  }
+  .mob-tabs::-webkit-scrollbar { display: none; }
+  .mob-tab {
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 4px 11px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    background: white;
+    color: var(--gray-500);
+    white-space: nowrap;
+    transition: all .12s;
+  }
+  .mob-tab.on { background: var(--emerald); color: white; border-color: var(--emerald); }
+
+  .mob-content { overflow-y: auto; max-height: 580px; }
+  .mob-section { padding: 16px 16px 0; }
+  .mob-eyebrow {
+    display: block;
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--gray-400);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: 14px;
+  }
+
+  .mob-bottom {
+    background: white;
+    border-top: 1px solid var(--border-light);
+    padding: 12px 14px;
+    display: flex;
+    gap: 8px;
+  }
+  .mob-cta-btn {
+    flex: 1;
+    background: var(--emerald);
+    color: white;
+    border: none;
+    padding: 11px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+  }
+  .mob-sec-btn {
+    border: 1px solid var(--border);
+    background: white;
+    color: var(--gray-600);
+    padding: 11px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  /* Utility */
+  .hidden { display: none !important; }
+  .pos { color: #1A6B5A; }
+  .neg { color: #E24B4A; }
+</style>
+</head>
+<body>
+
+<!-- CONTROLS -->
+<div class="controls-bar">
+  <span class="controls-label">View</span>
+  <button class="ctrl-btn on" onclick="setView('desktop',this)">Desktop</button>
+  <button class="ctrl-btn" onclick="setView('mobile',this)">Mobile</button>
+  <div class="ctrl-sep"></div>
+  <span class="controls-label">Category</span>
+  <button class="ctrl-btn on" onclick="setCat(1,this)">Cat 1 — cost-plus, saving</button>
+  <button class="ctrl-btn" onclick="setCat(2,this)">Cat 2 — flat rate</button>
+  <button class="ctrl-btn" onclick="setCat(3,this)">Cat 3 — surcharging</button>
+  <button class="ctrl-btn" onclick="setCat(4,this)">Cat 4 — both problems</button>
+  <span class="view-indicator" id="view-label">Desktop view</span>
+</div>
+
+<!-- DESKTOP -->
+<div id="desktop-view">
+<div class="page-shell">
+
+  <!-- Sticky top bar -->
+  <div class="top-bar">
+    <span class="tb-brand">nosurcharging.com.au</span>
+    <div class="tb-vdiv"></div>
+    <span class="tb-pill" id="tb-pill">Situation 1</span>
+    <span class="tb-pnl" id="tb-pnl"></span>
+    <div class="tb-acc-wrap">
+      <span class="tb-acc-label">Accuracy</span>
+      <div class="tb-acc-bar"><div class="tb-acc-fill" id="tb-acc-fill" style="width:20%"></div></div>
+      <span class="tb-acc-pct" id="tb-acc-pct">20%</span>
+    </div>
+    <div class="tb-right">
+      <span class="tb-feedback">Result looks off?</span>
+      <button class="tb-share">Share</button>
+    </div>
+  </div>
+
+  <!-- Two-column body -->
+  <div class="two-col">
+
+    <!-- LEFT SIDEBAR -->
+    <nav class="sidebar">
+      <div class="sb-group">Result</div>
+      <div class="sb-item active" onclick="showSec('overview',this)">
+        <div class="sb-dot" style="background:var(--emerald)"></div>
+        <span class="sb-text">Overview</span>
+      </div>
+      <div class="sb-item" onclick="showSec('actions',this)">
+        <div class="sb-dot" id="action-dot" style="background:#E24B4A"></div>
+        <span class="sb-text">Actions</span>
+        <span class="sb-badge urgent" id="action-badge">1 urgent</span>
+      </div>
+      <div class="sb-group" style="margin-top:6px">Understand</div>
+      <div class="sb-item" onclick="showSec('values',this)">
+        <div class="sb-dot" style="background:var(--gray-400)"></div>
+        <span class="sb-text">Values &amp; rates</span>
+      </div>
+      <div class="sb-item" onclick="showSec('refine',this)">
+        <div class="sb-dot" style="background:#854F0B"></div>
+        <span class="sb-text">Refine estimate</span>
+        <span class="sb-badge green" id="acc-badge">20%</span>
+      </div>
+      <div class="sb-group" style="margin-top:6px">Next step</div>
+      <div class="sb-item" onclick="showSec('help',this)">
+        <div class="sb-dot" style="background:var(--emerald)"></div>
+        <span class="sb-text">Get help</span>
+        <span class="sb-badge green" id="price-badge">$2,500</span>
+      </div>
+    </nav>
+
+    <!-- RIGHT CONTENT -->
+    <div class="content" id="content">
+
+      <!-- OVERVIEW -->
+      <div class="section" id="sec-overview">
+        <span class="eyebrow">Overview</span>
+        <div class="hero-pill-row">
+          <span class="tb-pill" id="d-pill">Situation 1</span>
+          <span class="pill-sub" id="d-pill-sub">Estimated · 20% accuracy</span>
+        </div>
+        <h2 class="verdict-headline" id="d-headline"></h2>
+        <div class="hero-num" id="d-num"></div>
+        <div class="hero-unit">per year, from 1 October 2026</div>
+        <div class="daily-anchor" id="d-daily"></div>
+        <div class="ctx-line" id="d-ctx"></div>
+        <div class="metrics" id="d-metrics"></div>
+        <div class="verdict-body" id="d-body"></div>
+        <div id="d-problems"></div>
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="section hidden" id="sec-actions">
+        <span class="eyebrow">Action plan</span>
+        <div class="action-summary" id="d-action-summary"></div>
+        <div id="d-actions"></div>
+      </div>
+
+      <!-- VALUES -->
+      <div class="section hidden" id="sec-values">
+        <span class="eyebrow">What changes in October</span>
+        <div style="font-size:11px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Rate changes</div>
+        <div id="d-rates"></div>
+        <div style="font-size:11px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:1px;margin:18px 0 10px">Your P&amp;L breakdown</div>
+        <div class="pl-table" id="d-pltable"></div>
+        <p style="font-size:11px;color:var(--gray-400);font-style:italic;line-height:1.6;margin-top:12px;padding-top:12px;border-top:1px solid var(--border-light)">Scheme fees (~$2,100/yr on your volume) are unchanged by the reform and already included in your Stripe bill. Source: RBA Conclusions Paper, March 2026.</p>
+      </div>
+
+      <!-- REFINE -->
+      <div class="section hidden" id="sec-refine">
+        <span class="eyebrow">Refine your estimate</span>
+        <div style="background:var(--gray-50);border-radius:10px;padding:14px;margin-bottom:16px;border:1px solid var(--border-light)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+            <span style="font-size:11px;color:var(--gray-500)">Estimate accuracy</span>
+            <div style="flex:1;height:5px;background:var(--gray-200);border-radius:3px;overflow:hidden"><div style="height:100%;background:var(--emerald);border-radius:3px;width:20%" id="rf-acc-bar"></div></div>
+            <span style="font-size:11px;font-weight:600;color:var(--emerald);font-family:var(--mono)" id="rf-acc-pct">20%</span>
+          </div>
+          <div style="font-size:11px;color:var(--gray-400)">Update the fields below to improve your estimate.</div>
+        </div>
+        <div style="border:1px solid var(--border-light);border-radius:10px;padding:14px;margin-bottom:8px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <span style="font-size:13px;font-weight:600;color:var(--gray-900)">Average transaction value</span>
+            <span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--emerald-light);color:var(--emerald-dark)">Critical — below $50</span>
+          </div>
+          <div style="font-size:11px;color:var(--gray-400);margin-bottom:10px">At $35 each debit txn saves 3.4c — not the flat 1c above $50. Find in PSP dashboard → Reports.</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:10px;background:var(--gray-100);padding:2px 8px;border-radius:6px;color:var(--gray-500);border:1px solid var(--border-light)">Industry default</span>
+            <span style="font-size:11px;color:var(--gray-400)">$</span>
+            <input type="number" value="35" style="width:72px;padding:5px 8px;font-size:12px;font-family:var(--mono);border:1px solid var(--border);border-radius:6px;background:white;outline:none">
+            <span style="font-size:11px;color:var(--gray-400)">AUD</span>
+          </div>
+        </div>
+        <div style="border:1px solid var(--border-light);border-radius:10px;padding:14px;margin-bottom:8px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <span style="font-size:13px;font-weight:600;color:var(--gray-900)">Credit interchange rate</span>
+            <span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;background:#FAEEDA;color:#633806">High impact</span>
+          </div>
+          <div style="font-size:11px;color:var(--gray-400);margin-bottom:10px">We've assumed 0.47% (RBA market average). Find on your statement → interchange line items.</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:10px;background:var(--gray-100);padding:2px 8px;border-radius:6px;color:var(--gray-500);border:1px solid var(--border-light)">RBA average</span>
+            <input type="number" value="0.47" step="0.01" style="width:72px;padding:5px 8px;font-size:12px;font-family:var(--mono);border:1px solid var(--border);border-radius:6px;background:white;outline:none">
+            <span style="font-size:11px;color:var(--gray-400)">%</span>
+          </div>
+        </div>
+        <div style="border:1px solid var(--border-light);border-radius:10px;padding:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <span style="font-size:13px;font-weight:600;color:var(--gray-900)">Commercial card share</span>
+            <span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--gray-100);color:var(--gray-500);border:1px solid var(--border)">Moderate</span>
+          </div>
+          <div style="font-size:11px;color:var(--gray-400);margin-bottom:10px">Corporate interchange is UNCHANGED. Find on statement → card type breakdown.</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:10px;background:var(--gray-100);padding:2px 8px;border-radius:6px;color:var(--gray-500);border:1px solid var(--border-light)">RBA average</span>
+            <input type="number" value="0" style="width:72px;padding:5px 8px;font-size:12px;font-family:var(--mono);border:1px solid var(--border);border-radius:6px;background:white;outline:none">
+            <span style="font-size:11px;color:var(--gray-400)">% of cards</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- HELP -->
+      <div class="section hidden" id="sec-help">
+        <span class="eyebrow">Get help</span>
+        <div class="cta-block">
+          <div class="cta-top">
+            <span class="cta-eyebrow" id="d-cta-eye"></span>
+            <div class="cta-title" id="d-cta-title"></div>
+            <div class="cta-body" id="d-cta-body"></div>
+          </div>
+          <div class="cta-bottom">
+            <button class="cta-btn" id="d-cta-btn"></button>
+            <div class="cta-detail">30-minute call · Fixed price<br>No retainer required</div>
+          </div>
+        </div>
+        <div class="email-block">
+          <div class="email-title">Get your personalised reform timeline</div>
+          <div class="email-sub">Step-by-step checklist with exact dates, based on your category and volume.</div>
+          <div class="email-row">
+            <input class="email-input" type="email" placeholder="your@email.com">
+            <button class="email-btn">Send</button>
+          </div>
+        </div>
+        <span class="feedback-link">Does your result look off? Tell us →</span>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /two-col -->
+</div><!-- /page-shell -->
+</div><!-- /desktop-view -->
+
+<!-- MOBILE -->
+<div id="mobile-view" style="display:none; padding: 0 0 24px">
+<div class="mobile-shell">
+  <!-- Sticky mini-nav -->
+  <div class="mob-topbar">
+    <span class="mob-pnl" id="m-pnl"></span>
+    <div class="mob-vdiv"></div>
+    <div class="mob-tabs">
+      <div class="mob-tab on" onclick="setMobTab('overview',this)">Overview</div>
+      <div class="mob-tab" onclick="setMobTab('actions',this)">Actions</div>
+      <div class="mob-tab" onclick="setMobTab('values',this)">Values</div>
+      <div class="mob-tab" onclick="setMobTab('refine',this)">Refine</div>
+      <div class="mob-tab" onclick="setMobTab('help',this)">Help</div>
+    </div>
+  </div>
+
+  <!-- Mobile content -->
+  <div class="mob-content">
+
+    <div class="mob-section" id="m-sec-overview">
+      <span class="mob-eyebrow">Overview</span>
+      <div class="hero-pill-row">
+        <span class="tb-pill" id="m-pill">Situation 1</span>
+        <span class="pill-sub" id="m-acc-label">20% accuracy</span>
+      </div>
+      <h2 style="font-size:15px;font-weight:500;line-height:1.35;margin-bottom:12px;font-family:var(--serif)" id="m-headline"></h2>
+      <div style="font-family:var(--mono);font-size:36px;font-weight:500;letter-spacing:-2px;line-height:1;margin-bottom:4px" id="m-num"></div>
+      <div style="font-size:11px;color:var(--gray-400);margin-bottom:8px">per year from 1 October 2026</div>
+      <div style="font-size:13px;color:var(--gray-600);margin-bottom:14px" id="m-daily"></div>
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">IC saving</div><div class="metric-value pos" id="m-ic"></div></div>
+        <div class="metric"><div class="metric-label">Net impact</div><div class="metric-value" id="m-net"></div></div>
+      </div>
+      <div id="m-problems"></div>
+      <div style="height:16px"></div>
+    </div>
+
+    <div class="mob-section hidden" id="m-sec-actions">
+      <span class="mob-eyebrow">Action plan</span>
+      <div class="action-summary" id="m-action-summary"></div>
+      <div id="m-actions"></div>
+      <div style="height:16px"></div>
+    </div>
+
+    <div class="mob-section hidden" id="m-sec-values">
+      <span class="mob-eyebrow">Values &amp; rates</span>
+      <div id="m-rates"></div>
+      <div style="height:16px"></div>
+    </div>
+
+    <div class="mob-section hidden" id="m-sec-refine">
+      <span class="mob-eyebrow">Refine estimate</span>
+      <div style="font-size:12px;color:var(--gray-600);line-height:1.6;background:var(--gray-50);padding:12px;border-radius:8px;margin-bottom:12px">Update the fields below to improve your estimate accuracy from 20%.</div>
+      <div style="border:1px solid var(--border-light);border-radius:10px;padding:12px;margin-bottom:8px">
+        <div style="font-size:12px;font-weight:600;color:var(--gray-900);margin-bottom:4px">Avg transaction value</div>
+        <div style="font-size:10px;color:var(--gray-400);margin-bottom:8px">Find in PSP dashboard → Reports</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;background:var(--gray-100);padding:2px 6px;border-radius:5px;color:var(--gray-500)">Industry default</span>
+          <span style="font-size:10px;color:var(--gray-400)">$</span>
+          <input type="number" value="35" style="width:60px;padding:4px 7px;font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:5px;background:white;outline:none">
+          <span style="font-size:10px;color:var(--gray-400)">AUD</span>
+        </div>
+      </div>
+      <div style="border:1px solid var(--border-light);border-radius:10px;padding:12px;margin-bottom:8px">
+        <div style="font-size:12px;font-weight:600;color:var(--gray-900);margin-bottom:4px">Credit interchange rate</div>
+        <div style="font-size:10px;color:var(--gray-400);margin-bottom:8px">Monthly statement → interchange</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;background:var(--gray-100);padding:2px 6px;border-radius:5px;color:var(--gray-500)">RBA average</span>
+          <input type="number" value="0.47" step="0.01" style="width:60px;padding:4px 7px;font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:5px;background:white;outline:none">
+          <span style="font-size:10px;color:var(--gray-400)">%</span>
+        </div>
+      </div>
+      <div style="height:16px"></div>
+    </div>
+
+    <div class="mob-section hidden" id="m-sec-help">
+      <span class="mob-eyebrow">Get help</span>
+      <div class="cta-block">
+        <div class="cta-top">
+          <span class="cta-eyebrow" id="m-cta-eye"></span>
+          <div class="cta-title" id="m-cta-title" style="font-size:14px"></div>
+          <div class="cta-body" id="m-cta-body" style="font-size:12px"></div>
+        </div>
+        <div class="cta-bottom">
+          <button class="cta-btn" id="m-cta-btn" style="font-size:12px"></button>
+          <div class="cta-detail" style="font-size:10px">Fixed price · No retainer</div>
+        </div>
+      </div>
+      <div style="height:16px"></div>
+    </div>
+
+  </div><!-- /mob-content -->
+
+  <!-- Persistent bottom bar -->
+  <div class="mob-bottom">
+    <button class="mob-cta-btn" id="m-bottom-btn">Book a call</button>
+    <button class="mob-sec-btn">Save result</button>
+  </div>
+</div><!-- /mobile-shell -->
+</div><!-- /mobile-view -->
+
+<script>
+const V=2000000, DS=0.60, CS=0.35, SCH=0.00105, MSF=0.017, SUR=0.012, MAR=0.001
+let CAT=1
+
+function fmt(n){return '$'+Math.abs(Math.round(n)).toLocaleString('en-AU')}
+function fmtS(n){return(n>=0?'+':'−')+fmt(n)}
+function pct(r,d=2){return(r*100).toFixed(d)+'%'}
+
+function calc(){
+  const dTxns=(V*DS)/65
+  const newDr=Math.min(0.08,0.0016*65)
+  const dSave=Math.round(dTxns*Math.max(0,0.09-newDr))
+  const cSave=Math.round(V*CS*Math.max(0,0.0047-0.003))
+  const ic=dSave+cSave
+  const scheme=Math.round(V*SCH), gross=Math.round(dTxns*0.09)+Math.round(V*CS*0.0047)+scheme+Math.round(V*MAR)
+  const msfAnn=Math.round(V*MSF), srch=Math.round(V*SUR)
+  const pl=CAT===1?ic:CAT===2?0:CAT===3?ic-srch:-srch
+  return{ic,dSave,cSave,pl,gross,msfAnn,srch,scheme}
+}
+
+const PILLS={
+  1:{bg:'#EBF6F3',col:'#0D3D32'},2:{bg:'#FEF3E0',col:'#633806'},
+  3:{bg:'#FDECEA',col:'#791F1F'},4:{bg:'#FDECEA',col:'#791F1F'}
+}
+const HEADLINES={
+  1:'The reform works in your favour — you\'ll save automatically from October.',
+  2:'You may benefit, but only if Stripe passes the saving on.',
+  3:'You\'ll lose surcharge revenue that your interchange saving won\'t replace.',
+  4:'You\'re facing two simultaneous problems — surcharge ban and a flat-rate uncertainty.'
+}
+const BODIES={
+  1:'Your cost-plus plan means the interchange cut flows directly into your Stripe bill from 1 October. No negotiation needed. No action required to capture the saving.',
+  2:'The interchange cut happened, but Stripe\'s flat rate may not reflect it. The saving belongs to you — but only if Stripe passes it through. You need to ask, in writing, before October.',
+  3:'Your surcharge revenue on designated cards disappears on 1 October. The interchange saving partially offsets it, but not completely. The gap requires repricing.',
+  4:'From 1 October: your surcharge revenue disappears entirely, and your flat rate may not reflect the interchange saving. Two separate problems, one deadline.'
+}
+const CTX={
+  1:'$2M annual card volume · Stripe cost-plus · not surcharging',
+  2:'$2M annual card volume · Stripe 1.70% flat rate · not surcharging',
+  3:'$2M annual card volume · Stripe cost-plus · surcharging 1.20%',
+  4:'$2M annual card volume · Stripe 1.70% flat rate · surcharging 1.20%'
+}
+const CTAS={
+  1:{eye:'Payments Health Check · $2,500',title:'Your plan is solid — let\'s confirm the saving arrives',body:'A 30-minute call confirms your Stripe October statement will reflect the interchange cut, benchmarks your rate, and gives you the exact written confirmation script.',btn:'Book a call · $2,500'},
+  2:{eye:'Payments Health Check · $2,500',title:'Stripe needs to change your rate — let\'s get it in writing',body:'A 30-minute call gives you the exact script to present to Stripe, the benchmark to back it up, and cost-plus alternatives. Most merchants recover $1,000–$3,000/year.',btn:'Book a call · $2,500'},
+  3:{eye:'Reform Ready · $3,500',title:'Your repricing strategy needs to be set before October',body:'A Reform Ready engagement builds your full October response: repricing strategy, Stripe negotiation brief, and a 12-month payment cost roadmap.',btn:'Book a call · $3,500'},
+  4:{eye:'Reform Ready · $3,500',title:'Two problems, one October deadline — let\'s fix both',body:'You need a repricing strategy AND a PSP plan change. A Reform Ready engagement addresses both simultaneously.',btn:'Book a call · $3,500'}
+}
+const ACTIONS={
+  1:[
+    {t:'urgent',dl:'Before 1 Oct',text:'Confirm with Stripe in writing that your October statement will reflect the interchange cut.',script:'Hi, I\'m on your cost-plus plan. Can you confirm in writing that the RBA interchange rate changes effective 1 October 2026 will be reflected on my next statement?'},
+    {t:'plan',dl:'By 30 Oct',text:'Benchmark your rate against the mandatory MSF publication when it drops on 30 October.',script:null},
+    {t:'monitor',dl:'November',text:'Review your November statement line by line to confirm the debit and credit savings arrived.',script:null}
+  ],
+  2:[
+    {t:'urgent',dl:'Before 1 Oct',text:'Ask Stripe in writing whether your flat rate will be reduced to reflect the October interchange cut.',script:'I\'m on your flat rate. Following the RBA interchange changes effective 1 October 2026, will my rate be reduced? Please confirm in writing.'},
+    {t:'urgent',dl:'Before 1 Oct',text:'If Stripe won\'t pass through the saving, get quotes from at least two cost-plus providers.',script:null},
+    {t:'plan',dl:'By 30 Oct',text:'Compare your Stripe rate against the mandatory MSF publication on 30 October.',script:null},
+    {t:'monitor',dl:'Ongoing',text:'Monitor your effective rate monthly against the published MSF benchmark.',script:null}
+  ],
+  3:[
+    {t:'urgent',dl:'Before 1 Oct',text:'Reprice your products or services to recover the surcharge revenue loss before October.',script:null},
+    {t:'urgent',dl:'Before 1 Oct',text:'Confirm with Stripe that your interchange saving will appear automatically from October.',script:'We\'re on your cost-plus plan. Can you confirm our October bill will reflect the RBA debit and credit interchange cuts?'},
+    {t:'plan',dl:'By 15 Sep',text:'Model three repricing scenarios — full recovery, partial, and status quo — before committing.',script:null},
+    {t:'monitor',dl:'November',text:'Track your net payment cost weekly for the first month after October.',script:null}
+  ],
+  4:[
+    {t:'urgent',dl:'Before 1 Oct',text:'Reprice to recover the full surcharge revenue loss. This must be live on or before 1 October.',script:null},
+    {t:'urgent',dl:'Before 1 Oct',text:'Negotiate with Stripe to convert to cost-plus pricing. You should not be on flat rate if you were surcharging.',script:'We\'re on your flat rate and were surcharging. Following the October reform we need to move to interchange-plus pricing. What options do you have?'},
+    {t:'plan',dl:'By 1 Sep',text:'Get three competitive cost-plus quotes and prepare a side-by-side comparison.',script:null},
+    {t:'monitor',dl:'November',text:'Verify both changes — surcharge removal and rate update — appear in your October statement.',script:null}
+  ]
+}
+
+function actionHTML(acts, compact){
+  const uN=acts.filter(a=>a.t==='urgent').length
+  const pN=acts.filter(a=>a.t==='plan').length
+  const mN=acts.filter(a=>a.t==='monitor').length
+  const summary=`<div class="action-summary"><span class="a-chip urgent">${uN} urgent</span><span class="a-chip plan">${pN} to plan</span><span class="a-chip monitor">${mN} to monitor</span></div>`
+  const items=acts.map(a=>`
+    <div class="action-item ${a.t}">
+      <div class="action-meta">
+        <span class="urgency-chip ${a.t}">${a.t==='urgent'?'Urgent':a.t==='plan'?'Plan ahead':'Monitor'}</span>
+        <span class="action-deadline">${a.dl}</span>
+      </div>
+      <div class="action-text" style="${compact?'font-size:13px':''}">${a.text}</div>
+      ${a.script?`<div class="action-script"><span class="script-label">Exact script</span>"${a.script}"</div>`:''}
+    </div>`).join('')
+  return{summary,items}
+}
+
+function rateHTML(r){
+  const isFl=CAT===2||CAT===4, isSr=CAT===3||CAT===4
+  const rows=[]
+  rows.push({label:'Debit (Visa/MC) per transaction',note:'min(8c, 0.16% × avg txn value)',before:'9c',after:'5.6c',saving:'+'+fmt(r.dSave),neg:false})
+  if(!isFl)rows.push({label:'Consumer credit interchange',note:'0.17% saving on credit volume',before:'0.47%',after:'0.30%',saving:'+'+fmt(r.cSave),neg:false})
+  if(isSr)rows.push({label:'Surcharge on designated cards',note:'Banned from 1 October 2026',before:'1.20%',after:'0%',saving:'−'+fmt(r.srch),neg:true})
+  if(isFl)rows.push({label:'Your Stripe flat rate',note:'Depends on Stripe passing through',before:'1.70%',after:'?',saving:'TBD',neg:true})
+  return rows.map(rd=>`
+    <div class="rate-row">
+      <div class="rate-label-block"><div class="rate-label">${rd.label}</div><div class="rate-note">${rd.note}</div></div>
+      <span class="rate-before">${rd.before}</span>
+      <span class="rate-arrow">→</span>
+      <span class="rate-after" style="color:${rd.neg?'#E24B4A':'#1A6B5A'}">${rd.after}</span>
+      <span class="rate-saving" style="color:${rd.neg||rd.saving==='TBD'?'#E24B4A':'#1A6B5A'}">${rd.saving}</span>
+    </div>`).join('')
+}
+
+function plHTML(r){
+  const isFl=CAT===2||CAT===4, isSr=CAT===3||CAT===4
+  const rows=[]
+  if(isFl)rows.push({item:'What you pay Stripe today',formula:`${fmt(V)} × 1.70% flat rate`,val:fmt(r.msfAnn),col:'var(--gray-700)'})
+  else rows.push({item:'What you pay today',formula:'Interchange + scheme + margin',val:fmt(r.gross),col:'var(--gray-700)'})
+  if(isSr)rows.push({item:'Surcharge you currently recover',formula:`${fmt(V)} × 1.20% on designated cards`,val:'−'+fmt(r.srch),col:'#E24B4A'})
+  rows.push({item:'Debit saving (October)',formula:'min(8c, 0.16%×$65) per debit txn',val:'+'+fmt(r.dSave),col:'#1A6B5A'})
+  if(!isFl)rows.push({item:'Credit saving (October)',formula:'0.47% → 0.30% on credit volume',val:'+'+fmt(r.cSave),col:'#1A6B5A'})
+  if(isFl)rows.push({item:'Pass-through (at 0%)',formula:'Stripe has not confirmed the saving',val:'$0',col:'var(--gray-400)'})
+  rows.push({item:'NET ANNUAL P&L IMPACT',formula:'',val:fmtS(r.pl),col:r.pl>=0?'#1A6B5A':'#E24B4A',total:true})
+  return rows.map(row=>`
+    <div class="pl-row">
+      <div class="pl-item-col">
+        <div class="${row.total?'pl-item total':'pl-item'}">${row.item}</div>
+        ${row.formula?`<div class="pl-formula">${row.formula}</div>`:''}
+      </div>
+      <span class="pl-val" style="color:${row.col}">${row.val}</span>
+    </div>`).join('')
+}
+
+function render(){
+  const r=calc()
+  const pos=r.pl>=0
+  const p=PILLS[CAT]
+  const pnlStr=fmtS(r.pl)
+  const pnlColor=pos?'#1A6B5A':'#E24B4A'
+  const isFl=CAT===2||CAT===4, isSr=CAT===3||CAT===4
+  const daily=Math.round(Math.abs(r.pl)/365)
+  const dailyHTML=`That's <strong style="color:${pnlColor}">$${daily.toLocaleString('en-AU')} ${pos?'more in your pocket':'more in cost'} every day</strong> from October.`
+
+  // Top bar
+  const tbPill=document.getElementById('tb-pill')
+  tbPill.textContent=`Situation ${CAT}`; tbPill.style.background=p.bg; tbPill.style.color=p.col
+  const tbPnl=document.getElementById('tb-pnl')
+  tbPnl.textContent=pnlStr; tbPnl.style.color=pnlColor
+
+  // Sidebar badges
+  const urgentN=ACTIONS[CAT].filter(a=>a.t==='urgent').length
+  document.getElementById('action-badge').textContent=urgentN+' urgent'
+  document.getElementById('price-badge').textContent=CAT<=2?'$2,500':'$3,500'
+
+  // Overview - desktop
+  const dPill=document.getElementById('d-pill')
+  dPill.textContent=`Situation ${CAT}`; dPill.style.background=p.bg; dPill.style.color=p.col
+  document.getElementById('d-pill-sub').textContent='Estimated · 20% accuracy'
+  document.getElementById('d-headline').textContent=HEADLINES[CAT]
+  const dNum=document.getElementById('d-num')
+  dNum.textContent=pnlStr; dNum.style.color=pnlColor
+  document.getElementById('d-daily').innerHTML=dailyHTML
+  document.getElementById('d-ctx').textContent=CTX[CAT]
+  document.getElementById('d-body').textContent=BODIES[CAT]
+
+  // Metrics
+  const mc=['var(--gray-700)','var(--gray-700)','var(--gray-700)','var(--gray-700)']
+  document.getElementById('d-metrics').innerHTML=`
+    <div class="metric"><div class="metric-label">Annual IC saving</div><div class="metric-value pos">+${fmt(r.ic)}</div><div class="metric-sub">debit + credit</div></div>
+    <div class="metric"><div class="metric-label">Net P&L impact</div><div class="metric-value" style="color:${pnlColor}">${pnlStr}</div><div class="metric-sub">${pos?'annual saving':'annual shortfall'}</div></div>
+    <div class="metric"><div class="metric-label">Surcharge revenue</div><div class="metric-value" style="color:${isSr?'#E24B4A':'var(--gray-400)'}">${isSr?'−'+fmt(r.srch):'$0'}</div><div class="metric-sub">${isSr?'lost from 1 Oct':'not applicable'}</div></div>
+    <div class="metric"><div class="metric-label">Your cost today</div><div class="metric-value" style="color:var(--gray-700)">${fmt(isFl?r.msfAnn:r.gross)}</div><div class="metric-sub">${isFl?'annual flat rate':'interchange + scheme'}</div></div>`
+
+  // Problems
+  let pb=''
+  if(isSr)pb+=`<div class="problem-row certain"><div class="prob-header"><span class="prob-title">Your surcharge revenue disappears</span><span class="prob-chip" style="background:#A32D2D;color:white">Certain</span></div><div class="prob-body">From 1 October, designated cards cannot be surcharged. You are currently recovering <span class="prob-figure">${fmt(r.srch)}/year</span>. That disappears in a single day.</div></div>`
+  if(isFl)pb+=`<div class="problem-row depends"><div class="prob-header"><span class="prob-title">Processing cost reduction may not flow through</span><span class="prob-chip" style="background:#854F0B;color:white">Depends</span></div><div class="prob-body">Stripe's flat rate may not automatically reflect the interchange cut. On a cost-plus plan it flows through automatically — on flat rate, you need to ask and get written confirmation.</div></div>`
+  document.getElementById('d-problems').innerHTML=pb
+
+  // Actions
+  const {summary,items}=actionHTML(ACTIONS[CAT],false)
+  document.getElementById('d-action-summary').innerHTML=summary
+  document.getElementById('d-actions').innerHTML=items
+
+  // Values
+  document.getElementById('d-rates').innerHTML=rateHTML(r)
+  document.getElementById('d-pltable').innerHTML=plHTML(r)
+
+  // CTA
+  const c=CTAS[CAT]
+  document.getElementById('d-cta-eye').textContent=c.eye
+  document.getElementById('d-cta-title').textContent=c.title
+  document.getElementById('d-cta-body').textContent=c.body
+  document.getElementById('d-cta-btn').textContent=c.btn
+
+  // MOBILE
+  const mPnl=document.getElementById('m-pnl')
+  mPnl.textContent=pnlStr; mPnl.style.color=pnlColor
+  const mPill=document.getElementById('m-pill')
+  mPill.textContent=`Situation ${CAT}`; mPill.style.background=p.bg; mPill.style.color=p.col
+  const mNum=document.getElementById('m-num')
+  mNum.textContent=pnlStr; mNum.style.color=pnlColor
+  document.getElementById('m-headline').textContent=HEADLINES[CAT]
+  document.getElementById('m-daily').innerHTML=dailyHTML
+  document.getElementById('m-ic').textContent='+'+fmt(r.ic)
+  const mNet=document.getElementById('m-net')
+  mNet.textContent=pnlStr; mNet.style.color=pnlColor
+  document.getElementById('m-problems').innerHTML=pb
+  const {summary:ms,items:mi}=actionHTML(ACTIONS[CAT],true)
+  document.getElementById('m-action-summary').innerHTML=ms
+  document.getElementById('m-actions').innerHTML=mi
+  document.getElementById('m-rates').innerHTML=rateHTML(r)
+  document.getElementById('m-cta-eye').textContent=c.eye
+  document.getElementById('m-cta-title').textContent=c.title
+  document.getElementById('m-cta-body').textContent=c.body
+  document.getElementById('m-cta-btn').textContent=c.btn
+  document.getElementById('m-bottom-btn').textContent=c.btn
+}
+
+function showSec(id,el){
+  ['overview','actions','values','refine','help'].forEach(s=>{
+    document.getElementById('sec-'+s).classList.toggle('hidden',s!==id)
+  })
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'))
+  el.classList.add('active')
+  document.getElementById('content').scrollTop=0
+}
+
+function setMobTab(id,el){
+  ['overview','actions','values','refine','help'].forEach(s=>{
+    document.getElementById('m-sec-'+s).classList.toggle('hidden',s!==id)
+  })
+  document.querySelectorAll('.mob-tab').forEach(t=>t.classList.remove('on'))
+  el.classList.add('on')
+}
+
+function setCat(n,el){
+  CAT=n
+  document.querySelectorAll('.controls-bar .ctrl-btn').forEach(b=>{
+    if(['Cat 1','Cat 2','Cat 3','Cat 4'].some(t=>b.textContent.startsWith(t)))b.classList.remove('on')
+  })
+  el.classList.add('on')
+  render()
+}
+
+function setView(v,el){
+  document.querySelectorAll('.controls-bar .ctrl-btn').forEach(b=>{
+    if(b.textContent==='Desktop'||b.textContent==='Mobile')b.classList.remove('on')
+  })
+  el.classList.add('on')
+  document.getElementById('desktop-view').style.display=v==='desktop'?'block':'none'
+  document.getElementById('mobile-view').style.display=v==='mobile'?'block':'none'
+  document.getElementById('view-label').textContent=v==='desktop'?'Desktop view':'Mobile view'
+}
+
+render()
+</script>
+</body>
+</html>

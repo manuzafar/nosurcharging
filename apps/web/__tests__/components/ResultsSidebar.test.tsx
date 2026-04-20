@@ -10,10 +10,13 @@ describe('ResultsSidebar', () => {
     category: 2 as const,
   };
 
-  it('renders all 5 section labels', () => {
+  it('renders all 8 section labels', () => {
     render(<ResultsSidebar {...defaultProps} />);
     expect(screen.getByText('Overview')).toBeInTheDocument();
     expect(screen.getByText('Actions')).toBeInTheDocument();
+    expect(screen.getByText('Talk to customers')).toBeInTheDocument();
+    expect(screen.getByText('Negotiation brief')).toBeInTheDocument();
+    expect(screen.getByText('Readiness checklist')).toBeInTheDocument();
     expect(screen.getByText('Values & rates')).toBeInTheDocument();
     expect(screen.getByText('Refine estimate')).toBeInTheDocument();
     expect(screen.getByText('Get help')).toBeInTheDocument();
@@ -22,6 +25,7 @@ describe('ResultsSidebar', () => {
   it('renders group labels', () => {
     render(<ResultsSidebar {...defaultProps} />);
     expect(screen.getByText('Result')).toBeInTheDocument();
+    expect(screen.getByText('Prepare')).toBeInTheDocument();
     expect(screen.getByText('Understand')).toBeInTheDocument();
     expect(screen.getByText('Next step')).toBeInTheDocument();
   });
@@ -32,10 +36,10 @@ describe('ResultsSidebar', () => {
     expect(actionsBtn?.style.borderLeft).toContain('2px solid');
   });
 
-  it('active section has transparent background (no fill)', () => {
+  it('active section has accent-light background', () => {
     render(<ResultsSidebar {...defaultProps} activeSection="actions" />);
     const actionsBtn = screen.getByText('Actions').closest('button');
-    expect(actionsBtn?.style.background).toBe('transparent');
+    expect(actionsBtn?.style.background).toBe('var(--color-accent-light)');
   });
 
   it('fires onNavClick when clicked', () => {
@@ -64,7 +68,7 @@ describe('ResultsSidebar', () => {
   it('renders dividers between groups', () => {
     const { container } = render(<ResultsSidebar {...defaultProps} />);
     const dividers = container.querySelectorAll('[data-testid="sidebar-divider"]');
-    // 3 groups → 2 dividers (before "Understand" and "Next step")
-    expect(dividers.length).toBe(2);
+    // 4 groups → 3 dividers (before "Prepare", "Understand", "Next step")
+    expect(dividers.length).toBe(3);
   });
 });

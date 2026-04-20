@@ -51,7 +51,7 @@ export function ResultsTopBar({ category, plSwing, accuracy, volume, assessmentI
           className="font-medium uppercase shrink-0"
           style={{
             ...pillStyle,
-            fontSize: '9px',
+            fontSize: '10px',
             letterSpacing: '1px',
             padding: '2px 8px',
             borderRadius: '20px',
@@ -91,7 +91,7 @@ export function ResultsTopBar({ category, plSwing, accuracy, volume, assessmentI
               }}
             />
           </div>
-          <span className="font-mono" style={{ fontSize: '11px', color: 'var(--color-accent)' }}>
+          <span className="font-mono font-medium" style={{ fontSize: '11px', color: 'var(--color-accent)' }}>
             {accuracy}%
           </span>
         </div>

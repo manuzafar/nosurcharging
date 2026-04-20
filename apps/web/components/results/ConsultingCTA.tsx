@@ -62,7 +62,7 @@ export function ConsultingCTA({ category, pspName }: ConsultingCTAProps) {
       <p
         className="uppercase font-medium"
         style={{
-          fontSize: '9px',
+          fontSize: '11px',
           letterSpacing: '1.5px',
           color: 'rgba(255, 255, 255, 0.4)',
           marginBottom: '10px',

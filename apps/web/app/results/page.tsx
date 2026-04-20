@@ -37,6 +37,9 @@ import { ActionsSection } from '@/components/results/sections/ActionsSection';
 import { ValuesSection } from '@/components/results/sections/ValuesSection';
 import { RefineSection } from '@/components/results/sections/RefineSection';
 import { HelpSection } from '@/components/results/sections/HelpSection';
+import { TalkToCustomers } from '@/components/results/sections/TalkToCustomers';
+import { NegotiationBrief } from '@/components/results/sections/NegotiationBrief';
+import { ReadinessChecklist } from '@/components/results/sections/ReadinessChecklist';
 
 export default function ResultsPage() {
   return (
@@ -233,7 +236,27 @@ function ResultsContent() {
             surchargeRate={originalRaw.surchargeRate}
           />
 
-          <ActionsSection actions={actions} />
+          <ActionsSection
+            actions={actions}
+            category={category}
+            outputs={outputs}
+            passThrough={passThrough}
+            volume={volume}
+            surcharging={originalRaw.surcharging}
+            pspName={pspName}
+          />
+
+          <TalkToCustomers category={category} pspName={pspName} />
+
+          <NegotiationBrief
+            pspName={pspName}
+            planType={planType}
+            volume={volume}
+            category={category}
+            outputs={outputs}
+          />
+
+          <ReadinessChecklist category={category} pspName={pspName} />
 
           <ValuesSection
             outputs={outputs}
