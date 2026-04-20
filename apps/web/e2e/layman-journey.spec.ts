@@ -57,10 +57,7 @@ test.describe('Layman journey → Category 2', () => {
     // Wait for results content to load before interacting
     await expect(page.locator('#overview').getByText(/Situation \d/)).toBeVisible({ timeout: 10000 });
 
-    // Open depth zone to reveal slider
-    await page.getByRole('button', { name: /understand your numbers/i }).click();
-
-    // Slider should be visible (Category 2)
+    // Slider is directly visible in RefineSection (DepthToggle removed in two-column redesign)
     const slider = page.getByRole('slider');
     await expect(slider).toBeVisible();
 
