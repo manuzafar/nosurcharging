@@ -9,7 +9,7 @@ interface SubTabStripProps {
 export function SubTabStrip({ tabs, activeTab, onTabChange }: SubTabStripProps) {
   return (
     <div
-      className="flex overflow-x-auto scrollbar-hide gap-1 border border-rule rounded-lg overflow-hidden"
+      className="flex overflow-x-auto scrollbar-hide gap-1 border border-rule rounded-lg overflow-hidden w-fit"
       style={{
         background: 'var(--color-bg-secondary, #F5F3EF)',
         padding: '3px',
