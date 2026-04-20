@@ -110,35 +110,37 @@ export const TalkToCustomers = forwardRef<HTMLElement, TalkToCustomersProps>(
 
         <SubTabStrip tabs={TEMPLATE_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
 
-        <div
-          className="mt-4 rounded-lg p-4"
-          style={{
-            background: 'var(--color-bg-secondary, #F5F3EF)',
-            border: '1px solid var(--color-border-secondary)',
-            whiteSpace: 'pre-wrap',
-            fontSize: '13px',
-            lineHeight: '1.6',
-            color: 'var(--color-text-primary)',
-          }}
-        >
-          {currentTemplate}
-        </div>
+        <div className="bg-white border border-rule rounded-xl p-6 mt-4">
+          <div
+            className="rounded-lg p-4"
+            style={{
+              background: 'var(--color-bg-secondary, #F5F3EF)',
+              border: '1px solid var(--color-border-secondary)',
+              whiteSpace: 'pre-wrap',
+              fontSize: '13px',
+              lineHeight: '1.6',
+              color: 'var(--color-text-primary)',
+            }}
+          >
+            {currentTemplate}
+          </div>
 
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="mt-3 cursor-pointer rounded-lg"
-          style={{
-            fontSize: '13px',
-            padding: '8px 16px',
-            background: copied ? '#4B9E7E' : 'var(--color-accent)',
-            color: '#FFFFFF',
-            border: 'none',
-            transition: 'background 150ms ease',
-          }}
-        >
-          {copied ? 'Copied!' : 'Copy to clipboard'}
-        </button>
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="mt-3 cursor-pointer rounded-lg"
+            style={{
+              fontSize: '13px',
+              padding: '8px 16px',
+              background: copied ? '#4B9E7E' : 'var(--color-accent)',
+              color: '#FFFFFF',
+              border: 'none',
+              transition: 'background 150ms ease',
+            }}
+          >
+            {copied ? 'Copied!' : 'Copy to clipboard'}
+          </button>
+        </div>
       </section>
     );
   },

@@ -43,30 +43,30 @@ export const ActionsSection = forwardRef<HTMLElement, ActionsSectionProps>(
 
         <SubTabStrip tabs={ACTIONS_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
 
-        {activeTab === 'action-list' && (
-          <div className="mt-4">
+        <div className="bg-white border border-rule rounded-xl p-6 mt-4">
+          {activeTab === 'action-list' && (
             <ActionList actions={actions} />
-          </div>
-        )}
+          )}
 
-        {activeTab === 'your-options' && (
-          <YourOptions
-            category={category}
-            outputs={outputs}
-            passThrough={passThrough}
-            volume={volume}
-            surcharging={surcharging}
-            pspName={pspName}
-          />
-        )}
+          {activeTab === 'your-options' && (
+            <YourOptions
+              category={category}
+              outputs={outputs}
+              passThrough={passThrough}
+              volume={volume}
+              surcharging={surcharging}
+              pspName={pspName}
+            />
+          )}
 
-        {activeTab === 'do-nothing' && (
-          <IfYouDoNothing
-            category={category}
-            outputs={outputs}
-            pspName={pspName}
-          />
-        )}
+          {activeTab === 'do-nothing' && (
+            <IfYouDoNothing
+              category={category}
+              outputs={outputs}
+              pspName={pspName}
+            />
+          )}
+        </div>
       </section>
     );
   },

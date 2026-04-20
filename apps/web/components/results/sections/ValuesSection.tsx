@@ -40,37 +40,39 @@ export const ValuesSection = forwardRef<HTMLElement, ValuesSectionProps>(
           Values &amp; rates
         </p>
 
-        {/* LCR Insight Panel — flat and blended plans only */}
-        {(planType === 'flat' || planType === 'blended') && (
+        <div className="bg-white border border-rule rounded-xl p-6">
+          {/* LCR Insight Panel — flat and blended plans only */}
+          {(planType === 'flat' || planType === 'blended') && (
+            <div className="mb-6">
+              <LCRInsightPanel
+                volume={volume}
+                pspName={pspName}
+                planType={planType}
+                avgTransactionValue={avgTransactionValue}
+              />
+            </div>
+          )}
+
           <div className="mb-6">
-            <LCRInsightPanel
-              volume={volume}
+            <CostCompositionChart
+              outputs={outputs}
+              passThrough={passThrough}
               pspName={pspName}
-              planType={planType}
-              avgTransactionValue={avgTransactionValue}
             />
           </div>
-        )}
 
-        <div className="mb-6">
-          <CostCompositionChart
+          <AssumptionsPanel
             outputs={outputs}
             passThrough={passThrough}
+            resolutionTrace={resolutionTrace}
+            volume={volume}
             pspName={pspName}
+            planType={planType === 'blended' ? 'flat' : planType}
+            msfRate={msfRate}
+            surcharging={surcharging}
+            surchargeRate={surchargeRate}
           />
         </div>
-
-        <AssumptionsPanel
-          outputs={outputs}
-          passThrough={passThrough}
-          resolutionTrace={resolutionTrace}
-          volume={volume}
-          pspName={pspName}
-          planType={planType === 'blended' ? 'flat' : planType}
-          msfRate={msfRate}
-          surcharging={surcharging}
-          surchargeRate={surchargeRate}
-        />
       </section>
     );
   },
