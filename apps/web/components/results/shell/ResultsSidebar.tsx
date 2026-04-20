@@ -13,6 +13,7 @@ interface ResultsSidebarProps {
 const GROUP_LABELS: Record<SectionMeta['group'], string> = {
   result: 'Result',
   prepare: 'Prepare',
+  community: 'Community',
   understand: 'Understand',
   next: 'Next step',
 };

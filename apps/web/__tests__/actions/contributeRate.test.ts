@@ -164,4 +164,24 @@ describe('contributeRate', () => {
     expect(result.error).toBe('No active session');
     expect(mockInsert).not.toHaveBeenCalled();
   });
+
+  it('stores industry and stateCode when provided', async () => {
+    await contributeRate({
+      ...VALID_INPUT,
+      industry: 'hospitality',
+      stateCode: 'VIC',
+    });
+
+    const insertPayload = mockInsert.mock.calls[0]![0];
+    expect(insertPayload.industry).toBe('hospitality');
+    expect(insertPayload.state_code).toBe('VIC');
+  });
+
+  it('stores null for industry and stateCode when omitted', async () => {
+    await contributeRate(VALID_INPUT);
+
+    const insertPayload = mockInsert.mock.calls[0]![0];
+    expect(insertPayload.industry).toBeNull();
+    expect(insertPayload.state_code).toBeNull();
+  });
 });

@@ -40,6 +40,7 @@ import { HelpSection } from '@/components/results/sections/HelpSection';
 import { TalkToCustomers } from '@/components/results/sections/TalkToCustomers';
 import { NegotiationBrief } from '@/components/results/sections/NegotiationBrief';
 import { ReadinessChecklist } from '@/components/results/sections/ReadinessChecklist';
+import { PSPRegistrySection } from '@/components/results/sections/PSPRegistrySection';
 
 export default function ResultsPage() {
   return (
@@ -259,6 +260,15 @@ function ResultsContent() {
 
           <ReadinessChecklist category={category} pspName={pspName} />
 
+          <PSPRegistrySection
+            assessmentId={assessmentId ?? ''}
+            pspName={pspName}
+            planType={planType === 'blended' ? 'flat' : planType}
+            volume={volume}
+            category={category}
+            industry={(storedInputs.industry as string) ?? 'other'}
+          />
+
           <ValuesSection
             outputs={outputs}
             passThrough={passThrough}
@@ -288,8 +298,6 @@ function ResultsContent() {
             category={category}
             pspName={pspName}
             assessmentId={assessmentId ?? ''}
-            planType={planType}
-            volume={volume}
           />
         </main>
       </div>
