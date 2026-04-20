@@ -22,8 +22,8 @@ describe('useScrollSpy', () => {
       thresholds = [] as number[];
     } as unknown as typeof IntersectionObserver;
 
-    // Mock querySelectorAll to return some elements
-    vi.spyOn(document, 'querySelectorAll').mockReturnValue([] as unknown as NodeListOf<Element>);
+    // Mock getElementById to return null (sections not in DOM during test)
+    vi.spyOn(document, 'getElementById').mockReturnValue(null);
   });
 
   it('returns "overview" as default active section', () => {
@@ -46,8 +46,7 @@ describe('useScrollSpy', () => {
       observeCallback!(
         [
           {
-            target: { dataset: { section: 'actions' } } as unknown as Element,
-            isIntersecting: true,
+            target: { id: 'actions' } as unknown as Element,
             intersectionRatio: 0.5,
           } as unknown as IntersectionObserverEntry,
         ],
@@ -60,9 +59,9 @@ describe('useScrollSpy', () => {
 
   it('scrollToSection calls scrollIntoView', () => {
     const scrollIntoView = vi.fn();
-    vi.spyOn(document, 'querySelector').mockReturnValue({
+    vi.spyOn(document, 'getElementById').mockReturnValue({
       scrollIntoView: scrollIntoView,
-    } as unknown as Element);
+    } as unknown as HTMLElement);
 
     const { result } = renderHook(() => useScrollSpy());
     result.current.scrollToSection('values');
