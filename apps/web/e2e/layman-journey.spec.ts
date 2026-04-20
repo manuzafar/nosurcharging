@@ -28,8 +28,10 @@ test.describe('Layman journey → Category 2', () => {
     // Wait for reveal screen to complete and navigate to results
     await page.waitForURL(/\/results\?id=/, { timeout: 15000 });
 
-    // Results page assertions — explicit timeout for data fetch from remote DB
-    await expect(page.getByText('Situation 2')).toBeVisible({ timeout: 10000 });
+    // Results page assertions — scoped to overview to avoid strict mode violation
+    // (TopBar also renders "Situation N")
+    const overview = page.locator('#overview');
+    await expect(overview.getByText('Situation 2')).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(/per year from 1 October/)).toBeVisible();
   });
 
@@ -53,7 +55,7 @@ test.describe('Layman journey → Category 2', () => {
     await page.waitForURL(/\/results\?id=/, { timeout: 15000 });
 
     // Wait for results content to load before interacting
-    await expect(page.getByText(/Situation \d/)).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('#overview').getByText(/Situation \d/)).toBeVisible({ timeout: 10000 });
 
     // Open depth zone to reveal slider
     await page.getByRole('button', { name: /understand your numbers/i }).click();
