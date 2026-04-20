@@ -61,11 +61,7 @@ export function MetricCards({ outputs, planType = 'flat' }: MetricCardsProps) {
       {cells.map((cell) => (
         <div
           key={cell.label}
-          className="rounded-xl p-4"
-          style={{
-            background: 'var(--color-background-secondary)',
-            border: '0.5px solid var(--color-border-tertiary)',
-          }}
+          className="rounded-xl p-4 bg-white border border-rule"
         >
           <p
             className="uppercase"

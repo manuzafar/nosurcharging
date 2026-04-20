@@ -51,38 +51,40 @@ export const RefineSection = forwardRef<HTMLElement, RefineSectionProps>(
           Refine your estimate
         </p>
 
-        <RefinementPanel
-          initialResult={outputs}
-          resolutionTrace={resolvedInputs.resolutionTrace}
-          inputs={resolvedInputs}
-          industry={originalRaw.industry}
-          onRefinedResult={onRefinedResult}
-          onAccuracyChange={onAccuracyChange}
-        />
-
-        {/* PassThroughSlider — Cat 2/4 only (internally gates) */}
-        <div className="mt-6">
-          <PassThroughSlider
-            category={category}
-            passThrough={passThrough}
-            outputs={outputs}
-            originalRaw={originalRaw}
-            resolutionContext={resolutionContext}
-            pspName={pspName}
-            onOutputsChange={onOutputsChange}
+        <div className="bg-white border border-rule rounded-xl p-6">
+          <RefinementPanel
+            initialResult={outputs}
+            resolutionTrace={resolvedInputs.resolutionTrace}
+            inputs={resolvedInputs}
+            industry={originalRaw.industry}
+            onRefinedResult={onRefinedResult}
+            onAccuracyChange={onAccuracyChange}
           />
-        </div>
 
-        {/* EscapeScenarioCard — Cat 2/4 only (internally gates) */}
-        <div className="mt-4">
-          <EscapeScenarioCard
-            category={category}
-            outputs={outputs}
-            passThrough={passThrough}
-            originalRaw={originalRaw}
-            resolutionContext={resolutionContext}
-            pspName={pspName}
-          />
+          {/* PassThroughSlider — Cat 2/4 only (internally gates) */}
+          <div className="mt-6">
+            <PassThroughSlider
+              category={category}
+              passThrough={passThrough}
+              outputs={outputs}
+              originalRaw={originalRaw}
+              resolutionContext={resolutionContext}
+              pspName={pspName}
+              onOutputsChange={onOutputsChange}
+            />
+          </div>
+
+          {/* EscapeScenarioCard — Cat 2/4 only (internally gates) */}
+          <div className="mt-4">
+            <EscapeScenarioCard
+              category={category}
+              outputs={outputs}
+              passThrough={passThrough}
+              originalRaw={originalRaw}
+              resolutionContext={resolutionContext}
+              pspName={pspName}
+            />
+          </div>
         </div>
       </section>
     );

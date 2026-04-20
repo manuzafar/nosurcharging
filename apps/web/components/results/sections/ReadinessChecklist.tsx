@@ -60,78 +60,80 @@ export const ReadinessChecklist = forwardRef<HTMLElement, ReadinessChecklistProp
           Readiness checklist
         </p>
 
-        {/* Progress bar */}
-        <div className="mb-5">
-          <div className="flex items-center justify-between mb-2">
-            <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-              Progress
-            </span>
-            <span className="font-mono" style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>
-              {completedCount}/{items.length}
-            </span>
-          </div>
-          <div
-            style={{
-              height: '7px',
-              borderRadius: '9999px',
-              background: 'var(--color-bg-secondary, #F5F3EF)',
-              overflow: 'hidden',
-            }}
-          >
+        <div className="bg-white border border-rule rounded-xl p-6">
+          {/* Progress bar */}
+          <div className="mb-5">
+            <div className="flex items-center justify-between mb-2">
+              <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+                Progress
+              </span>
+              <span className="font-mono" style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>
+                {completedCount}/{items.length}
+              </span>
+            </div>
             <div
-              data-testid="progress-fill"
               style={{
-                height: '100%',
+                height: '7px',
                 borderRadius: '9999px',
-                background: 'var(--color-accent)',
-                width: `${progressPct}%`,
-                transition: 'width 300ms ease',
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Checklist items */}
-        <div className="flex flex-col gap-3">
-          {items.map((item, i) => (
-            <label
-              key={item.label}
-              className="flex items-start gap-3 cursor-pointer rounded-lg p-3"
-              style={{
-                background: checked[i] ? '#F0FAF6' : 'var(--color-bg-secondary, #F5F3EF)',
-                border: '1px solid ' + (checked[i] ? '#C6E7D9' : 'var(--color-border-secondary)'),
-                transition: 'background 150ms ease, border 150ms ease',
+                background: 'var(--color-bg-secondary, #F5F3EF)',
+                overflow: 'hidden',
               }}
             >
-              <input
-                type="checkbox"
-                checked={checked[i]}
-                onChange={() => handleToggle(i)}
-                className="mt-0.5 accent-amber-600"
-                style={{ width: '16px', height: '16px' }}
+              <div
+                data-testid="progress-fill"
+                style={{
+                  height: '100%',
+                  borderRadius: '9999px',
+                  background: 'var(--color-accent)',
+                  width: `${progressPct}%`,
+                  transition: 'width 300ms ease',
+                }}
               />
-              <div className="flex-1">
-                <span
-                  style={{
-                    fontSize: '13px',
-                    color: checked[i] ? 'var(--color-text-tertiary)' : 'var(--color-text-primary)',
-                    textDecoration: checked[i] ? 'line-through' : 'none',
-                  }}
-                >
-                  {item.label}
-                </span>
-                <span
-                  className="font-mono block mt-1"
-                  style={{
-                    fontSize: '12px',
-                    color: 'var(--color-text-tertiary)',
-                  }}
-                >
-                  {item.deadline}
-                </span>
-              </div>
-            </label>
-          ))}
+            </div>
+          </div>
+
+          {/* Checklist items */}
+          <div className="flex flex-col gap-3">
+            {items.map((item, i) => (
+              <label
+                key={item.label}
+                className="flex items-start gap-3 cursor-pointer rounded-lg p-3"
+                style={{
+                  background: checked[i] ? '#F0FAF6' : 'var(--color-bg-secondary, #F5F3EF)',
+                  border: '1px solid ' + (checked[i] ? '#C6E7D9' : 'var(--color-border-secondary)'),
+                  transition: 'background 150ms ease, border 150ms ease',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked[i]}
+                  onChange={() => handleToggle(i)}
+                  className="mt-0.5 accent-amber-600"
+                  style={{ width: '16px', height: '16px' }}
+                />
+                <div className="flex-1">
+                  <span
+                    style={{
+                      fontSize: '13px',
+                      color: checked[i] ? 'var(--color-text-tertiary)' : 'var(--color-text-primary)',
+                      textDecoration: checked[i] ? 'line-through' : 'none',
+                    }}
+                  >
+                    {item.label}
+                  </span>
+                  <span
+                    className="font-mono block mt-1"
+                    style={{
+                      fontSize: '12px',
+                      color: 'var(--color-text-tertiary)',
+                    }}
+                  >
+                    {item.deadline}
+                  </span>
+                </div>
+              </label>
+            ))}
+          </div>
         </div>
       </section>
     );

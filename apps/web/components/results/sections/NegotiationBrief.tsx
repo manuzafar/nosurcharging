@@ -118,110 +118,112 @@ export const NegotiationBrief = forwardRef<HTMLElement, NegotiationBriefProps>(
           Negotiation brief
         </p>
 
-        {/* PSP contact card */}
-        <div
-          className="rounded-lg p-4 mb-5"
-          style={{
-            background: '#F0FAF6',
-            border: '1px solid #C6E7D9',
-          }}
-        >
-          <p style={{ fontSize: '14px', color: '#2D7A5E', fontWeight: 500, marginBottom: '8px' }}>
-            {pspName} contact
-          </p>
-          <div className="flex flex-col gap-1" style={{ fontSize: '13px', color: '#2D7A5E' }}>
-            <span><strong>Channel:</strong> {contact.channel}</span>
-            <span><strong>How:</strong> {contact.instructions}</span>
-            {contact.hours && <span><strong>Hours:</strong> {contact.hours}</span>}
-            {contact.phone && (
-              <span><strong>Phone:</strong> <span className="font-mono">{contact.phone}</span></span>
-            )}
-          </div>
-        </div>
-
-        {/* 5 steps */}
-        <div className="flex flex-col gap-4">
-          <div className="flex gap-3">
-            <span className="font-mono shrink-0" style={{ fontSize: '13px', color: 'var(--color-accent)', fontWeight: 500 }}>1.</span>
-            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-              Gather your current statement showing your effective rate and monthly volume.
+        <div className="bg-white border border-rule rounded-xl p-6">
+          {/* PSP contact card */}
+          <div
+            className="rounded-lg p-4 mb-5"
+            style={{
+              background: '#F0FAF6',
+              border: '1px solid #C6E7D9',
+            }}
+          >
+            <p style={{ fontSize: '14px', color: '#2D7A5E', fontWeight: 500, marginBottom: '8px' }}>
+              {pspName} contact
             </p>
-          </div>
-
-          <div className="flex gap-3">
-            <span className="font-mono shrink-0" style={{ fontSize: '13px', color: 'var(--color-accent)', fontWeight: 500 }}>2.</span>
-            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-              Call {pspName} using the contact details above. Ask to speak with the pricing or retention team.
-            </p>
-          </div>
-
-          <div className="flex gap-3">
-            <span className="font-mono shrink-0" style={{ fontSize: '13px', color: 'var(--color-accent)', fontWeight: 500 }}>3.</span>
-            <div>
-              <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '8px' }}>
-                Use this script:
-              </p>
-              <blockquote
-                className="rounded-lg p-4"
-                style={{
-                  borderLeft: '3px solid var(--color-accent)',
-                  background: 'var(--color-bg-secondary, #F5F3EF)',
-                  fontSize: '13px',
-                  color: 'var(--color-text-primary)',
-                  lineHeight: '1.6',
-                  margin: 0,
-                }}
-              >
-                {scriptText}
-              </blockquote>
+            <div className="flex flex-col gap-1" style={{ fontSize: '13px', color: '#2D7A5E' }}>
+              <span><strong>Channel:</strong> {contact.channel}</span>
+              <span><strong>How:</strong> {contact.instructions}</span>
+              {contact.hours && <span><strong>Hours:</strong> {contact.hours}</span>}
+              {contact.phone && (
+                <span><strong>Phone:</strong> <span className="font-mono">{contact.phone}</span></span>
+              )}
             </div>
           </div>
 
-          <div className="flex gap-3">
-            <span className="font-mono shrink-0" style={{ fontSize: '13px', color: 'var(--color-accent)', fontWeight: 500 }}>4.</span>
-            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-              Ask for the new rate in writing. Compare it against the RBA benchmark data (available from 30 October 2026).
-            </p>
+          {/* 5 steps */}
+          <div className="flex flex-col gap-4">
+            <div className="flex gap-3">
+              <span className="font-mono shrink-0" style={{ fontSize: '13px', color: 'var(--color-accent)', fontWeight: 500 }}>1.</span>
+              <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+                Gather your current statement showing your effective rate and monthly volume.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <span className="font-mono shrink-0" style={{ fontSize: '13px', color: 'var(--color-accent)', fontWeight: 500 }}>2.</span>
+              <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+                Call {pspName} using the contact details above. Ask to speak with the pricing or retention team.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <span className="font-mono shrink-0" style={{ fontSize: '13px', color: 'var(--color-accent)', fontWeight: 500 }}>3.</span>
+              <div>
+                <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '8px' }}>
+                  Use this script:
+                </p>
+                <blockquote
+                  className="rounded-lg p-4"
+                  style={{
+                    borderLeft: '3px solid var(--color-accent)',
+                    background: 'var(--color-bg-secondary, #F5F3EF)',
+                    fontSize: '13px',
+                    color: 'var(--color-text-primary)',
+                    lineHeight: '1.6',
+                    margin: 0,
+                  }}
+                >
+                  {scriptText}
+                </blockquote>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <span className="font-mono shrink-0" style={{ fontSize: '13px', color: 'var(--color-accent)', fontWeight: 500 }}>4.</span>
+              <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+                Ask for the new rate in writing. Compare it against the RBA benchmark data (available from 30 October 2026).
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <span className="font-mono shrink-0" style={{ fontSize: '13px', color: 'var(--color-accent)', fontWeight: 500 }}>5.</span>
+              <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+                If the offer isn&apos;t competitive, mention you&apos;re comparing alternatives. Most PSPs have retention offers.
+              </p>
+            </div>
           </div>
 
-          <div className="flex gap-3">
-            <span className="font-mono shrink-0" style={{ fontSize: '13px', color: 'var(--color-accent)', fontWeight: 500 }}>5.</span>
-            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-              If the offer isn&apos;t competitive, mention you&apos;re comparing alternatives. Most PSPs have retention offers.
+          {/* If PSP says no */}
+          <div className="mt-6">
+            <p style={{ fontSize: '14px', color: 'var(--color-text-primary)', fontWeight: 500, marginBottom: '12px' }}>
+              If {pspName} says no
             </p>
-          </div>
-        </div>
+            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '12px' }}>
+              Consider switching to a cost-plus (IC+) provider. These alternatives pass through interchange savings automatically:
+            </p>
 
-        {/* If PSP says no */}
-        <div className="mt-6">
-          <p style={{ fontSize: '14px', color: 'var(--color-text-primary)', fontWeight: 500, marginBottom: '12px' }}>
-            If {pspName} says no
-          </p>
-          <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '12px' }}>
-            Consider switching to a cost-plus (IC+) provider. These alternatives pass through interchange savings automatically:
-          </p>
-
-          <div className="overflow-x-auto">
-            <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--color-border-secondary)' }}>
-                  <th style={{ textAlign: 'left', padding: '8px 12px', color: 'var(--color-text-tertiary)', fontWeight: 500, fontSize: '12px' }}>Provider</th>
-                  <th style={{ textAlign: 'left', padding: '8px 12px', color: 'var(--color-text-tertiary)', fontWeight: 500, fontSize: '12px' }}>Best for</th>
-                  <th style={{ textAlign: 'left', padding: '8px 12px', color: 'var(--color-text-tertiary)', fontWeight: 500, fontSize: '12px' }}>Strength</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ALT_PSPS
-                  .filter((p) => p.name !== pspName)
-                  .map((p) => (
-                    <tr key={p.name} style={{ borderBottom: '1px solid var(--color-border-secondary)' }}>
-                      <td style={{ padding: '8px 12px', color: 'var(--color-text-primary)', fontWeight: 500 }}>{p.name}</td>
-                      <td style={{ padding: '8px 12px', color: 'var(--color-text-secondary)' }}>{p.type}</td>
-                      <td style={{ padding: '8px 12px', color: 'var(--color-text-secondary)' }}>{p.strength}</td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto">
+              <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--color-border-secondary)' }}>
+                    <th style={{ textAlign: 'left', padding: '8px 12px', color: 'var(--color-text-tertiary)', fontWeight: 500, fontSize: '12px' }}>Provider</th>
+                    <th style={{ textAlign: 'left', padding: '8px 12px', color: 'var(--color-text-tertiary)', fontWeight: 500, fontSize: '12px' }}>Best for</th>
+                    <th style={{ textAlign: 'left', padding: '8px 12px', color: 'var(--color-text-tertiary)', fontWeight: 500, fontSize: '12px' }}>Strength</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ALT_PSPS
+                    .filter((p) => p.name !== pspName)
+                    .map((p) => (
+                      <tr key={p.name} style={{ borderBottom: '1px solid var(--color-border-secondary)' }}>
+                        <td style={{ padding: '8px 12px', color: 'var(--color-text-primary)', fontWeight: 500 }}>{p.name}</td>
+                        <td style={{ padding: '8px 12px', color: 'var(--color-text-secondary)' }}>{p.type}</td>
+                        <td style={{ padding: '8px 12px', color: 'var(--color-text-secondary)' }}>{p.strength}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>

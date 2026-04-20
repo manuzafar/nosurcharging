@@ -34,12 +34,14 @@ export function ResultsSidebar({
 
   return (
     <nav
-      className="hidden md:flex flex-col shrink-0 border-r border-rule overflow-y-auto"
+      className="hidden md:flex flex-col shrink-0 overflow-y-auto"
       style={{
         width: '200px',
         position: 'sticky',
         top: '44px',
         height: 'calc(100vh - 44px)',
+        background: '#F0EBE3',
+        borderRight: '1.5px solid #C8C0B4',
       }}
       aria-label="Results sections"
     >
