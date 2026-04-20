@@ -37,10 +37,10 @@ const SCENARIOS: ScenarioConfig[] = [
 ];
 
 export function YourOptions({ category, outputs, passThrough, volume, surcharging, pspName }: YourOptionsProps) {
+  const [sliderPct, setSliderPct] = useState(1.5);
+
   // Cat 1/2: not applicable
   if (category === 1 || category === 2) return null;
-
-  const [sliderPct, setSliderPct] = useState(1.5);
 
   const calcNet = (pct: number) => {
     const newRev = volume * pct / 100;
