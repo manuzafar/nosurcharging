@@ -6,15 +6,15 @@ test.describe('Amex carve-out', () => {
 
     // Disclaimer
     await page.getByRole('checkbox').check();
-    await page.getByRole('button', { name: /start assessment/i }).click();
+    await page.getByRole('button', { name: /start my assessment/i }).click();
 
     // Step 1
     await page.getByRole('textbox').fill('1000000');
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 2
-    await page.getByRole('radio', { name: /flat rate/i }).click();
-    await page.getByRole('button', { name: 'Stripe' }).click();
+    await page.getByRole('radio', { name: /a single rate on every transaction/i }).click();
+    await page.getByRole('radio', { name: 'Stripe' }).click();
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 3 — Yes surcharging

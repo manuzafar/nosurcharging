@@ -2,9 +2,9 @@
 
 // Step 4: Industry selection.
 // CB-06: 3 columns (2 below 500px). SVG icons, not emoji.
-// Selected: 1px amber border, #FAEEDA bg, #633806 text, #BA7517 icon.
+// Selected: 1px accent border, #EBF6F3 bg, #0D4A3C text, #1A6B5A icon.
 
-import { AmberButton } from '@/components/ui/AmberButton';
+import { AccentButton } from '@/components/ui/AccentButton';
 import { TextButton } from '@/components/ui/TextButton';
 
 const INDUSTRIES = [
@@ -84,7 +84,7 @@ export function Step4Industry({
 }: Step4IndustryProps) {
   return (
     <div>
-      <p className="text-label tracking-widest text-amber-400">Step 4</p>
+      <p className="text-label tracking-widest text-accent">Step 4</p>
       <h2 className="mt-2 font-serif text-heading-lg">What industry are you in?</h2>
       <p className="mt-2 text-body-sm text-gray-500">
         This personalises your action list and average transaction value.
@@ -101,12 +101,16 @@ export function Step4Industry({
               className={`flex flex-col items-center gap-2 rounded-lg p-3.5 text-center
                 transition-all duration-150 ${
                   selected
-                    ? 'border border-amber-400 bg-amber-50 text-amber-800'
+                    ? 'border border-accent bg-accent-light text-accent-dark'
                     : 'border border-gray-200 text-gray-600 hover:border-gray-300'
                 }`}
               style={{ borderWidth: selected ? '1px' : '0.5px' }}
             >
-              <span className={selected ? 'text-amber-400' : 'text-gray-400'}>
+              {/* The icon itself is purely decorative (the label says the
+                  industry name) — aria-hidden keeps it out of the a11y tree.
+                  text-gray-500 meets 4.5:1 against the white card for sighted
+                  users who still scan the icon. */}
+              <span aria-hidden className={selected ? 'text-accent' : 'text-gray-500'}>
                 {ind.icon}
               </span>
               <span className="text-caption">{ind.label}</span>
@@ -117,16 +121,9 @@ export function Step4Industry({
 
       <div className="mt-8 flex items-center justify-between">
         <TextButton onClick={onBack}>Back</TextButton>
-        <button
-          type="button"
-          onClick={onNext}
-          disabled={!industry}
-          className="rounded-lg bg-gray-900 px-8 py-3 text-body font-medium text-white
-            transition-opacity duration-150 hover:opacity-90
-            disabled:opacity-30 disabled:cursor-not-allowed"
-        >
+        <AccentButton onClick={onNext} disabled={!industry}>
           See my results →
-        </button>
+        </AccentButton>
       </div>
     </div>
   );

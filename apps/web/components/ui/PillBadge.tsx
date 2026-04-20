@@ -2,9 +2,9 @@
 
 // Pill badge — used for category pills, confidence chips, urgency labels.
 // 11px, 4px 12px padding, 20px border-radius.
-// Variants: amber, green, red, grey.
+// Variants: accent, green, red, grey.
 
-type PillVariant = 'amber' | 'green' | 'red' | 'grey';
+type PillVariant = 'accent' | 'amber' | 'green' | 'red' | 'grey';
 
 interface PillBadgeProps {
   children: React.ReactNode;
@@ -13,9 +13,13 @@ interface PillBadgeProps {
 }
 
 const variantStyles: Record<PillVariant, React.CSSProperties> = {
+  accent: {
+    background: '#EBF6F3',
+    color: '#0D4A3C',
+  },
   amber: {
-    background: 'var(--color-background-warning)',
-    color: 'var(--color-text-warning)',
+    background: 'var(--color-accent-light)',
+    color: 'var(--color-accent-dark)',
   },
   green: {
     background: 'var(--color-background-success)',
@@ -31,7 +35,7 @@ const variantStyles: Record<PillVariant, React.CSSProperties> = {
   },
 };
 
-export function PillBadge({ children, variant = 'amber', className = '' }: PillBadgeProps) {
+export function PillBadge({ children, variant = 'accent', className = '' }: PillBadgeProps) {
   return (
     <span
       className={`inline-flex items-center rounded-pill px-3 py-1

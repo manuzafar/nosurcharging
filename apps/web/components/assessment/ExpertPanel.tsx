@@ -6,7 +6,7 @@
 // Confidence badge updates live.
 // State persists through Steps 3/4.
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import type { MerchantInputOverrides } from '@nosurcharging/calculations/types';
 
 interface ExpertPanelProps {
@@ -16,6 +16,10 @@ interface ExpertPanelProps {
 
 export function ExpertPanel({ expertRates, onChange }: ExpertPanelProps) {
   const [expanded, setExpanded] = useState(false);
+  const panelId = useId();
+  const debitId = useId();
+  const creditId = useId();
+  const marginId = useId();
 
   const hasAnyInput =
     expertRates?.debitCents !== undefined ||
@@ -32,6 +36,8 @@ export function ExpertPanel({ expertRates, onChange }: ExpertPanelProps) {
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
+        aria-controls={panelId}
         className="text-body-sm text-gray-500 underline decoration-gray-300
           underline-offset-2 hover:text-gray-700 transition-colors duration-100"
       >
@@ -39,6 +45,7 @@ export function ExpertPanel({ expertRates, onChange }: ExpertPanelProps) {
       </button>
 
       <div
+        id={panelId}
         className={`overflow-hidden transition-all duration-250 ease-out ${
           expanded ? 'mt-3 max-h-96 opacity-100' : 'max-h-0 opacity-0'
         }`}
@@ -47,65 +54,71 @@ export function ExpertPanel({ expertRates, onChange }: ExpertPanelProps) {
           <p className="text-body-sm font-medium text-gray-700">
             Your actual interchange rates
           </p>
-          <p className="mt-1 text-caption text-gray-400">
+          <p className="mt-1 text-caption text-gray-500">
             Leave blank to use RBA averages
           </p>
 
           <div className="mt-3 grid grid-cols-3 gap-3">
             <div>
-              <label className="text-micro text-gray-500 tracking-wide">
+              <label htmlFor={debitId} className="text-micro text-gray-500 tracking-wide">
                 Debit (cents/txn)
               </label>
               <input
+                id={debitId}
                 type="number"
                 step="0.01"
                 placeholder="9"
                 value={expertRates?.debitCents ?? ''}
                 onChange={(e) => handleChange('debitCents', e.target.value)}
                 className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2
-                  font-mono text-body-sm outline-none focus:border-amber-400
+                  font-mono text-body-sm outline-none focus:border-accent
                   transition-colors duration-150"
               />
             </div>
             <div>
-              <label className="text-micro text-gray-500 tracking-wide">
+              <label htmlFor={creditId} className="text-micro text-gray-500 tracking-wide">
                 Credit (%)
               </label>
               <input
+                id={creditId}
                 type="number"
                 step="0.01"
                 placeholder="0.52"
                 value={expertRates?.creditPct ?? ''}
                 onChange={(e) => handleChange('creditPct', e.target.value)}
                 className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2
-                  font-mono text-body-sm outline-none focus:border-amber-400
+                  font-mono text-body-sm outline-none focus:border-accent
                   transition-colors duration-150"
               />
             </div>
             <div>
-              <label className="text-micro text-gray-500 tracking-wide">
+              <label htmlFor={marginId} className="text-micro text-gray-500 tracking-wide">
                 PSP margin (%)
               </label>
               <input
+                id={marginId}
                 type="number"
                 step="0.01"
                 placeholder="0.10"
                 value={expertRates?.marginPct ?? ''}
                 onChange={(e) => handleChange('marginPct', e.target.value)}
                 className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2
-                  font-mono text-body-sm outline-none focus:border-amber-400
+                  font-mono text-body-sm outline-none focus:border-accent
                   transition-colors duration-150"
               />
             </div>
           </div>
 
-          <p className="mt-3 text-caption text-gray-400">
+          <p className="mt-3 text-caption text-gray-500">
             Scheme fees default to RBA averages. Unregulated. Unchanged by reform.
           </p>
 
-          {/* Confidence badge — updates live. Exact colours from CB-02 spec. */}
+          {/* Confidence badge — updates live. Exact colours from CB-02 spec.
+              Shape: pill (20px) — it's a classification chip, not an input,
+              so it belongs with the other pill badges (category pill, tier
+              chips, "Estimated breakdown" pill). */}
           <div
-            className="mt-3 inline-flex items-center rounded-lg px-3 py-1.5 text-caption font-medium"
+            className="mt-3 inline-flex items-center rounded-pill px-3 py-1.5 text-caption font-medium"
             style={
               hasAnyInput
                 ? {

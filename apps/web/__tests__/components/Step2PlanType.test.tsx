@@ -12,10 +12,20 @@ describe('Step2PlanType', () => {
   const user = userEvent.setup();
 
   const defaultProps = {
-    planType: null as 'flat' | 'costplus' | null,
+    planType: null as 'flat' | 'costplus' | 'blended' | 'zero_cost' | null,
+    msfRateMode: 'unselected' as 'unselected' | 'market_estimate' | 'custom',
+    customMSFRate: null as number | null,
+    blendedDebitRate: null as number | null,
+    blendedCreditRate: null as number | null,
     psp: null as string | null,
     merchantInput: {},
+    msfRate: 0.014,
+    onMsfRateChange: vi.fn(),
     onPlanTypeChange,
+    onMsfRateModeChange: vi.fn(),
+    onCustomMSFRateChange: vi.fn(),
+    onBlendedRatesChange: vi.fn(),
+    onStrategicRateSelected: vi.fn(),
     onPspChange,
     onMerchantInputChange,
     onNext,
@@ -26,26 +36,26 @@ describe('Step2PlanType', () => {
     vi.clearAllMocks();
   });
 
-  it('both plan type cards render', () => {
+  it('both plan type tiles render', () => {
     render(<Step2PlanType {...defaultProps} />);
-    expect(screen.getByRole('radio', { name: /flat rate/i })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /cost-plus/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /a single rate on every transaction/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /list of separate charges/i })).toBeInTheDocument();
   });
 
-  it('clicking flat rate card selects it (aria-checked=true)', async () => {
+  it('clicking flat rate tile selects it (aria-checked=true)', async () => {
     const { rerender } = render(<Step2PlanType {...defaultProps} />);
-    const flatCard = screen.getByRole('radio', { name: /flat rate/i });
+    const flatTile = screen.getByRole('radio', { name: /a single rate on every transaction/i });
 
-    await user.click(flatCard);
-    expect(onPlanTypeChange).toHaveBeenCalledWith('flat');
+    await user.click(flatTile);
+    expect(onPlanTypeChange).toHaveBeenCalledWith('flat', false);
 
     // Rerender with flat selected to verify aria-checked
     rerender(<Step2PlanType {...defaultProps} planType="flat" />);
-    expect(screen.getByRole('radio', { name: /flat rate/i })).toHaveAttribute(
+    expect(screen.getByRole('radio', { name: /a single rate on every transaction/i })).toHaveAttribute(
       'aria-checked',
       'true',
     );
-    expect(screen.getByRole('radio', { name: /cost-plus/i })).toHaveAttribute(
+    expect(screen.getByRole('radio', { name: /list of separate charges/i })).toHaveAttribute(
       'aria-checked',
       'false',
     );
@@ -54,15 +64,15 @@ describe('Step2PlanType', () => {
   it('clicking cost-plus deselects flat and selects cost-plus', async () => {
     const { rerender } = render(<Step2PlanType {...defaultProps} planType="flat" />);
 
-    await user.click(screen.getByRole('radio', { name: /cost-plus/i }));
-    expect(onPlanTypeChange).toHaveBeenCalledWith('costplus');
+    await user.click(screen.getByRole('radio', { name: /list of separate charges/i }));
+    expect(onPlanTypeChange).toHaveBeenCalledWith('costplus', false);
 
     rerender(<Step2PlanType {...defaultProps} planType="costplus" />);
-    expect(screen.getByRole('radio', { name: /cost-plus/i })).toHaveAttribute(
+    expect(screen.getByRole('radio', { name: /list of separate charges/i })).toHaveAttribute(
       'aria-checked',
       'true',
     );
-    expect(screen.getByRole('radio', { name: /flat rate/i })).toHaveAttribute(
+    expect(screen.getByRole('radio', { name: /a single rate on every transaction/i })).toHaveAttribute(
       'aria-checked',
       'false',
     );
@@ -74,28 +84,28 @@ describe('Step2PlanType', () => {
     const toggle = screen.getByRole('button', { name: /payment wizard/i });
     expect(toggle).toBeInTheDocument();
 
-    // Expert panel fields are not initially accessible
-    // (they're inside a collapsed overflow-hidden container)
-    expect(screen.queryByText(/use smart defaults/i)).not.toBeInTheDocument();
+    // Expert panel is collapsed — toggle shows "Enter your exact rates"
+    expect(screen.queryByText(/use smart defaults instead/i)).not.toBeInTheDocument();
 
-    // Click expands it
+    // Click expands it — button text changes to "Use smart defaults instead"
     await user.click(toggle);
-    expect(screen.getByText(/use smart defaults/i)).toBeInTheDocument();
+    expect(screen.getByText(/use smart defaults instead/i)).toBeInTheDocument();
   });
 
   it('PSP pill selection works', async () => {
     render(<Step2PlanType {...defaultProps} />);
 
-    const stripePill = screen.getByRole('button', { name: 'Stripe' });
+    // PSP pills are a radiogroup — query by role=radio
+    const stripePill = screen.getByRole('radio', { name: 'Stripe' });
     await user.click(stripePill);
     expect(onPspChange).toHaveBeenCalledWith('Stripe');
   });
 
-  it('all 9 PSP options render', () => {
+  it('all 10 PSP options render', () => {
     render(<Step2PlanType {...defaultProps} />);
-    const psps = ['Stripe', 'Square', 'Tyro', 'CommBank', 'ANZ', 'Westpac', 'eWAY', 'Adyen', 'Other'];
+    const psps = ['Stripe', 'Square', 'Tyro', 'CommBank', 'ANZ', 'Westpac', 'Zeller', 'eWAY', 'Adyen', 'Other'];
     for (const psp of psps) {
-      expect(screen.getByRole('button', { name: psp })).toBeInTheDocument();
+      expect(screen.getByRole('radio', { name: psp })).toBeInTheDocument();
     }
   });
 
@@ -118,13 +128,21 @@ describe('Step2PlanType', () => {
     expect(screen.getByRole('button', { name: /next/i })).toBeEnabled();
   });
 
-  it('mock statement content renders correctly', () => {
+  it('mock bill content uses structure bars (no rate figures)', () => {
     render(<Step2PlanType {...defaultProps} />);
-    // Flat rate card content
+    // Flat rate tile — structure labels, no percentages
     expect(screen.getByText(/merchant service fee/i)).toBeInTheDocument();
-    expect(screen.getByText('1.40%')).toBeInTheDocument();
-    // Cost-plus card content
-    expect(screen.getByText(/debit interchange/i)).toBeInTheDocument();
-    expect(screen.getByText('PSP margin')).toBeInTheDocument();
+    expect(screen.getAllByText(/total charged/i).length).toBeGreaterThanOrEqual(1);
+    // Cost-plus tile — structure labels
+    expect(screen.getByText(/payment processing costs/i)).toBeInTheDocument();
+    expect(screen.getByText(/provider margin/i)).toBeInTheDocument();
+    // No specific rate figures anywhere
+    const allText = document.body.textContent ?? '';
+    expect(allText).not.toContain('1.40%');
+    expect(allText).not.toContain('$1,400');
+    expect(allText).not.toContain('$312');
+    expect(allText).not.toContain('$280');
+    expect(allText).not.toContain('$88');
+    expect(allText).not.toContain('$95');
   });
 });

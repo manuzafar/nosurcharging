@@ -4,6 +4,7 @@
 // Steps 1-4 are fully client-side (no network calls).
 // Network calls: (1) createSession on disclaimer, (2) recordConsent, (3) submitAssessment on reveal.
 // Step transitions: opacity only, no slide animations. 200ms ease-out.
+// Strategic rate selection replaces flow with inline exit page (URL unchanged).
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -18,6 +19,7 @@ import { RevealScreen } from '@/components/assessment/RevealScreen';
 import { trackEvent } from '@/lib/analytics';
 import type { MerchantInputOverrides } from '@nosurcharging/calculations/types';
 import type { AssessmentFormData, AssessmentResult } from '@/actions/submitAssessment';
+import { PSP_PUBLISHED_RATES } from '@nosurcharging/calculations/constants/psp-rates';
 
 type Phase = 'disclaimer' | 'step1' | 'step2' | 'step3' | 'step4' | 'reveal' | 'error';
 
@@ -28,13 +30,29 @@ export default function AssessmentPage() {
 
   // Form state — persists across steps
   const [volume, setVolume] = useState(0);
-  const [planType, setPlanType] = useState<'flat' | 'costplus' | null>(null);
+  const [planType, setPlanType] = useState<'flat' | 'costplus' | 'blended' | 'zero_cost' | null>(null);
   const [psp, setPsp] = useState<string | null>(null);
   const [merchantInput, setMerchantInput] = useState<MerchantInputOverrides>({});
   const [surcharging, setSurcharging] = useState<boolean | null>(null);
   const [surchargeRate, setSurchargeRate] = useState(0);
   const [surchargeNetworks, setSurchargeNetworks] = useState<string[]>([]);
   const [industry, setIndustry] = useState<string | null>(null);
+
+  // Iteration 2 state
+  const [msfRateMode, setMsfRateMode] = useState<'unselected' | 'market_estimate' | 'custom'>('unselected');
+  const [customMSFRate, setCustomMSFRate] = useState<number | null>(null);
+  const [blendedDebitRate, setBlendedDebitRate] = useState<number | null>(null);
+  const [blendedCreditRate, setBlendedCreditRate] = useState<number | null>(null);
+  const [strategicRateSelected, setStrategicRateSelected] = useState(false);
+  const [planTypeUnknown, setPlanTypeUnknown] = useState(false);
+
+  // Flat-rate MSF — SPRINT_BRIEF.md Sprint 2 UX-06. Default 1.4% (market
+  // average) until the merchant picks a PSP, at which point we pre-fill
+  // from PSP_PUBLISHED_RATES. Merchant can confirm or override.
+  // `msfRateUserEdited` stays true once the merchant types a value so that
+  // subsequent PSP changes don't overwrite their input.
+  const [msfRate, setMsfRate] = useState(0.014);
+  const [msfRateUserEdited, setMsfRateUserEdited] = useState(false);
 
   // Tracking flags — fire once per session, not on every keystroke
   const expertModeTracked = useRef(false);
@@ -69,14 +87,19 @@ export default function AssessmentPage() {
   const buildFormData = (): AssessmentFormData => ({
     volume,
     planType: planType!,
-    msfRate: 0.014, // Default MSF for flat rate — Phase 2 will allow input
+    msfRate,
     surcharging: surcharging!,
     surchargeRate,
     surchargeNetworks,
     industry: industry!,
     psp: psp!,
-    passThrough: 0, // Default — slider on results page adjusts this
+    passThrough: 0.45, // CB-08 override: 45% (RBA market average)
     merchantInput: Object.keys(merchantInput).length > 0 ? merchantInput : undefined,
+    msfRateMode: planType === 'zero_cost' ? msfRateMode : undefined,
+    customMSFRate: planType === 'zero_cost' && msfRateMode === 'custom' ? customMSFRate ?? undefined : undefined,
+    blendedDebitRate: planType === 'blended' ? blendedDebitRate ?? undefined : undefined,
+    blendedCreditRate: planType === 'blended' ? blendedCreditRate ?? undefined : undefined,
+    planTypeUnknown: planTypeUnknown || undefined,
   });
 
   const handleRevealComplete = (result: AssessmentResult) => {
@@ -90,18 +113,57 @@ export default function AssessmentPage() {
     setPhase('error');
   };
 
+  // Strategic rate inline exit — replaces entire flow, URL unchanged
+  if (strategicRateSelected) {
+    return (
+      <main className="min-h-screen bg-paper">
+        <div className="mx-auto max-w-assessment px-5 py-8">
+          <div className="text-center">
+            <p className="text-label tracking-widest text-accent">STRATEGIC RATE</p>
+            <h2 className="mt-4 font-serif text-heading-lg">
+              You may have a strategic interchange rate
+            </h2>
+            <p className="mt-4 text-body text-gray-600">
+              Merchants processing over $50M annually or with self-reported strategic rates
+              typically have individually negotiated interchange arrangements that fall
+              outside standard category analysis.
+            </p>
+            <p className="mt-4 text-body text-gray-600">
+              Our standard assessment cannot accurately model your position.
+              We recommend specialist guidance for your pricing review.
+            </p>
+            <div className="mt-8">
+              <button
+                type="button"
+                onClick={() => setStrategicRateSelected(false)}
+                className="rounded-lg border border-gray-200 px-6 py-2 text-body-sm text-gray-600
+                  hover:border-gray-300 transition-colors duration-150"
+              >
+                Back to assessment
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   const currentStep =
     phase === 'step1' ? 1 : phase === 'step2' ? 2 : phase === 'step3' ? 3 : phase === 'step4' ? 4 : 0;
 
   return (
-    <main className="min-h-screen bg-white">
-      {/* Site-wide disclaimer */}
-      <div className="border-b border-gray-100 py-2 text-center">
-        <p className="text-micro text-gray-400">
-          nosurcharging.com.au provides general guidance only. Not financial advice.
-          Verify with your PSP before making business decisions.
-        </p>
-      </div>
+    <main className="min-h-screen bg-paper">
+      {/* Site-wide disclaimer (FR-02). Hidden during disclaimer phase —
+          the dedicated commitments screen is the disclaimer at that point. */}
+      {phase !== 'disclaimer' && (
+        <div className="border-b border-rule py-2 text-center">
+          <p className="text-micro text-ink-faint">
+            nosurcharging.com.au provides general guidance only. Not financial
+            advice. Verify with your payment provider before making business
+            decisions.
+          </p>
+        </div>
+      )}
 
       {/* Reveal screen is full-screen overlay */}
       {phase === 'reveal' && (
@@ -130,30 +192,32 @@ export default function AssessmentPage() {
         </div>
       )}
 
-      {/* Assessment steps */}
-      {phase !== 'reveal' && phase !== 'error' && (
+      {/* Disclaimer phase — DisclaimerConsent owns its own width and padding
+          (paper canvas, max-w 420). No outer wrapper needed. */}
+      {phase === 'disclaimer' && (
+        <div className="transition-opacity duration-200 ease-out">
+          <DisclaimerConsent
+            onAccept={() => {
+              trackEvent('Assessment started');
+              goToStep('step1');
+            }}
+          />
+        </div>
+      )}
+
+      {/* Assessment steps 1-4 */}
+      {phase !== 'reveal' && phase !== 'error' && phase !== 'disclaimer' && (
         <div className="mx-auto max-w-assessment px-5 py-8">
-          {/* Progress bar + step counter (hidden on disclaimer) */}
-          {phase !== 'disclaimer' && (
-            <div className="mb-8 flex items-center gap-4">
-              <div className="flex-1">
-                <ProgressBar currentStep={currentStep} />
-              </div>
-              <StepCounter current={currentStep} />
+          {/* Progress bar + step counter */}
+          <div className="mb-8 flex items-center gap-4">
+            <div className="flex-1">
+              <ProgressBar currentStep={currentStep} />
             </div>
-          )}
+            <StepCounter current={currentStep} />
+          </div>
 
           {/* Step content with opacity transition */}
           <div className="transition-opacity duration-200 ease-out">
-            {phase === 'disclaimer' && (
-              <DisclaimerConsent
-                onAccept={() => {
-                  trackEvent('Assessment started');
-                  goToStep('step1');
-                }}
-              />
-            )}
-
             {phase === 'step1' && (
               <Step1Volume
                 value={volume}
@@ -166,15 +230,50 @@ export default function AssessmentPage() {
             {phase === 'step2' && (
               <Step2PlanType
                 planType={planType}
+                msfRateMode={msfRateMode}
+                customMSFRate={customMSFRate}
+                blendedDebitRate={blendedDebitRate}
+                blendedCreditRate={blendedCreditRate}
                 psp={psp}
                 merchantInput={merchantInput}
-                onPlanTypeChange={(type) => {
+                volume={volume}
+                onPlanTypeChange={(type, unknown) => {
                   setPlanType(type);
-                  trackEvent('Plan type selected', { type });
+                  setPlanTypeUnknown(unknown ?? false);
+                  trackEvent('Plan type selected', { type: unknown ? 'dont_know' : type });
+                }}
+                onMsfRateModeChange={(mode) => {
+                  setMsfRateMode(mode);
+                  trackEvent('Zero-cost rate selected', { mode });
+                }}
+                onCustomMSFRateChange={setCustomMSFRate}
+                onBlendedRatesChange={(debit, credit) => {
+                  setBlendedDebitRate(debit);
+                  setBlendedCreditRate(credit);
+                  trackEvent('Blended rates entered', {
+                    debit_provided: String(debit !== null),
+                    credit_provided: String(credit !== null),
+                  });
+                }}
+                onStrategicRateSelected={() => {
+                  setStrategicRateSelected(true);
+                  trackEvent('Strategic rate exit viewed', { trigger: 'self_select' });
                 }}
                 onPspChange={(name) => {
                   setPsp(name);
+                  // SPRINT_BRIEF.md Sprint 2 UX-06: pre-fill flat-rate MSF
+                  // from published rates. Only overwrite if the merchant
+                  // hasn't manually edited the field — their input wins.
+                  if (!msfRateUserEdited) {
+                    const published = PSP_PUBLISHED_RATES[name];
+                    if (published) setMsfRate(published.standardMsf);
+                  }
                   trackEvent('PSP selected', { psp: name });
+                }}
+                msfRate={msfRate}
+                onMsfRateChange={(rate) => {
+                  setMsfRate(rate);
+                  setMsfRateUserEdited(true);
                 }}
                 onMerchantInputChange={(input) => {
                   // FIX 5: Expert mode activated — fire once when expert rates first provided

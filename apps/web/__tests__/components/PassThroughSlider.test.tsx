@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 
 // Mock the calculation pipeline
 vi.mock('@nosurcharging/calculations/rules/resolver', () => ({
@@ -21,6 +20,10 @@ vi.mock('@nosurcharging/calculations/calculations', () => ({
     netToday: 28000.0,
     octNet: 27223.92,
     plSwing: 776.08,
+    plSwingLow: 0,
+    plSwingHigh: 1724.62,
+    rangeDriver: 'pass_through' as const,
+    rangeNote: '',
     todayScheme: 2100.0,
     oct2026Scheme: 2100.0,
     confidence: 'low' as const,
@@ -44,6 +47,10 @@ const BASE_OUTPUTS: AssessmentOutputs = {
   netToday: 28000.0,
   octNet: 28000.0,
   plSwing: 0,
+  plSwingLow: 0,
+  plSwingHigh: 0,
+  rangeDriver: 'card_mix' as const,
+  rangeNote: '',
   todayScheme: 2100.0,
   oct2026Scheme: 2100.0,
   confidence: 'low',
@@ -105,7 +112,7 @@ describe('PassThroughSlider', () => {
     expect(container.innerHTML).toBe('');
   });
 
-  it('visible for category 2', () => {
+  it('visible for category 2 with new section eyebrow', () => {
     render(
       <PassThroughSlider
         category={2}
@@ -118,6 +125,7 @@ describe('PassThroughSlider', () => {
       />,
     );
     expect(screen.getByRole('slider')).toBeInTheDocument();
+    expect(screen.getByText(/Model your outcome/i)).toBeInTheDocument();
   });
 
   it('visible for category 4', () => {
@@ -135,7 +143,7 @@ describe('PassThroughSlider', () => {
     expect(screen.getByRole('slider')).toBeInTheDocument();
   });
 
-  it('PSP name appears in note text, not "your PSP"', () => {
+  it('intro mentions IC saving amount and PSP name', () => {
     render(
       <PassThroughSlider
         category={2}
@@ -148,13 +156,65 @@ describe('PassThroughSlider', () => {
       />,
     );
 
-    // PSP name inline
-    expect(screen.getByText(/Stripe keeps the full/)).toBeInTheDocument();
-    expect(screen.getByText(/If Stripe passes through/)).toBeInTheDocument();
+    // Updated intro: "RBA estimates ~45%... Stripe keeps the full $1,725 interchange saving"
+    expect(
+      screen.getByText(/RBA estimates ~45% of merchants/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/\$1,725/)).toBeInTheDocument();
+  });
 
-    // Never "your PSP"
+  it('slider labels use new spec wording', () => {
+    render(
+      <PassThroughSlider
+        category={2}
+        passThrough={0}
+        outputs={BASE_OUTPUTS}
+        originalRaw={BASE_RAW}
+        resolutionContext={BASE_CTX}
+        pspName="Stripe"
+        onOutputsChange={onOutputsChange}
+      />,
+    );
+
+    expect(screen.getByText(/Not reflected in your rate \(0%\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Fully reflected \(100%\)/)).toBeInTheDocument();
+  });
+
+  it('result box shows three rows with PSP name inline', () => {
+    render(
+      <PassThroughSlider
+        category={2}
+        passThrough={0.5}
+        outputs={BASE_OUTPUTS}
+        originalRaw={BASE_RAW}
+        resolutionContext={BASE_CTX}
+        pspName="Stripe"
+        onOutputsChange={onOutputsChange}
+      />,
+    );
+
+    expect(screen.getByText(/Cost reduction in your Stripe rate/i)).toBeInTheDocument();
+    expect(screen.getByText(/Your net annual impact/i)).toBeInTheDocument();
+    expect(screen.getByText(/Net cost from October/i)).toBeInTheDocument();
+  });
+
+  it('never uses banned phrases ("your PSP", "your provider", "Stripe keeps")', () => {
+    render(
+      <PassThroughSlider
+        category={2}
+        passThrough={0}
+        outputs={BASE_OUTPUTS}
+        originalRaw={BASE_RAW}
+        resolutionContext={BASE_CTX}
+        pspName="Stripe"
+        onOutputsChange={onOutputsChange}
+      />,
+    );
+
     const allText = document.body.textContent ?? '';
     expect(allText).not.toContain('your PSP');
+    expect(allText).not.toContain('your provider');
+    expect(allText).not.toContain('Stripe keeps');
   });
 
   it('onOutputsChange called on slider input', () => {

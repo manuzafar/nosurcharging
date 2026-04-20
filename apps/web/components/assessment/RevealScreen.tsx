@@ -41,15 +41,24 @@ export function RevealScreen({ formData, onComplete, onError }: RevealScreenProp
         return;
       }
 
-      const cat = r.outputs!.category;
-      const verdicts: Record<number, string> = {
-        1: 'Category 1 — your costs fall automatically',
-        2: 'Category 2 — conditional saving',
-        3: 'Category 3 — repricing required',
-        4: 'Category 4 — act immediately',
-      };
-      setCategoryLabel(verdicts[cat] ?? '');
-      trackEvent('Results viewed', { category: String(cat) });
+      // Handle strategic rate exit and zero-cost (no standard category)
+      if (r.strategicRateExit) {
+        setCategoryLabel('Strategic rate — specialist guidance');
+        trackEvent('Results viewed', { category: 'strategic_rate' });
+      } else if (r.outputs && 'modelType' in r.outputs) {
+        setCategoryLabel('Zero-cost — action required');
+        trackEvent('Results viewed', { category: 'zero_cost' });
+      } else {
+        const cat = (r.outputs as { category: number })?.category;
+        const verdicts: Record<number, string> = {
+          1: 'Category 1 — your costs fall automatically',
+          2: 'Category 2 — conditional saving',
+          3: 'Category 3 — repricing required',
+          4: 'Category 4 — act immediately',
+        };
+        setCategoryLabel(verdicts[cat] ?? '');
+        trackEvent('Results viewed', { category: String(cat) });
+      }
 
       if (timerDone) {
         onComplete(r);
@@ -77,12 +86,25 @@ export function RevealScreen({ formData, onComplete, onError }: RevealScreenProp
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-gray-900">
-      <p className="text-caption tracking-widest text-white/35">
+    // role="status" + aria-live="polite" announces the calculating state
+    // and the category label to screen readers without interrupting. The
+    // pulsing dot is marked aria-hidden — it's decorative.
+    <div
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-gray-900"
+    >
+      {/* text-white/65 on bg-gray-900 computes to ~6.8:1 — passes WCAG AA.
+          text-white/35 (the previous value) was ~3.1:1 and failed 1.4.3. */}
+      <p className="text-caption tracking-widest text-white/65">
         Calculating your position...
       </p>
 
-      <div className="h-3 w-3 rounded-full bg-amber-200 animate-pulse-amber" />
+      <div
+        aria-hidden
+        className="h-3 w-3 rounded-full bg-accent-border animate-pulse-accent"
+      />
 
       <p
         className={`font-serif text-body-lg text-white/60 transition-opacity duration-400 ease-out ${

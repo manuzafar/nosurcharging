@@ -23,20 +23,22 @@ import { hashIP, getClientIP } from '@/lib/security';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { getSessionId } from './createSession';
 import { resolveAssessmentInputs } from '@nosurcharging/calculations/rules/resolver';
-import { calculateMetrics } from '@nosurcharging/calculations/calculations';
+import { calculateMetrics, calculateZeroCostMetrics } from '@nosurcharging/calculations/calculations';
 import { buildActions } from '@nosurcharging/calculations/actions';
+import { detectStrategicRate } from '@nosurcharging/calculations/categories';
 import { sanitiseForHTML } from '@/lib/security';
 import type {
   RawAssessmentData,
   ResolutionContext,
   MerchantInputOverrides,
   AssessmentOutputs,
+  ZeroCostOutputs,
   ActionItem,
 } from '@nosurcharging/calculations/types';
 
 export interface AssessmentFormData {
   volume: number;
-  planType: 'flat' | 'costplus';
+  planType: 'flat' | 'costplus' | 'blended' | 'zero_cost' | 'strategic_rate';
   msfRate: number;
   surcharging: boolean;
   surchargeRate: number;
@@ -45,13 +47,19 @@ export interface AssessmentFormData {
   psp: string;
   passThrough: number;
   merchantInput?: MerchantInputOverrides;
+  msfRateMode?: 'unselected' | 'market_estimate' | 'custom';
+  customMSFRate?: number;
+  blendedDebitRate?: number;
+  blendedCreditRate?: number;
+  planTypeUnknown?: boolean;
 }
 
 export interface AssessmentResult {
   success: boolean;
   assessmentId?: string;
-  outputs?: AssessmentOutputs;
+  outputs?: AssessmentOutputs | ZeroCostOutputs;
   actions?: ActionItem[];
+  strategicRateExit?: boolean;
   error?: string;
 }
 
@@ -98,7 +106,30 @@ export async function submitAssessment(
     return { success: false, error: 'PSP is required — assessment cannot be submitted without PSP selection.' };
   }
 
-  // 6. Build raw assessment data
+  // 6. Strategic rate interception — before resolve/calculate pipeline
+  const safePsp = sanitiseForHTML(formData.psp);
+  const strategicCheck = formData.planTypeUnknown
+    ? { detected: false, triggerReason: null as string | null }
+    : detectStrategicRate(formData.planType, formData.volume, formData.psp);
+  if (strategicCheck.detected) {
+    const { data: inserted } = await supabaseAdmin
+      .from('assessments')
+      .insert({
+        session_id: sessionId,
+        idempotency_key: idempotencyKey,
+        country_code: 'AU',
+        category: 5,
+        variant_type: 'strategic_rate',
+        inputs: { volume: formData.volume, psp: formData.psp, industry: formData.industry, planType: formData.planType },
+        outputs: { strategic_rate: true, triggerReason: strategicCheck.triggerReason },
+        ip_hash: ipHash,
+      })
+      .select('id')
+      .single();
+    return { success: true, assessmentId: inserted?.id, strategicRateExit: true };
+  }
+
+  // 7. Build raw assessment data
   const raw: RawAssessmentData = {
     volume: formData.volume,
     planType: formData.planType,
@@ -110,33 +141,55 @@ export async function submitAssessment(
     psp: formData.psp,
     passThrough: formData.passThrough,
     country: 'AU',
+    msfRateMode: formData.msfRateMode,
+    customMSFRate: formData.customMSFRate,
   };
 
-  // 4. Build resolution context
+  // 8. Build resolution context
   const ctx: ResolutionContext = {
     country: 'AU',
     industry: formData.industry,
-    merchantInput: formData.merchantInput,
+    merchantInput: {
+      ...formData.merchantInput,
+      blendedRates: formData.planType === 'blended'
+        ? { debitRate: formData.blendedDebitRate, creditRate: formData.blendedCreditRate }
+        : undefined,
+    },
   };
 
-  // 6. resolveAssessmentInputs() → calculateMetrics()
-  //    The resolver builds fully resolved inputs.
-  //    The engine receives resolved inputs only — never raw form data.
+  // 9. resolveAssessmentInputs() → route to correct engine
   const resolved = resolveAssessmentInputs(raw, ctx);
-  const outputs = calculateMetrics(resolved);
+  const outputs: AssessmentOutputs | ZeroCostOutputs =
+    formData.planType === 'zero_cost'
+      ? calculateZeroCostMetrics(resolved)
+      : calculateMetrics(resolved);
 
-  // 7. Build action list — sanitise PSP name before embedding in text (SR-08)
-  const safePsp = sanitiseForHTML(formData.psp);
-  const actions = buildActions(outputs.category, safePsp, formData.industry);
+  // 10. Build action list
+  const categoryArg = formData.planType === 'zero_cost'
+    ? ('zero_cost' as const)
+    : (outputs as AssessmentOutputs).category;
+  const actions = buildActions(categoryArg, safePsp, formData.industry, {
+    volume: formData.volume,
+    surchargeRate: formData.surchargeRate,
+    surchargeRevenue: 'surchargeRevenue' in outputs ? outputs.surchargeRevenue : 0,
+    icSaving: 'icSaving' in outputs ? outputs.icSaving : 0,
+  }, formData.planType === 'strategic_rate' ? undefined : formData.planType as 'flat' | 'costplus' | 'blended' | 'zero_cost');
 
-  // 9. INSERT with idempotency key — use .select() to get generated ID
+  // 11. Category and variant_type sentinels
+  const categoryValue = formData.planType === 'zero_cost'
+    ? 0  // sentinel — see migration 005
+    : (outputs as AssessmentOutputs).category;
+  const variantType = formData.planType === 'zero_cost' ? 'zero_cost' : 'standard';
+
+  // 12. INSERT with idempotency key — use .select() to get generated ID
   const { data: inserted, error: insertError } = await supabaseAdmin
     .from('assessments')
     .insert({
       session_id: sessionId,
       idempotency_key: idempotencyKey,
       country_code: 'AU',
-      category: outputs.category,
+      category: categoryValue,
+      variant_type: variantType,
       inputs: {
         ...raw,
         merchantInput: formData.merchantInput,

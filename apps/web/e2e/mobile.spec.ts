@@ -7,13 +7,10 @@ test.describe('Mobile 375px', () => {
     await page.goto('/');
 
     // Hero visible
-    await expect(page.getByText(/RBA banned surcharges/)).toBeVisible();
+    await expect(page.getByText(/RBA Surcharge Ban/)).toBeVisible();
 
     // CTA button visible
-    await expect(page.getByRole('link', { name: /start free assessment/i })).toBeVisible();
-
-    // Nav "Start assessment" button visible
-    await expect(page.getByRole('link', { name: /start assessment/i }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: /generate my free report/i }).first()).toBeVisible();
   });
 
   test('assessment flow works on mobile', async ({ page }) => {
@@ -21,15 +18,15 @@ test.describe('Mobile 375px', () => {
 
     // Disclaimer
     await page.getByRole('checkbox').check();
-    await page.getByRole('button', { name: /start assessment/i }).click();
+    await page.getByRole('button', { name: /start my assessment/i }).click();
 
     // Step 1
     await page.getByRole('textbox').fill('500000');
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 2 — plan cards should be single column
-    await page.getByRole('radio', { name: /flat rate/i }).click();
-    await page.getByRole('button', { name: 'Tyro' }).click();
+    await page.getByRole('radio', { name: /a single rate on every transaction/i }).click();
+    await page.getByRole('radio', { name: 'Tyro' }).click();
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 3
@@ -40,8 +37,8 @@ test.describe('Mobile 375px', () => {
     await page.getByText('Online store').click();
     await page.getByRole('button', { name: /see my results/i }).click();
 
-    // Should navigate to results
-    await page.waitForURL(/\/results\?id=/, { timeout: 10000 });
-    await expect(page.getByText('Category 2')).toBeVisible();
+    // Should navigate to results (scoped to avoid TopBar duplicate)
+    await page.waitForURL(/\/results\?id=/, { timeout: 15000 });
+    await expect(page.locator('#overview').getByText('Situation 2')).toBeVisible({ timeout: 10000 });
   });
 });

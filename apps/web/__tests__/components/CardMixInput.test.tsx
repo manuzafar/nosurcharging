@@ -55,7 +55,7 @@ describe('CardMixInput', () => {
     expect(screen.getByText('100%')).toBeInTheDocument();
   });
 
-  it('shows green at 100%, amber when off', async () => {
+  it('shows green at 100%, muted ink when off', async () => {
     // At exactly 100%
     const { rerender } = render(
       <CardMixInput value={{ visa_debit: 0.60, visa_credit: 0.40 }} onChange={onChange} />,
@@ -65,13 +65,13 @@ describe('CardMixInput', () => {
     const total100 = screen.getByText('100%');
     expect(total100.className).toContain('green');
 
-    // At 80% — amber
+    // At 80% — ink-muted (neutral warning, not accent which signals approval)
     rerender(
       <CardMixInput value={{ visa_debit: 0.60, visa_credit: 0.20 }} onChange={onChange} />,
     );
 
     const total80 = screen.getByText('80%');
-    expect(total80.className).toContain('amber');
+    expect(total80.className).toContain('ink-muted');
   });
 
   it('shows adjustment message when total is off by more than 1%', async () => {

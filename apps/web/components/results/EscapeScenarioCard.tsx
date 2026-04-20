@@ -1,17 +1,14 @@
 'use client';
 
-// CB-15: Escape Scenario Card — Categories 2 and 4 only.
-// Shows the merchant what their position would be on cost-plus,
-// removing all pass-through uncertainty. Strongest CTA driver.
+// EscapeScenarioCard — per ux-spec §3.7. Categories 2 and 4 only.
+// Single green box (no twin cards) showing how much the merchant would
+// save by switching to the PSP's itemised plan, where the IC saving
+// flows through automatically.
 //
-// Left card:  current flat rate plan — octNet updates with slider
-// Right card: cost-plus escape — fixed, calculated once on mount
-//             with planType: 'costplus', passThrough: 1.0
-//
-// Range values (at 0% PT and 100% PT) calculated once on mount.
+// Banned: "no negotiation needed" / "your PSP" / "your provider".
+// Use: "flows through automatically" / explicit pspName.
 
 import { useMemo } from 'react';
-import { PillBadge } from '@/components/ui/PillBadge';
 import { resolveAssessmentInputs } from '@nosurcharging/calculations/rules/resolver';
 import { calculateMetrics } from '@nosurcharging/calculations/calculations';
 import type {
@@ -36,105 +33,104 @@ function formatDollar(v: number): string {
 export function EscapeScenarioCard({
   category,
   outputs,
-  passThrough,
   originalRaw,
   resolutionContext,
   pspName,
 }: EscapeScenarioCardProps) {
-  // ── Cost-plus escape — calculated ONCE on mount ────────────────
-  // Hooks must be called before any conditional return.
+  // Cost-plus escape — calculated ONCE on mount.
   const costPlusOctNet = useMemo(() => {
     if (category !== 2 && category !== 4) return 0;
     const costPlusResolved = resolveAssessmentInputs(
       { ...originalRaw, planType: 'costplus', passThrough: 1.0 },
       resolutionContext,
     );
-    const costPlusOutputs = calculateMetrics(costPlusResolved);
-    return costPlusOutputs.octNet;
+    return calculateMetrics(costPlusResolved).octNet;
   }, [originalRaw, resolutionContext, category]);
 
-  // ── Range values — calculated ONCE on mount ────────────────────
-  const { rangeMin, rangeMax } = useMemo(() => {
-    if (category !== 2 && category !== 4) return { rangeMin: 0, rangeMax: 0 };
-    const at0 = resolveAssessmentInputs(
-      { ...originalRaw, passThrough: 0 },
-      resolutionContext,
-    );
-    const at100 = resolveAssessmentInputs(
-      { ...originalRaw, passThrough: 1.0 },
-      resolutionContext,
-    );
-    const outputs0 = calculateMetrics(at0);
-    const outputs100 = calculateMetrics(at100);
-    return {
-      rangeMin: outputs100.octNet,
-      rangeMax: outputs0.octNet,
-    };
-  }, [originalRaw, resolutionContext, category]);
-
-  // Only visible for categories 2 and 4
   if (category !== 2 && category !== 4) return null;
 
   const saving = Math.abs(outputs.octNet - costPlusOctNet);
-  const pctLabel = Math.round(passThrough * 100);
 
   return (
-    <div>
-      <div className="grid gap-3 max-[500px]:grid-cols-1" style={{ gridTemplateColumns: '1fr 1fr' }}>
-        {/* Left card — current flat rate plan */}
-        <div
-          className="rounded-xl p-4"
-          style={{ border: '0.5px solid var(--color-border-secondary)' }}
-        >
-          <PillBadge variant="amber">Your current plan</PillBadge>
-
-          <p
-            className="mt-3 font-mono font-medium"
-            style={{ fontSize: '22px', color: 'var(--color-text-primary)' }}
-          >
-            {formatDollar(outputs.octNet)}
-          </p>
-          <p className="mt-1 text-caption" style={{ color: 'var(--color-text-secondary)' }}>
-            Oct 2026 net cost at {pctLabel}% pass-through
-          </p>
-          <p className="mt-2 text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
-            Range: {formatDollar(rangeMin)}–{formatDollar(rangeMax)} depending on {pspName}
-          </p>
-        </div>
-
-        {/* Right card — cost-plus escape (featured, 1.5px green border) */}
-        <div
-          className="rounded-xl p-4"
-          style={{ border: '1.5px solid var(--color-border-success)' }}
-        >
-          <PillBadge variant="green">Escape scenario</PillBadge>
-
-          <p
-            className="mt-3 font-mono font-medium"
-            style={{ fontSize: '22px', color: 'var(--color-text-primary)' }}
-          >
-            {formatDollar(costPlusOctNet)}
-          </p>
-          <p className="mt-1 text-caption" style={{ color: 'var(--color-text-secondary)' }}>
-            IC saving flows 100% automatically. No pass-through risk.
-          </p>
-          <p
-            className="mt-2 font-mono text-caption font-medium"
-            style={{ color: 'var(--color-text-success)' }}
-          >
-            Saves {formatDollar(saving)}/year vs your current plan at {pctLabel}% pass-through
-          </p>
-        </div>
-      </div>
-
-      {/* Note below cards */}
+    <section
+      className="py-5"
+      style={{ borderBottom: '1px solid var(--color-border-secondary)' }}
+    >
+      {/* Section eyebrow */}
       <p
-        className="mt-3 text-caption"
-        style={{ color: 'var(--color-text-tertiary)', lineHeight: '1.55' }}
+        className="font-medium uppercase"
+        style={{
+          fontSize: '11px',
+          letterSpacing: '2.5px',
+          color: 'var(--color-text-tertiary)',
+          marginBottom: '12px',
+        }}
       >
-        Switching to cost-plus requires renegotiating with {pspName} or switching providers.
-        The discovery call will confirm whether this is achievable for your volume and {pspName}.
+        Is there a better option?
       </p>
-    </div>
+
+      {/* Intro */}
+      <p
+        style={{
+          fontSize: '13px',
+          color: 'var(--color-text-secondary)',
+          lineHeight: 1.65,
+          marginBottom: '14px',
+        }}
+      >
+        {pspName} also offers an itemised plan where interchange and scheme
+        fees are shown separately. When the RBA cuts wholesale costs, the
+        reduction flows through automatically — it doesn&apos;t depend on a
+        rate review.
+      </p>
+
+      {/* Green box — 12px wrapper card tier (it's the main structural card
+          of the section, containing a heading + hero number + body copy). */}
+      <div
+        style={{
+          background: '#E8F5EB',
+          border: '1px solid rgba(39, 80, 10, 0.25)',
+          padding: '16px 18px',
+          borderRadius: '12px',
+        }}
+      >
+        <p
+          className="font-medium"
+          style={{
+            fontSize: '12px',
+            color: 'var(--color-text-success)',
+            marginBottom: '4px',
+          }}
+        >
+          Switching to {pspName}&apos;s itemised plan saves you:
+        </p>
+
+        <p
+          className="font-mono font-medium"
+          style={{
+            fontSize: '24px',
+            color: 'var(--color-text-success)',
+            letterSpacing: '-1px',
+            marginBottom: '8px',
+          }}
+        >
+          {formatDollar(saving)}/year
+        </p>
+
+        <p
+          style={{
+            fontSize: '12px',
+            color: 'var(--color-text-secondary)',
+            lineHeight: 1.7,
+          }}
+        >
+          Your net cost would be{' '}
+          <span className="font-mono">{formatDollar(costPlusOctNet)}</span>{' '}
+          instead of{' '}
+          <span className="font-mono">{formatDollar(outputs.octNet)}</span> —
+          the full saving flows automatically at 100%.
+        </p>
+      </div>
+    </section>
   );
 }

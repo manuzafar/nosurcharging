@@ -39,24 +39,64 @@ describe('Source priority', () => {
     expect(resolved.resolutionTrace['cardMix.visa_debit']!.source).toBe('merchant_input');
   });
 
-  it('falls to env var when merchant input is absent', () => {
+  it('falls to industry_default when merchant input is absent', () => {
     vi.stubEnv('CALC_CARD_MIX_VISA_DEBIT', '0.40');
     const resolved = resolveAssessmentInputs(baseRaw, {
       country: 'AU',
       industry: 'retail',
       merchantInput: {},
     });
-    expect(resolved.resolutionTrace['cardMix.visa_debit']!.source).toBe('env_var');
+    // industry_default has higher priority than env_var
+    expect(resolved.resolutionTrace['cardMix.visa_debit']!.source).toBe('industry_default');
   });
 
-  it('falls to regulatory constant when no env var set', () => {
-    // Ensure env vars are NOT set
-    vi.stubEnv('CALC_CARD_MIX_VISA_DEBIT', '');
+  it('falls to env var when no merchant input and unknown industry', () => {
+    vi.stubEnv('CALC_CARD_MIX_VISA_DEBIT', '0.40');
+    const rawUnknown = { ...baseRaw, industry: 'unknownIndustry' };
+    const resolved = resolveAssessmentInputs(rawUnknown, {
+      country: 'AU',
+      industry: 'unknownIndustry',
+      merchantInput: {},
+    });
+    // unknown industry falls back to 'other' which has same values as regulatory_constant
+    // but resolves as industry_default source
+    expect(resolved.resolutionTrace['cardMix.visa_debit']!.source).toBe('industry_default');
+  });
+
+  it('avgTransactionValue resolves to industry_default when no env var for a known industry', () => {
+    // AU_AVG_TXN_BY_INDUSTRY['retail'] = 65 — wins over regulatory_constant
+    vi.stubEnv('CALC_AVG_TXN_RETAIL', '');
+    vi.stubEnv('CALC_AVG_TXN_DEFAULT', '');
     const resolved = resolveAssessmentInputs(baseRaw, {
       country: 'AU',
       industry: 'retail',
     });
-    expect(resolved.resolutionTrace['cardMix.visa_debit']!.source).toBe('regulatory_constant');
+    expect(resolved.resolutionTrace['avgTransactionValue']!.source).toBe('industry_default');
+    expect(resolved.resolutionTrace['avgTransactionValue']!.value).toBe(65);
+  });
+
+  it('avgTransactionValue falls to regulatory_constant when industry has no default', () => {
+    vi.stubEnv('CALC_AVG_TXN_UNKNOWNINDUSTRY', '');
+    vi.stubEnv('CALC_AVG_TXN_DEFAULT', '');
+    const rawUnknown = { ...baseRaw, industry: 'unknownIndustry' };
+    const resolved = resolveAssessmentInputs(rawUnknown, {
+      country: 'AU',
+      industry: 'unknownIndustry',
+    });
+    expect(resolved.resolutionTrace['avgTransactionValue']!.source).toBe('regulatory_constant');
+    expect(resolved.resolutionTrace['avgTransactionValue']!.value).toBe(65);
+  });
+
+  it('avgTransactionValue resolves to café-specific default ($35) for cafe industry', () => {
+    vi.stubEnv('CALC_AVG_TXN_CAFE', '');
+    vi.stubEnv('CALC_AVG_TXN_DEFAULT', '');
+    const rawCafe = { ...baseRaw, industry: 'cafe' };
+    const resolved = resolveAssessmentInputs(rawCafe, {
+      country: 'AU',
+      industry: 'cafe',
+    });
+    expect(resolved.resolutionTrace['avgTransactionValue']!.source).toBe('industry_default');
+    expect(resolved.resolutionTrace['avgTransactionValue']!.value).toBe(35);
   });
 });
 
@@ -256,16 +296,17 @@ describe('Resolution trace', () => {
     expect(resolved.resolutionTrace['cardMix.visa_debit']!.label).toBe('Your input');
   });
 
-  it('labels regulatory constant as "RBA average"', () => {
+  it('labels industry_default as "Industry average"', () => {
     vi.stubEnv('CALC_CARD_MIX_VISA_CREDIT', '');
     const resolved = resolveAssessmentInputs(baseRaw, {
       country: 'AU',
       industry: 'retail',
     });
-    expect(resolved.resolutionTrace['cardMix.visa_credit']!.label).toBe('RBA average');
+    // With industry_default source in pipeline, retail resolves from industry_default
+    expect(resolved.resolutionTrace['cardMix.visa_credit']!.label).toBe('Industry average');
   });
 
-  it('Scenario 6 trace: visa_debit from merchant, visa_credit from default', () => {
+  it('Scenario 6 trace: visa_debit from merchant, visa_credit from industry_default', () => {
     vi.stubEnv('CALC_CARD_MIX_VISA_DEBIT', '');
     vi.stubEnv('CALC_CARD_MIX_VISA_CREDIT', '');
     vi.stubEnv('CALC_CARD_MIX_MC_DEBIT', '');
@@ -281,6 +322,6 @@ describe('Resolution trace', () => {
     });
     expect(resolved.resolutionTrace['cardMix.visa_debit']!.source).toBe('merchant_input');
     expect(resolved.resolutionTrace['cardMix.amex']!.source).toBe('merchant_input');
-    expect(resolved.resolutionTrace['cardMix.visa_credit']!.source).toBe('regulatory_constant');
+    expect(resolved.resolutionTrace['cardMix.visa_credit']!.source).toBe('industry_default');
   });
 });

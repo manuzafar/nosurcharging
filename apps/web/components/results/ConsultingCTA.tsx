@@ -1,10 +1,10 @@
 'use client';
 
-// CB-12: Consulting CTA — category-specific copy, varies before/after Oct 2026.
-// Opens Calendly in new tab. Plausible event on click.
-// Copy from docs/product/consulting-products.md "Results Page CTA Hierarchy".
+// ConsultingCTA — category-specific headline, body, and pricing.
+// Cat 1-2: $2,500 Payments Health Check
+// Cat 3-4: $3,500 Reform Ready
+// PSP name interpolated into the headline. No "your PSP".
 
-import { getCurrentPeriod } from '@nosurcharging/calculations/periods';
 import { trackEvent } from '@/lib/analytics';
 
 interface ConsultingCTAProps {
@@ -12,25 +12,40 @@ interface ConsultingCTAProps {
   pspName: string;
 }
 
-function getCTACopy(category: 1 | 2 | 3 | 4, pspName: string, isPreReform: boolean): string {
-  if (category === 1) {
-    return `Verified your rate is below market? A Payments Health Check confirms it — and finds any hidden fees you're paying above your contracted rate. $2,500.`;
-  }
-  if (category === 2) {
-    return `Want someone to negotiate with ${pspName} on your behalf? A Payments Health Check reviews your statements, benchmarks your rate, and gives you the exact script. $2,500.`;
-  }
-  // Cat 3 and 4
-  if (isPreReform) {
-    return `You need to act before October. A Reform Ready engagement calculates your exact repricing gap, gives you the PSP script, and follows up when the benchmark data drops. $3,500. Limited availability.`;
-  }
-  return `The reform is live. A Payments Health Check will tell you whether your costs actually fell — and what to do if they didn't. $2,500.`;
-}
+const CTA_CONFIG: Record<
+  1 | 2 | 3 | 4,
+  { eyebrow: string; title: string; price: string; priceNum: number }
+> = {
+  1: {
+    eyebrow: 'Payments Health Check',
+    title: 'Your plan is solid — let\u2019s confirm the saving arrives',
+    price: '$2,500',
+    priceNum: 2500,
+  },
+  2: {
+    eyebrow: 'Payments Health Check',
+    title: '{psp} needs to change your rate — let\u2019s get it in writing',
+    price: '$2,500',
+    priceNum: 2500,
+  },
+  3: {
+    eyebrow: 'Reform Ready',
+    title: 'Your repricing strategy needs to be set before October',
+    price: '$3,500',
+    priceNum: 3500,
+  },
+  4: {
+    eyebrow: 'Reform Ready',
+    title: 'Two problems, one October deadline — let\u2019s fix both',
+    price: '$3,500',
+    priceNum: 3500,
+  },
+};
 
 export function ConsultingCTA({ category, pspName }: ConsultingCTAProps) {
-  const period = getCurrentPeriod();
-  const isPreReform = period === 'pre_reform';
-  const copy = getCTACopy(category, pspName, isPreReform);
   const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL ?? '#';
+  const config = CTA_CONFIG[category];
+  const title = config.title.replace('{psp}', pspName);
 
   const handleClick = () => {
     trackEvent('CTA clicked', { category: String(category) });
@@ -38,42 +53,63 @@ export function ConsultingCTA({ category, pspName }: ConsultingCTAProps) {
 
   return (
     <div
-      className="rounded-xl p-7"
-      style={{ background: 'var(--color-background-secondary)' }}
+      style={{
+        background: '#1A1409',
+        padding: '24px',
+      }}
     >
-      <h3
-        className="font-serif font-medium"
-        style={{ fontSize: '18px', color: 'var(--color-text-primary)' }}
-      >
-        Get expert help with your payments
-      </h3>
-
+      {/* Eyebrow */}
       <p
-        className="mt-3 text-body-sm"
+        className="uppercase font-medium"
         style={{
-          color: 'var(--color-text-secondary)',
-          lineHeight: '1.6',
-          maxWidth: '400px',
+          fontSize: '11px',
+          letterSpacing: '1.5px',
+          color: 'rgba(255, 255, 255, 0.4)',
+          marginBottom: '10px',
         }}
       >
-        {copy}
+        {config.eyebrow}
       </p>
 
-      <a
-        href={calendlyUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={handleClick}
-        className="mt-4 inline-block rounded-lg px-7 py-3 text-body-sm font-medium
-          transition-opacity duration-150 hover:opacity-90"
-        style={{ background: '#BA7517', color: '#FAEEDA' }}
+      {/* Headline */}
+      <h3
+        className="font-serif font-medium"
+        style={{
+          fontSize: '17px',
+          color: '#FFFFFF',
+          lineHeight: 1.45,
+          marginBottom: '16px',
+        }}
       >
-        Book a free discovery call
-      </a>
+        {title}
+      </h3>
 
-      <p className="mt-3 text-caption" style={{ color: 'var(--color-text-secondary)' }}>
-        Manu · Payments practitioner · Paid It
-      </p>
+      {/* Bottom bar — CTA + detail */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <a
+          href={calendlyUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={handleClick}
+          className="font-medium text-center transition-opacity duration-150 hover:opacity-90 rounded-pill"
+          style={{
+            background: '#1A6B5A',
+            color: '#FFFFFF',
+            fontSize: '13px',
+            padding: '11px 20px',
+          }}
+        >
+          Book a call · {config.price}
+        </a>
+        <p
+          style={{
+            fontSize: '11px',
+            color: 'rgba(255, 255, 255, 0.25)',
+          }}
+        >
+          30-minute call · Fixed price · No retainer
+        </p>
+      </div>
     </div>
   );
 }

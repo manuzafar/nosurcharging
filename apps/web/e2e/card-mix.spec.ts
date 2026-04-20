@@ -6,19 +6,19 @@ test.describe('Card mix → confidence badge', () => {
 
     // Disclaimer
     await page.getByRole('checkbox').check();
-    await page.getByRole('button', { name: /start assessment/i }).click();
+    await page.getByRole('button', { name: /start my assessment/i }).click();
 
     // Step 1
     await page.getByRole('textbox').fill('2000000');
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 2 — open card mix panel
-    await page.getByRole('radio', { name: /cost-plus/i }).click();
+    await page.getByRole('radio', { name: /list of separate charges/i }).click();
 
     // Open card mix input
     await page.getByText(/know your card mix/i).click();
 
-    // Default confidence badge should show "RBA averages" (amber)
+    // Default confidence badge should show "RBA averages" (grey/neutral)
     await expect(page.getByText(/will use rba averages/i)).toBeVisible();
 
     // Fill in expert rates to change confidence

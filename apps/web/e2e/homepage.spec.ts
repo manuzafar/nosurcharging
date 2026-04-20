@@ -4,33 +4,32 @@ test.describe('Homepage', () => {
   test('hero section renders with CTA', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page.getByText(/RBA banned surcharges/)).toBeVisible();
-    await expect(page.getByRole('link', { name: /start free assessment/i })).toBeVisible();
-    // Trust bar items — use .first() since features section also contains "No account"
+    await expect(page.getByText(/RBA Surcharge Ban/)).toBeVisible();
+    await expect(page.getByRole('link', { name: /generate my free report/i }).first()).toBeVisible();
+    // Proof row items
     await expect(page.getByText('No account required').first()).toBeVisible();
-    await expect(page.getByText('No PSP affiliation').first()).toBeVisible();
+    await expect(page.getByText('No Stripe or Square affiliation').first()).toBeVisible();
   });
 
-  test('preview section rotates categories', async ({ page }) => {
+  test('preview section shows four situations', async ({ page }) => {
     await page.goto('/');
 
-    // Category 1 tab should be visible
-    await expect(page.getByText('Category 1 — Winner')).toBeVisible();
+    // Situation 1 card should be visible in the 2x2 grid
+    await expect(page.getByText('Situation 1').first()).toBeVisible();
 
-    // Click Category 3 tab
-    await page.getByText('Category 3 — Reprice').click();
-
-    // Category 3 verdict should appear
-    await expect(page.getByText(/surcharge revenue disappears/)).toBeVisible();
+    // Situation 3 card should also be visible (static grid, not tabs)
+    await expect(page.getByText('Situation 3').first()).toBeVisible();
+    await expect(page.getByText(/surcharge revenue disappears/i)).toBeVisible();
   });
 
-  test('features section renders 3 items', async ({ page }) => {
+  test('features section renders four questions', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page.getByRole('heading', { name: 'How it works' })).toBeVisible();
-    await expect(page.getByText('Answer four questions')).toBeVisible();
-    await expect(page.getByText('See your P&L impact')).toBeVisible();
-    await expect(page.getByText('Get your action plan')).toBeVisible();
+    await expect(page.getByText('Four questions. Your report.')).toBeVisible();
+    await expect(page.getByText(/How much do you process/)).toBeVisible();
+    await expect(page.getByText(/one rate, or a breakdown/)).toBeVisible();
+    await expect(page.getByText(/add a surcharge/)).toBeVisible();
+    await expect(page.getByText(/What industry are you in/)).toBeVisible();
   });
 
   test('privacy policy link works', async ({ page }) => {
@@ -47,5 +46,6 @@ test.describe('Homepage', () => {
     expect(response.status()).toBe(200);
     const body = await response.json();
     expect(body.status).toBe('ok');
+    expect(body.commit).toBeDefined();
   });
 });

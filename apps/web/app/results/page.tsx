@@ -1,49 +1,49 @@
 'use client';
 
-// Results page — the product.
-// Loads assessment data from URL search param: /results?id=<assessmentId>
-// If no ID or invalid ID, redirects to /assessment.
+// Results page — two-column sticky layout with scroll-based navigation.
+//
+// Routing:
+//   strategicRateExit → StrategicRateExitPage (no dollar figures)
+//   ZeroCostOutputs   → ZeroCostResultsVariant (critical banner, before/after)
+//   standard          → full results with sidebar, sections, sticky top bar
 //
 // State managed here:
-//   outputs: AssessmentOutputs (from server, updated by slider)
-//   passThrough: number (0-1, driven by PassThroughSlider)
-//
-// All child components receive outputs and passThrough as props.
-// No child component manages its own calculation state.
-//
-// Staggered reveal via CSS animation-delay, NOT setTimeout.
+//   outputs: AssessmentOutputs (from server, updated by slider/refinement)
+//   actions: ActionItem[] (immutable after initial load — slider does NOT touch)
+//   passThrough: number (0-1, driven by PassThroughSlider, default 0.45)
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getAssessment } from '@/actions/getAssessment';
 import type { StoredAssessment } from '@/actions/getAssessment';
-import type { AssessmentOutputs, RawAssessmentData, ResolutionContext, ResolutionTrace, ActionItem } from '@nosurcharging/calculations/types';
+import type { AssessmentOutputs, ZeroCostOutputs, RawAssessmentData, ResolutionContext, ResolutionTrace, ActionItem } from '@nosurcharging/calculations/types';
+import { resolveAssessmentInputs } from '@nosurcharging/calculations/rules/resolver';
 import { sanitiseForHTML } from '@/lib/sanitise';
+import { useScrollSpy } from '@/hooks/useScrollSpy';
 
-import { VerdictSection } from '@/components/results/VerdictSection';
-import { MetricCards } from '@/components/results/MetricCards';
-import { ReformTimeline } from '@/components/results/ReformTimeline';
-import { PassThroughSlider } from '@/components/results/PassThroughSlider';
-import { WaterfallChart } from '@/components/charts/WaterfallChart';
-import { EscapeScenarioCard } from '@/components/results/EscapeScenarioCard';
-import { ActionList } from '@/components/results/ActionList';
-import { AssumptionsPanel } from '@/components/results/AssumptionsPanel';
-import { EmailCapture } from '@/components/results/EmailCapture';
-import { ConsultingCTA } from '@/components/results/ConsultingCTA';
-import { PSPRateRegistry } from '@/components/results/PSPRateRegistry';
-import { ResultsDisclaimer } from '@/components/results/ResultsDisclaimer';
+import { SkeletonLoader } from '@/components/results/SkeletonLoader';
+import { StrategicRateExitPage } from '@/components/results/StrategicRateExitPage';
+import { ZeroCostResultsVariant } from '@/components/results/ZeroCostResultsVariant';
+
+// Shell
+import { ResultsTopBar } from '@/components/results/shell/ResultsTopBar';
+import { ResultsSidebar } from '@/components/results/shell/ResultsSidebar';
+import { MobileMiniNav } from '@/components/results/shell/MobileMiniNav';
+import { MobileBottomBar } from '@/components/results/shell/MobileBottomBar';
+
+// Sections
+import { OverviewSection } from '@/components/results/sections/OverviewSection';
+import { ActionsSection } from '@/components/results/sections/ActionsSection';
+import { ValuesSection } from '@/components/results/sections/ValuesSection';
+import { RefineSection } from '@/components/results/sections/RefineSection';
+import { HelpSection } from '@/components/results/sections/HelpSection';
+import { TalkToCustomers } from '@/components/results/sections/TalkToCustomers';
+import { NegotiationBrief } from '@/components/results/sections/NegotiationBrief';
+import { ReadinessChecklist } from '@/components/results/sections/ReadinessChecklist';
 
 export default function ResultsPage() {
   return (
-    <Suspense
-      fallback={
-        <main className="flex min-h-screen items-center justify-center">
-          <p className="text-body" style={{ color: 'var(--color-text-secondary)' }}>
-            Loading results...
-          </p>
-        </main>
-      }
-    >
+    <Suspense fallback={<SkeletonLoader />}>
       <ResultsContent />
     </Suspense>
   );
@@ -56,8 +56,24 @@ function ResultsContent() {
 
   const [assessment, setAssessment] = useState<StoredAssessment | null>(null);
   const [outputs, setOutputs] = useState<AssessmentOutputs | null>(null);
-  const [passThrough, setPassThrough] = useState(0);
+  // `actions` lives in its own state, seeded ONCE from the initial DB load.
+  // It is deliberately NOT part of `outputs` — the slider recalculates
+  // outputs via calculateMetrics() which returns a clean AssessmentOutputs
+  // (no actions). If actions were part of outputs, every slider tick would
+  // blank the ActionList, causing the section to collapse and the viewport
+  // to jump. Keep actions separate and immutable after initial load.
+  const [actions, setActions] = useState<ActionItem[]>([]);
+  const [passThrough, setPassThrough] = useState(0.45); // CB-08: 45% default
   const [loading, setLoading] = useState(true);
+  // Track variant routing
+  const [isStrategicExit, setIsStrategicExit] = useState(false);
+  const [zeroCostOutputs, setZeroCostOutputs] = useState<ZeroCostOutputs | null>(null);
+  // Accuracy — base 20%, updated live by RefinementPanel via onAccuracyChange
+  const [accuracy, setAccuracy] = useState(20);
+
+  // Scroll spy — must be unconditional (Rules of Hooks).
+  // Pass !loading so the observer starts AFTER sections are in the DOM.
+  const { activeSection, scrollToSection } = useScrollSpy(!loading);
 
   useEffect(() => {
     if (!assessmentId) {
@@ -70,30 +86,93 @@ function ResultsContent() {
         router.replace('/assessment');
         return;
       }
-      setAssessment(result.data);
-      setOutputs(result.data.outputs);
+
+      const data = result.data;
+      setAssessment(data);
+
+      // Route by variant type
+      if (data.variant_type === 'strategic_rate') {
+        setIsStrategicExit(true);
+        setLoading(false);
+        return;
+      }
+
+      if (data.variant_type === 'zero_cost' || (data.outputs && 'modelType' in data.outputs)) {
+        setZeroCostOutputs(data.outputs as ZeroCostOutputs);
+        setActions((data.outputs as { actions?: ActionItem[] }).actions ?? []);
+        setLoading(false);
+        return;
+      }
+
+      setOutputs(data.outputs as AssessmentOutputs);
+      setActions((data.outputs as { actions?: ActionItem[] }).actions ?? []);
       setLoading(false);
     });
   }, [assessmentId, router]);
 
-  if (loading || !assessment || !outputs) {
+  // Resolved inputs for the RefinementPanel. Memoised on `assessment` so
+  // it runs once per page load. Must live above the conditional returns
+  // below — React's Rules of Hooks require unconditional ordering.
+  const resolvedInputs = useMemo(() => {
+    if (!assessment) return null;
+    const stored = assessment.inputs as Record<string, unknown>;
+    const rawPlanType = (stored.planType as RawAssessmentData['planType']) ?? 'flat';
+    // Refinement only applies to the standard Cat 1-4 flow.
+    if (rawPlanType === 'zero_cost' || rawPlanType === 'strategic_rate') return null;
+    const rawForResolve: RawAssessmentData = {
+      volume: (stored.volume as number) ?? 0,
+      planType: rawPlanType,
+      msfRate: (stored.msfRate as number) ?? 0.014,
+      surcharging: (stored.surcharging as boolean) ?? false,
+      surchargeRate: (stored.surchargeRate as number) ?? 0,
+      surchargeNetworks: (stored.surchargeNetworks as string[]) ?? [],
+      industry: (stored.industry as string) ?? 'other',
+      psp: sanitiseForHTML((stored.psp as string) ?? 'Unknown'),
+      passThrough: 0,
+      country: 'AU',
+    };
+    const ctx: ResolutionContext = {
+      country: 'AU',
+      industry: rawForResolve.industry,
+      merchantInput: stored.merchantInput as ResolutionContext['merchantInput'],
+    };
+    return resolveAssessmentInputs(rawForResolve, ctx);
+  }, [assessment]);
+
+  if (loading) {
+    return <SkeletonLoader />;
+  }
+
+  // Strategic rate exit — no dollar figures
+  if (isStrategicExit) {
+    return <StrategicRateExitPage onBack={() => router.push('/assessment')} />;
+  }
+
+  // Zero-cost variant
+  if (zeroCostOutputs && assessment) {
+    const storedInputs = assessment.inputs as Record<string, unknown>;
     return (
-      <main className="flex min-h-screen items-center justify-center">
-        <p className="text-body" style={{ color: 'var(--color-text-secondary)' }}>
-          Loading results...
-        </p>
-      </main>
+      <ZeroCostResultsVariant
+        outputs={zeroCostOutputs}
+        volume={(storedInputs.volume as number) ?? 0}
+        pspName={sanitiseForHTML((storedInputs.psp as string) ?? 'Unknown')}
+        actions={actions}
+      />
     );
+  }
+
+  if (!assessment || !outputs) {
+    return <SkeletonLoader />;
   }
 
   // ── Extract data from stored assessment ────────────────────────
   const storedInputs = assessment.inputs as Record<string, unknown>;
-  const actions = (outputs as unknown as { actions?: ActionItem[] }).actions ?? [];
   const category = outputs.category;
   const volume = (storedInputs.volume as number) ?? 0;
   const pspName = sanitiseForHTML((storedInputs.psp as string) ?? 'Unknown');
-  const planType = (storedInputs.planType as 'flat' | 'costplus') ?? 'flat';
-  const resolutionTrace = (storedInputs.resolutionTrace as ResolutionTrace) ?? {};
+  const planType = (storedInputs.planType as 'flat' | 'costplus' | 'blended') ?? 'flat';
+  // Use freshly computed resolutionTrace from resolvedInputs (PB-3)
+  const resolutionTrace = resolvedInputs?.resolutionTrace ?? {};
 
   // Build raw and context for slider recalculation
   const originalRaw: RawAssessmentData = {
@@ -115,117 +194,107 @@ function ResultsContent() {
     merchantInput: storedInputs.merchantInput as ResolutionContext['merchantInput'],
   };
 
+  // ── Urgent action count for sidebar badge ─────────────────────
+  const urgentCount = actions.filter((a) => a.priority === 'urgent').length;
+
   // ── Slider callback — single state update, all children re-render ──
   const handleOutputsChange = (newOutputs: AssessmentOutputs, pt: number) => {
     setOutputs(newOutputs);
     setPassThrough(pt);
   };
 
-  // ── Section reveal animation helper ────────────────────────────
-  const revealStyle = (delayMs: number): React.CSSProperties => ({
-    opacity: 0,
-    animation: 'fadeUp 0.4s ease forwards',
-    animationDelay: `${delayMs}ms`,
-  });
+  // ── RefinementPanel callback — updates headline P&L outputs only ──
+  const handleRefinedResult = (newOutputs: AssessmentOutputs) => {
+    setOutputs(newOutputs);
+  };
 
   return (
-    <main className="min-h-screen" style={{ background: 'var(--color-background-primary)' }}>
-      {/* Site-wide disclaimer */}
-      <div
-        className="py-2 text-center"
-        style={{ borderBottom: '0.5px solid var(--color-border-tertiary)' }}
-      >
-        <p className="text-micro" style={{ color: 'var(--color-text-tertiary)' }}>
-          nosurcharging.com.au provides general guidance only. Not financial advice.
-          Verify with your PSP before making business decisions.
-        </p>
-      </div>
+    <div className="min-h-screen bg-paper">
+      <ResultsTopBar category={category} plSwing={outputs.plSwing} accuracy={accuracy} volume={volume} assessmentId={assessmentId ?? undefined} />
 
-      <div className="mx-auto max-w-results px-5 pb-12">
-        {/* 1. Verdict — delay 0ms */}
-        <div style={revealStyle(0)}>
-          <VerdictSection outputs={outputs} volume={volume} pspName={pspName} />
-        </div>
+      <MobileMiniNav
+        activeSection={activeSection}
+        onNavClick={scrollToSection}
+        plSwing={outputs.plSwing}
+      />
 
-        {/* 2. Metrics — delay 120ms */}
-        <div style={revealStyle(120)}>
-          <MetricCards outputs={outputs} />
-        </div>
+      <div className="flex">
+        <ResultsSidebar
+          activeSection={activeSection}
+          onNavClick={scrollToSection}
+          urgentCount={urgentCount}
+          category={category}
+        />
 
-        {/* 3. Reform Timeline — delay 180ms */}
-        <div className="mt-4" style={revealStyle(180)}>
-          <ReformTimeline />
-        </div>
-
-        {/* 4. Pass-through Slider — delay 240ms (Cat 2/4 only) */}
-        <div className="mt-4" style={revealStyle(240)}>
-          <PassThroughSlider
-            category={category}
-            passThrough={passThrough}
+        <main className="flex-1 min-w-0 px-8 pb-20 md:pb-12 max-w-4xl">
+          <OverviewSection
             outputs={outputs}
+            volume={volume}
+            pspName={pspName}
+            planType={planType}
+            msfRate={originalRaw.msfRate}
+            surcharging={originalRaw.surcharging}
+            surchargeRate={originalRaw.surchargeRate}
+          />
+
+          <ActionsSection
+            actions={actions}
+            category={category}
+            outputs={outputs}
+            passThrough={passThrough}
+            volume={volume}
+            surcharging={originalRaw.surcharging}
+            pspName={pspName}
+          />
+
+          <TalkToCustomers category={category} pspName={pspName} />
+
+          <NegotiationBrief
+            pspName={pspName}
+            planType={planType}
+            volume={volume}
+            category={category}
+            outputs={outputs}
+          />
+
+          <ReadinessChecklist category={category} pspName={pspName} />
+
+          <ValuesSection
+            outputs={outputs}
+            passThrough={passThrough}
+            resolutionTrace={resolutionTrace}
+            volume={volume}
+            pspName={pspName}
+            planType={planType}
+            msfRate={originalRaw.msfRate}
+            surcharging={originalRaw.surcharging}
+            surchargeRate={originalRaw.surchargeRate}
+            avgTransactionValue={(storedInputs.avgTransactionValue as number) ?? 65}
+          />
+
+          <RefineSection
+            outputs={outputs}
+            resolvedInputs={resolvedInputs}
+            passThrough={passThrough}
             originalRaw={originalRaw}
             resolutionContext={resolutionContext}
             pspName={pspName}
             onOutputsChange={handleOutputsChange}
+            onRefinedResult={handleRefinedResult}
+            onAccuracyChange={setAccuracy}
           />
-        </div>
 
-        {/* 5. Waterfall Chart — delay 240ms */}
-        <div className="mt-4" style={revealStyle(240)}>
-          <WaterfallChart outputs={outputs} />
-        </div>
-
-        {/* 6. Escape Scenario Card — no delay (Cat 2/4 only) */}
-        <div className="mt-4" style={revealStyle(300)}>
-          <EscapeScenarioCard
+          <HelpSection
             category={category}
-            outputs={outputs}
-            passThrough={passThrough}
-            originalRaw={originalRaw}
-            resolutionContext={resolutionContext}
             pspName={pspName}
-          />
-        </div>
-
-        {/* 7. Action List — delay 360ms */}
-        <div className="mt-6" style={revealStyle(360)}>
-          <ActionList actions={actions} />
-        </div>
-
-        {/* 8. Assumptions Panel — delay 360ms */}
-        <div className="mt-6" style={revealStyle(360)}>
-          <AssumptionsPanel
-            outputs={outputs}
-            passThrough={passThrough}
-            resolutionTrace={resolutionTrace}
-          />
-        </div>
-
-        {/* 9. Email Capture — delay 480ms */}
-        <div className="mt-8" style={revealStyle(480)}>
-          <EmailCapture assessmentId={assessmentId ?? undefined} />
-        </div>
-
-        {/* 10. Consulting CTA — delay 480ms */}
-        <div className="mt-6" style={revealStyle(480)}>
-          <ConsultingCTA category={category} pspName={pspName} />
-        </div>
-
-        {/* 11. PSP Rate Registry */}
-        <div className="mt-8" style={revealStyle(540)}>
-          <PSPRateRegistry
             assessmentId={assessmentId ?? ''}
-            pspName={pspName}
             planType={planType}
             volume={volume}
           />
-        </div>
-
-        {/* 12. Results Disclaimer */}
-        <div className="mt-8 mb-4" style={revealStyle(600)}>
-          <ResultsDisclaimer />
-        </div>
+        </main>
       </div>
-    </main>
+
+      <MobileBottomBar category={category} />
+    </div>
   );
 }

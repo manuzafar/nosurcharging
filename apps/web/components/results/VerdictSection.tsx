@@ -1,10 +1,16 @@
 'use client';
 
 // Results verdict — the first thing the merchant sees.
-// P&L swing hero number: 44px monospace, green/red.
-// Category pill + confidence chip + headline + body.
+// Per ux-spec §3.2:
+//   - Pill label is "SITUATION N" — 20px pill radius
+//   - Range display: plSwingLow to plSwingHigh at clamp(24px, 7vw, 32px)
+//   - Expected line: plSwing at text-financial-standard (22px)
+//   - Old records without plSwingLow: single 44px number + "Complete a new assessment" note
+//   - Daily anchor sentence: "That's $X more per day..."
+//
+// Banned phrasing: never "your PSP" or "your provider" — always the
+// actual PSP name interpolated inline.
 
-import { PillBadge } from '@/components/ui/PillBadge';
 import { CATEGORY_VERDICTS } from '@nosurcharging/calculations/categories';
 import type { AssessmentOutputs } from '@nosurcharging/calculations/types';
 
@@ -12,20 +18,85 @@ interface VerdictSectionProps {
   outputs: AssessmentOutputs;
   volume: number;
   pspName: string;
+  planType: 'flat' | 'costplus' | 'blended';
+  msfRate: number;
+  surcharging: boolean;
+  surchargeRate: number;
 }
 
-const CATEGORY_PILLS: Record<1 | 2 | 3 | 4, { variant: 'green' | 'amber' | 'red'; label: string }> = {
-  1: { variant: 'green', label: 'Category 1' },
-  2: { variant: 'amber', label: 'Category 2' },
-  3: { variant: 'red', label: 'Category 3' },
-  4: { variant: 'red', label: 'Category 4' },
+// Situation pill variants — 20px pill radius under the Modern Fintech Hierarchy
+export const SITUATION_PILLS: Record<
+  1 | 2 | 3 | 4,
+  { background: string; color: string }
+> = {
+  1: {
+    background: 'var(--color-background-success)',
+    color: 'var(--color-text-success)',
+  },
+  2: {
+    background: 'var(--color-background-warning)',
+    color: 'var(--color-text-warning)',
+  },
+  3: {
+    background: 'var(--color-background-danger)',
+    color: 'var(--color-text-danger)',
+  },
+  4: {
+    background: 'var(--color-background-danger)',
+    color: 'var(--color-text-danger)',
+  },
 };
 
-const CONFIDENCE_LABELS: Record<string, string> = {
-  high: 'High confidence — your rates used',
-  medium: 'Estimated — partial RBA averages',
-  low: 'Estimated — RBA averages used',
-};
+function formatDollar(value: number): string {
+  return '$' + Math.round(Math.abs(value)).toLocaleString('en-AU');
+}
+
+function formatSignedDollar(value: number): string {
+  if (value === 0) return '$0';
+  return (value > 0 ? '+' : '−') + '$' + Math.abs(Math.round(value)).toLocaleString('en-AU');
+}
+
+// Format volume in human-readable form: $500K, $1.2M, $5M
+function formatVolumeShort(volume: number): string {
+  if (volume >= 1_000_000) {
+    const m = volume / 1_000_000;
+    const formatted = m >= 10 ? m.toFixed(0) : m.toFixed(1);
+    return `$${formatted}M`;
+  }
+  if (volume >= 1_000) {
+    return `$${Math.round(volume / 1_000)}K`;
+  }
+  return formatDollar(volume);
+}
+
+function formatPct(rate: number): string {
+  return `${(rate * 100).toFixed(2)}%`;
+}
+
+function buildContextLine(
+  volume: number,
+  pspName: string,
+  planType: 'flat' | 'costplus' | 'blended',
+  msfRate: number,
+  surcharging: boolean,
+  surchargeRate: number,
+): string {
+  const parts: string[] = [`${formatVolumeShort(volume)} annual card revenue`];
+
+  if (planType === 'flat') {
+    parts.push(`${pspName} flat rate ${formatPct(msfRate)}`);
+  } else if (planType === 'blended') {
+    parts.push(`${pspName} blended rate`);
+  } else {
+    parts.push(`${pspName} cost-plus`);
+  }
+
+  if (surcharging) {
+    parts.push(`surcharging ${formatPct(surchargeRate)}`);
+  }
+
+  return parts.join(' · ');
+}
 
 function getCategoryBody(category: 1 | 2 | 3 | 4, psp: string): string {
   const bodies: Record<1 | 2 | 3 | 4, string> = {
@@ -37,69 +108,188 @@ function getCategoryBody(category: 1 | 2 | 3 | 4, psp: string): string {
   return bodies[category];
 }
 
-export function VerdictSection({ outputs, volume, pspName }: VerdictSectionProps) {
-  const { category, plSwing, confidence } = outputs;
-  const isPositive = plSwing >= 0;
-  const pill = CATEGORY_PILLS[category];
-  const volumeInMillions = (volume / 1_000_000).toFixed(1);
+export function VerdictSection({
+  outputs,
+  volume,
+  pspName,
+  planType,
+  msfRate,
+  surcharging,
+  surchargeRate,
+}: VerdictSectionProps) {
+  const { category, plSwing, plSwingLow, plSwingHigh, rangeDriver, rangeNote } = outputs;
+  const isNegative = plSwing < 0;
+  const isPositiveOrZero = plSwing >= 0;
+  const pillStyle = SITUATION_PILLS[category];
 
-  const formattedSwing = '$' + Math.abs(plSwing).toLocaleString('en-AU', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
+  const contextLine = buildContextLine(
+    volume,
+    pspName,
+    planType,
+    msfRate,
+    surcharging,
+    surchargeRate,
+  );
+
+  // Daily anchor: spec §3.2 — Math.round(Math.abs(plSwing) / 365)
+  const dailyAnchor = Math.round(Math.abs(plSwing) / 365);
+  const dailyAnchorStrong = `$${dailyAnchor.toLocaleString('en-AU')} more per day`;
+  const dailyAnchorTail = isPositiveOrZero
+    ? ' in your pocket.'
+    : ' in net payments cost.';
+
+  // Range colour — uses the sign of plSwingLow to determine colour
+  const rangeColour = (plSwingLow ?? plSwing) >= 0
+    ? 'var(--color-text-success)'
+    : 'var(--color-text-danger)';
 
   return (
-    <div className="py-7">
-      {/* Row 1: Category pill + confidence chip */}
-      <div className="flex items-center justify-between">
-        <PillBadge variant={pill.variant}>{pill.label}</PillBadge>
+    <div
+      className="pt-8 pb-6"
+      style={{ borderBottom: '1px solid var(--color-border-secondary)' }}
+    >
+      {/* Row 1: Situation pill + confidence note */}
+      <div className="flex items-center">
         <span
-          className="text-label"
+          className="font-medium uppercase"
           style={{
-            background: 'var(--color-background-secondary)',
-            color: 'var(--color-text-secondary)',
-            padding: '3px 10px',
-            borderRadius: '12px',
-            fontSize: '11px',
+            ...pillStyle,
+            fontSize: '10px',
+            letterSpacing: '1.5px',
+            padding: '4px 10px',
+            borderRadius: '20px',
           }}
         >
-          {CONFIDENCE_LABELS[confidence] ?? CONFIDENCE_LABELS.low}
+          Situation {category}
+        </span>
+        <span
+          style={{
+            fontSize: '11px',
+            marginLeft: '8px',
+            color: 'var(--color-text-tertiary)',
+          }}
+        >
+          Estimated · RBA averages
         </span>
       </div>
 
       {/* Row 2: Category headline */}
       <h2
         className="mt-4 font-serif font-medium"
-        style={{ fontSize: '18px', lineHeight: '1.3', color: 'var(--color-text-primary)' }}
+        style={{
+          fontSize: '18px',
+          lineHeight: '1.3',
+          color: 'var(--color-text-primary)',
+        }}
       >
         {CATEGORY_VERDICTS[category]}
       </h2>
 
-      {/* Row 3: P&L swing hero number — 44px mono */}
+      {/* Row 3: Range display or fallback single number */}
+      {plSwingLow === undefined ? (
+        // Old records without range — single 44px hero number
+        <div>
+          <p
+            className="mt-3 font-mono text-financial-hero"
+            style={{
+              color: isNegative
+                ? 'var(--color-text-danger)'
+                : 'var(--color-text-success)',
+              marginBottom: '6px',
+            }}
+          >
+            {plSwing > 0 && '+'}
+            {plSwing < 0 && '−'}
+            {formatDollar(plSwing)}
+          </p>
+          <p
+            style={{
+              fontSize: '13px',
+              color: 'var(--color-text-tertiary)',
+              marginBottom: '8px',
+            }}
+          >
+            per year, from 1 October 2026
+          </p>
+          <p className="mt-1 text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
+            Complete a new assessment to see the full range.
+          </p>
+        </div>
+      ) : (
+        // Range display — overrides CLAUDE.md Rule 2 (44px) for the pair
+        <div>
+          <div className="mt-3">
+            <p className="font-mono text-financial-hero" style={{ color: rangeColour }}>
+              {formatSignedDollar(plSwingLow)}
+              <span className="font-sans mx-2" style={{ fontSize: '14px', color: 'var(--color-text-tertiary)' }}>
+                to
+              </span>
+              {formatSignedDollar(plSwingHigh)}
+            </p>
+            <p className="mt-1 text-caption" style={{ color: 'var(--color-text-secondary)' }}>
+              per year from 1 October 2026
+            </p>
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-center gap-x-2">
+            <span className="text-caption" style={{ color: 'var(--color-text-secondary)' }}>Expected:</span>
+            <span
+              className="font-mono text-body-sm font-medium"
+              style={{ color: plSwing >= 0 ? 'var(--color-text-success)' : 'var(--color-text-danger)' }}
+            >
+              {formatSignedDollar(plSwing)}
+            </span>
+            <span className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
+              {rangeDriver === 'pass_through'
+                ? '— at 45% PSP pass-through (RBA market estimate)'
+                : '— at estimated card mix'}
+            </span>
+          </div>
+
+          <p className="mt-2 text-caption" style={{ color: 'var(--color-text-tertiary)', lineHeight: '1.55' }}>
+            {rangeNote}
+          </p>
+        </div>
+      )}
+
+      {/* Daily anchor — §3.2 */}
       <p
-        className="mt-3 font-mono text-financial-hero"
-        style={{ color: isPositive ? 'var(--color-text-success)' : 'var(--color-text-danger)' }}
+        style={{
+          fontSize: '15px',
+          color: 'var(--color-text-secondary)',
+          lineHeight: '1.6',
+          marginTop: '8px',
+          marginBottom: '8px',
+        }}
       >
-        {isPositive ? '+' : '-'}{formattedSwing}
+        That&apos;s{' '}
+        <strong style={{ color: '#1A6B5A', fontWeight: 500 }}>
+          {dailyAnchorStrong}
+        </strong>
+        {dailyAnchorTail}
       </p>
 
-      {/* Row 4: Direction label */}
-      <p className="mt-1 text-body-sm" style={{ color: 'var(--color-text-secondary)' }}>
-        {isPositive ? 'annual saving' : 'annual increase in payments cost'}
-      </p>
-
-      {/* Row 5: Context line */}
-      <p className="mt-1 text-caption" style={{ color: 'var(--color-text-secondary)' }}>
-        across ${volumeInMillions}m in annual card revenue
-      </p>
-
-      {/* Row 6: Body paragraph */}
+      {/* Context line — what inputs drove the number */}
       <p
-        className="mt-4 text-body-sm"
-        style={{ color: 'var(--color-text-secondary)', lineHeight: '1.65' }}
+        style={{
+          fontSize: '11px',
+          color: 'var(--color-text-tertiary)',
+        }}
+      >
+        {contextLine}
+      </p>
+
+      {/* Body paragraph — category-specific narrative */}
+      <p
+        className="mt-4 text-body"
+        style={{
+          color: 'var(--color-text-secondary)',
+          lineHeight: '1.65',
+        }}
       >
         {getCategoryBody(category, pspName)}
       </p>
+
     </div>
   );
 }
