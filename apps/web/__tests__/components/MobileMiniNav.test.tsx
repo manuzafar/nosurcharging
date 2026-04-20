@@ -9,10 +9,13 @@ describe('MobileMiniNav', () => {
     plSwing: 1700,
   };
 
-  it('renders all 5 section tabs', () => {
+  it('renders all 8 section tabs', () => {
     render(<MobileMiniNav {...defaultProps} />);
     expect(screen.getByText('Overview')).toBeInTheDocument();
     expect(screen.getByText('Actions')).toBeInTheDocument();
+    expect(screen.getByText('Talk to customers')).toBeInTheDocument();
+    expect(screen.getByText('Negotiation brief')).toBeInTheDocument();
+    expect(screen.getByText('Readiness checklist')).toBeInTheDocument();
     expect(screen.getByText('Values & rates')).toBeInTheDocument();
     expect(screen.getByText('Refine estimate')).toBeInTheDocument();
     expect(screen.getByText('Get help')).toBeInTheDocument();

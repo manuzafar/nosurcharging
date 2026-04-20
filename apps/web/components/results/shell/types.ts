@@ -1,16 +1,20 @@
-export const SECTION_IDS = ['overview', 'actions', 'values', 'refine', 'help'] as const;
+export const SECTION_IDS = ['overview', 'actions', 'customers', 'negotiate', 'checklist', 'values', 'refine', 'help'] as const;
 export type SectionId = (typeof SECTION_IDS)[number];
 
 export interface SectionMeta {
   id: SectionId;
   label: string;
-  group: 'result' | 'understand' | 'next';
+  sublabel?: string;
+  group: 'result' | 'prepare' | 'understand' | 'next';
 }
 
 export const SECTIONS: SectionMeta[] = [
-  { id: 'overview', label: 'Overview', group: 'result' },
-  { id: 'actions', label: 'Actions', group: 'result' },
-  { id: 'values', label: 'Values & rates', group: 'understand' },
-  { id: 'refine', label: 'Refine estimate', group: 'understand' },
-  { id: 'help', label: 'Get help', group: 'next' },
+  { id: 'overview', label: 'Overview', sublabel: 'Verdict, metrics, problems', group: 'result' },
+  { id: 'actions', label: 'Actions', sublabel: 'Prioritised steps', group: 'result' },
+  { id: 'customers', label: 'Talk to customers', sublabel: 'Templates & scripts', group: 'prepare' },
+  { id: 'negotiate', label: 'Negotiation brief', sublabel: 'PSP call script', group: 'prepare' },
+  { id: 'checklist', label: 'Readiness checklist', sublabel: 'Track your progress', group: 'prepare' },
+  { id: 'values', label: 'Values & rates', sublabel: 'Cost breakdown', group: 'understand' },
+  { id: 'refine', label: 'Refine estimate', sublabel: 'Improve accuracy', group: 'understand' },
+  { id: 'help', label: 'Get help', sublabel: 'Expert consultation', group: 'next' },
 ];

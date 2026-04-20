@@ -38,7 +38,7 @@ function CertainProblem({ surchargeRevenue }: { surchargeRevenue: number }) {
         <h3
           className="font-medium"
           style={{
-            fontSize: '13px',
+            fontSize: '14px',
             color: 'var(--color-text-primary)',
           }}
         >
@@ -49,7 +49,7 @@ function CertainProblem({ surchargeRevenue }: { surchargeRevenue: number }) {
           style={{
             background: '#7F1D1D',
             color: '#FFFFFF',
-            fontSize: '9px',
+            fontSize: '10px',
             letterSpacing: '1px',
             padding: '2px 7px',
           }}
@@ -92,7 +92,7 @@ function DependsProblem({
         <h3
           className="font-medium"
           style={{
-            fontSize: '13px',
+            fontSize: '14px',
             color: 'var(--color-text-primary)',
           }}
         >
@@ -103,7 +103,7 @@ function DependsProblem({
           style={{
             background: '#BA7517',
             color: '#FFFFFF',
-            fontSize: '9px',
+            fontSize: '10px',
             letterSpacing: '1px',
             padding: '2px 7px',
             whiteSpace: 'nowrap',
@@ -150,10 +150,8 @@ export function ProblemsBlock({
       style={{ borderBottom: '1px solid var(--color-border-secondary)' }}
     >
       <p
-        className="font-medium uppercase"
+        className="text-label uppercase"
         style={{
-          fontSize: '9px',
-          letterSpacing: '2.5px',
           color: 'var(--color-text-tertiary)',
           marginBottom: '16px',
         }}

@@ -114,7 +114,7 @@ export function CostCompositionChart({
       <p
         className="font-medium uppercase"
         style={{
-          fontSize: '9px',
+          fontSize: '11px',
           letterSpacing: '2.5px',
           color: 'var(--color-text-tertiary)',
           marginBottom: '12px',
@@ -142,7 +142,7 @@ export function CostCompositionChart({
           <span
             className="font-medium uppercase inline-block"
             style={{
-              fontSize: '9px',
+              fontSize: '10px',
               letterSpacing: '0.8px',
               padding: '2px 7px',
               background: 'rgba(154, 140, 120, 0.1)',

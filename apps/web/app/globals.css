@@ -71,6 +71,11 @@
   --color-background-secondary: #F9FAFB;
   --color-border-secondary: rgba(0,0,0,0.15);
   --color-border-tertiary: rgba(0,0,0,0.08);
+
+  /* Accent — matches accent.DEFAULT / .light / .border in tailwind.config.ts */
+  --color-accent: #1A6B5A;
+  --color-accent-light: #EBF6F3;
+  --color-accent-border: #72C4B0;
 }
 
 /* Force light scheme — the revamped UI uses a fixed paper canvas and

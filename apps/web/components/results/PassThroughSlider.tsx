@@ -79,7 +79,7 @@ export function PassThroughSlider({
       <p
         className="font-medium uppercase"
         style={{
-          fontSize: '9px',
+          fontSize: '11px',
           letterSpacing: '2.5px',
           color: 'var(--color-text-tertiary)',
           marginBottom: '12px',

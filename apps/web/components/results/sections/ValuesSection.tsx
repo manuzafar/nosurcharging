@@ -33,7 +33,7 @@ export const ValuesSection = forwardRef<HTMLElement, ValuesSectionProps>(
           style={{
             color: 'var(--color-text-tertiary)',
             letterSpacing: '1.5px',
-            fontSize: '9px',
+            fontSize: '11px',
             borderBottom: '1px solid var(--color-border-secondary)',
           }}
         >

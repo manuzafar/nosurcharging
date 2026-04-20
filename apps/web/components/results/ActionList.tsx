@@ -61,7 +61,7 @@ export function ActionList({ actions }: ActionListProps) {
         id={eyebrowId}
         className="font-medium uppercase"
         style={{
-          fontSize: '9px',
+          fontSize: '11px',
           letterSpacing: '2.5px',
           color: 'var(--color-text-tertiary)',
           marginBottom: '12px',
@@ -132,7 +132,7 @@ export function ActionList({ actions }: ActionListProps) {
                   <span
                     className="font-medium uppercase"
                     style={{
-                      fontSize: '9px',
+                      fontSize: '10px',
                       letterSpacing: '0.8px',
                       padding: '3px 8px',
                       background: config.pillBg,
@@ -145,9 +145,10 @@ export function ActionList({ actions }: ActionListProps) {
                   <span
                     className="font-mono"
                     style={{
-                      fontSize: '10px',
+                      fontSize: '11px',
                       color: 'var(--color-accent)',
                       letterSpacing: '0.3px',
+                      fontWeight: 500,
                     }}
                   >
                     {action.timeAnchor}
@@ -172,7 +173,7 @@ export function ActionList({ actions }: ActionListProps) {
                     <p
                       className="uppercase font-medium"
                       style={{
-                        fontSize: '9px',
+                        fontSize: '11px',
                         letterSpacing: '1px',
                         color: 'var(--color-accent)',
                         marginBottom: '4px',
