@@ -18,10 +18,20 @@ export function calculateMetrics(
   inputs: ResolvedAssessmentInputs,
   now: Date = new Date(),
 ): AssessmentOutputs {
-  const { volume, planType, surcharging, surchargeRate, passThrough, msfRate } = inputs;
+  const { volume, planType, surcharging, surchargeRate, surchargeNetworks, passThrough, msfRate } = inputs;
   const { cardMix, avgTransactionValue, expertRates } = inputs;
 
-  const category = getCategory(planType, surcharging);
+  // A merchant surcharging only exempt networks (Amex, BNPL) has no designated
+  // network surcharge revenue at risk from the October ban. Their reform outcome
+  // is identical to a non-surcharging merchant — treat as non-surcharging for
+  // category assignment only. The raw surcharging field is unchanged in the DB.
+  const DESIGNATED_NETWORKS = ['visa', 'mastercard', 'eftpos'];
+  const effectiveSurcharging =
+    surcharging &&
+    (surchargeNetworks.length === 0 ||
+     surchargeNetworks.some((n) => DESIGNATED_NETWORKS.includes(n)));
+
+  const category = getCategory(planType, effectiveSurcharging);
   const period = getCurrentPeriod(now);
   const { current: currentRates, projected: projectedRates } = getRatesForPeriod(now);
 
