@@ -347,6 +347,24 @@ describe('Scenario 6 — Surcharge network share', () => {
     expect(result.surchargeRevenue).toBe(0);
   });
 
+  it('amex only → category 1 (treated as non-surcharging — no designated revenue at risk)', () => {
+    const inputs = makeInputs({
+      volume: 10_000_000, planType: 'costplus', surcharging: true,
+      surchargeRate: 0.012, surchargeNetworks: ['amex'],
+    });
+    const result = calculateMetrics(inputs, PRE_REFORM);
+    expect(result.category).toBe(1);
+  });
+
+  it('amex only → plSwing is positive (saving, not a loss)', () => {
+    const inputs = makeInputs({
+      volume: 10_000_000, planType: 'costplus', surcharging: true,
+      surchargeRate: 0.012, surchargeNetworks: ['amex'],
+    });
+    const result = calculateMetrics(inputs, PRE_REFORM);
+    expect(result.plSwing).toBeGreaterThan(0);
+  });
+
   it('not surcharging → $0 regardless of networks', () => {
     const inputs = makeInputs({
       volume: 10_000_000, planType: 'costplus', surcharging: false,
@@ -354,6 +372,49 @@ describe('Scenario 6 — Surcharge network share', () => {
     });
     const result = calculateMetrics(inputs, PRE_REFORM);
     expect(result.surchargeRevenue).toBe(0);
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════
+// Regression — empty surchargeNetworks with surcharging=true
+// Must produce same result as all-designated (backward compatible)
+// ══════════════════════════════════════════════════════════════════
+
+describe('Regression — empty surchargeNetworks with surcharging=true is backward compatible', () => {
+  const withEmpty = makeInputs({
+    planType: 'flat',
+    surcharging: true,
+    surchargeRate: 0.015,
+    surchargeNetworks: [],
+    msfRate: 0.014,
+    passThrough: 0,
+  });
+
+  const withAllDesignated = makeInputs({
+    planType: 'flat',
+    surcharging: true,
+    surchargeRate: 0.015,
+    surchargeNetworks: ['visa', 'mastercard', 'eftpos'],
+    msfRate: 0.014,
+    passThrough: 0,
+  });
+
+  it('empty networks produces same category as all-designated', () => {
+    const r1 = calculateMetrics(withEmpty, PRE_REFORM);
+    const r2 = calculateMetrics(withAllDesignated, PRE_REFORM);
+    expect(r1.category).toBe(r2.category);
+  });
+
+  it('empty networks produces same surchargeRevenue as all-designated', () => {
+    const r1 = calculateMetrics(withEmpty, PRE_REFORM);
+    const r2 = calculateMetrics(withAllDesignated, PRE_REFORM);
+    expect(r1.surchargeRevenue).toBeCloseTo(r2.surchargeRevenue, 2);
+  });
+
+  it('empty networks produces same plSwing as all-designated', () => {
+    const r1 = calculateMetrics(withEmpty, PRE_REFORM);
+    const r2 = calculateMetrics(withAllDesignated, PRE_REFORM);
+    expect(r1.plSwing).toBeCloseTo(r2.plSwing, 2);
   });
 });
 
