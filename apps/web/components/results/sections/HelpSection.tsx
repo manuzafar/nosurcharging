@@ -9,11 +9,13 @@ interface HelpSectionProps {
   category: 1 | 2 | 3 | 4;
   pspName: string;
   assessmentId: string;
+  plSwing?: number;
+  volumeTier?: string;
 }
 
 export const HelpSection = forwardRef<HTMLElement, HelpSectionProps>(
   function HelpSection(props, ref) {
-    const { category, pspName, assessmentId } = props;
+    const { category, pspName, assessmentId, plSwing, volumeTier } = props;
 
     return (
       <section id="help" data-section="help" ref={ref} className="pt-8">
@@ -29,10 +31,22 @@ export const HelpSection = forwardRef<HTMLElement, HelpSectionProps>(
           Next steps
         </p>
 
-        <ConsultingCTA category={category} pspName={pspName} />
+        <ConsultingCTA
+          category={category}
+          pspName={pspName}
+          plSwing={plSwing}
+          volumeTier={volumeTier}
+        />
 
         <div className="mt-6">
-          <EmailCapture assessmentId={assessmentId} />
+          <EmailCapture
+            assessmentId={assessmentId}
+            captureMoment="help_section"
+            category={category}
+            plSwing={plSwing}
+            volumeTier={volumeTier}
+            psp={pspName}
+          />
         </div>
 
         <div className="mt-8 mb-4">

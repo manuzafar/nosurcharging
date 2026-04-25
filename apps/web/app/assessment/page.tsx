@@ -16,7 +16,7 @@ import { Step2PlanType } from '@/components/assessment/Step2PlanType';
 import { Step3Surcharging } from '@/components/assessment/Step3Surcharging';
 import { Step4Industry } from '@/components/assessment/Step4Industry';
 import { RevealScreen } from '@/components/assessment/RevealScreen';
-import { trackEvent } from '@/lib/analytics';
+import { trackEvent, Analytics, getVolumeTier } from '@/lib/analytics';
 import type { MerchantInputOverrides } from '@nosurcharging/calculations/types';
 import type { AssessmentFormData, AssessmentResult } from '@/actions/submitAssessment';
 import { PSP_PUBLISHED_RATES } from '@nosurcharging/calculations/constants/psp-rates';
@@ -58,7 +58,14 @@ export default function AssessmentPage() {
   const expertModeTracked = useRef(false);
   const cardMixTracked = useRef(false);
 
-  // FIX 5: Assessment abandoned event — fires on tab close/navigate away
+  // Time-on-task — used for assessment_abandoned `time_spent_seconds`.
+  const startTimeRef = useRef(Date.now());
+
+  // step_completed deduplication — each step fires at most once per session
+  // even if the merchant goes back and forth.
+  const visitedSteps = useRef(new Set<number>());
+
+  // Assessment abandoned event — fires on tab close/navigate away
   const currentStepRef = useRef(0);
   useEffect(() => {
     const stepMap: Record<string, number> = { step1: 1, step2: 2, step3: 3, step4: 4 };
@@ -68,7 +75,10 @@ export default function AssessmentPage() {
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (currentStepRef.current > 0) {
-        trackEvent('Assessment abandoned', { at_step: String(currentStepRef.current) });
+        Analytics.assessmentAbandoned(
+          currentStepRef.current,
+          Math.round((Date.now() - startTimeRef.current) / 1000),
+        );
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -76,9 +86,36 @@ export default function AssessmentPage() {
   }, []);
 
   const goToStep = (next: Phase) => {
-    if (phase !== 'disclaimer' && phase !== 'reveal' && phase !== 'error') {
-      const stepNum = { step1: '1', step2: '2', step3: '3', step4: '4' }[phase];
-      if (stepNum) trackEvent('Step completed', { step: stepNum });
+    // Fire enriched step_completed for the OUTGOING step. Deduped via Set so
+    // back-and-forth navigation doesn't double-fire.
+    const stepMap: Record<string, 1 | 2 | 3 | 4> = { step1: 1, step2: 2, step3: 3, step4: 4 };
+    const stepNum = stepMap[phase];
+    if (stepNum && !visitedSteps.current.has(stepNum)) {
+      visitedSteps.current.add(stepNum);
+      if (stepNum === 1) {
+        Analytics.stepCompleted(1, {
+          volume_tier: getVolumeTier(volume),
+          input_mode: 'annual',
+        });
+      } else if (stepNum === 2) {
+        Analytics.stepCompleted(2, {
+          plan_type: planType ?? '',
+          psp: psp ?? '',
+        });
+      } else if (stepNum === 3) {
+        const isAmexOnly =
+          surchargeNetworks.length > 0 &&
+          surchargeNetworks.every((n) => ['amex', 'bnpl'].includes(n));
+        Analytics.stepCompleted(3, {
+          surcharging: surcharging ?? false,
+          surcharge_networks: JSON.stringify(surchargeNetworks),
+          surcharge_rate: surchargeRate,
+          is_amex_only: isAmexOnly,
+          amex_warning_shown: surcharging === true && isAmexOnly,
+        });
+      } else if (stepNum === 4) {
+        Analytics.stepCompleted(4, { industry: industry ?? '' });
+      }
     }
     setPhase(next);
   };
@@ -198,7 +235,7 @@ export default function AssessmentPage() {
         <div className="transition-opacity duration-200 ease-out">
           <DisclaimerConsent
             onAccept={() => {
-              trackEvent('Assessment started');
+              Analytics.assessmentStarted();
               goToStep('step1');
             }}
           />
@@ -240,24 +277,26 @@ export default function AssessmentPage() {
                 onPlanTypeChange={(type, unknown) => {
                   setPlanType(type);
                   setPlanTypeUnknown(unknown ?? false);
-                  trackEvent('Plan type selected', { type: unknown ? 'dont_know' : type });
+                  // plan_type is captured in step_completed (step 2). The
+                  // standalone 'Plan type selected' event was redundant —
+                  // the funnel only cares about the value at completion.
                 }}
                 onMsfRateModeChange={(mode) => {
                   setMsfRateMode(mode);
-                  trackEvent('Zero-cost rate selected', { mode });
+                  Analytics.zeroCostRateSelected({ mode });
                 }}
                 onCustomMSFRateChange={setCustomMSFRate}
                 onBlendedRatesChange={(debit, credit) => {
                   setBlendedDebitRate(debit);
                   setBlendedCreditRate(credit);
-                  trackEvent('Blended rates entered', {
-                    debit_provided: String(debit !== null),
-                    credit_provided: String(credit !== null),
+                  Analytics.blendedRatesEntered({
+                    debit_provided: debit !== null,
+                    credit_provided: credit !== null,
                   });
                 }}
                 onStrategicRateSelected={() => {
                   setStrategicRateSelected(true);
-                  trackEvent('Strategic rate exit viewed', { trigger: 'self_select' });
+                  Analytics.strategicRateExitViewed({ trigger: 'self_select' });
                 }}
                 onPspChange={(name) => {
                   setPsp(name);
@@ -268,7 +307,8 @@ export default function AssessmentPage() {
                     const published = PSP_PUBLISHED_RATES[name];
                     if (published) setMsfRate(published.standardMsf);
                   }
-                  trackEvent('PSP selected', { psp: name });
+                  // psp is captured in step_completed (step 2). The
+                  // standalone 'PSP selected' event was redundant.
                 }}
                 msfRate={msfRate}
                 onMsfRateChange={(rate) => {
@@ -313,7 +353,7 @@ export default function AssessmentPage() {
                 surchargeNetworks={surchargeNetworks}
                 onSurchargingChange={(val) => {
                   setSurcharging(val);
-                  trackEvent('Surcharging selected', { value: val ? 'yes' : 'no' });
+                  // surcharging is captured in step_completed (step 3).
                 }}
                 onSurchargeRateChange={setSurchargeRate}
                 onNetworksChange={setSurchargeNetworks}
@@ -327,7 +367,7 @@ export default function AssessmentPage() {
                 industry={industry}
                 onIndustryChange={(ind) => {
                   setIndustry(ind);
-                  trackEvent('Industry selected', { industry: ind });
+                  // industry is captured in step_completed (step 4).
                 }}
                 onNext={() => setPhase('reveal')}
                 onBack={() => goToStep('step3')}

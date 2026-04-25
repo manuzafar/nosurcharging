@@ -14,6 +14,7 @@ vi.mock('@/actions/submitAssessment', () => ({
 
 vi.mock('@/lib/analytics', () => ({
   trackEvent: mockTrackEvent,
+  Analytics: {},
 }));
 
 // ── Import after mocks ───────────────────────────────────────────

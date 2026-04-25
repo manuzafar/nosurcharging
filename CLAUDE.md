@@ -105,7 +105,7 @@ ONE Railway service. Not two. Not three. One.
   Supabase (Singapore — ap-southeast-1)  CONFIRM THIS REGION BEFORE PROJECT CREATION
     PostgreSQL via PgBouncer pooler PORT 6543 (not 5432)
 
-  Plausible Cloud ($9/month)  NOT self-hosted, NOT on Railway
+  PostHog Cloud (US or EU host)  NOT self-hosted, NOT on Railway
   Resend (transactional email)
   Cloudflare (DNS, WAF, SSL — free tier)
 
@@ -123,7 +123,7 @@ Technology stack:
   Charts:     Recharts (NOT Chart.js — prototype used Chart.js, production uses Recharts)
   Database:   Supabase PostgreSQL
   Email:      Resend
-  Analytics:  Plausible Cloud (NOT self-hosted)
+  Analytics:  PostHog Cloud (NOT self-hosted)
   Monorepo:   Turborepo
   Unit tests: Vitest (NOT Jest — same API, 10-20x faster, native ESM)
   E2E tests:  Playwright (NOT Cypress)
@@ -161,7 +161,7 @@ Phase 2 stubs to create in Phase 1 (prevents schema migrations later):
   apps/
     web/                          Next.js 14 (only app in Phase 1)
       app/
-        layout.tsx                Root layout — Plausible script here
+        layout.tsx                Root layout — PostHogProvider wraps children
         page.tsx                  Homepage (SSR)
         assessment/page.tsx       Assessment flow (client component)
         results/page.tsx          Results page
@@ -183,7 +183,7 @@ Phase 2 stubs to create in Phase 1 (prevents schema migrations later):
       lib/
         supabase/server.ts        Service-role client (server only — NEVER browser)
         supabase/client.ts        Anon-key client (browser safe)
-        analytics.ts              Plausible trackEvent() helper
+        analytics.ts              PostHog wrapper — Analytics.* typed API + trackEvent legacy
         security.ts               hashIP(), sanitiseForHTML(), validateConfig()
         rateLimit.ts              Supabase-backed rate limiter
   packages/
@@ -250,7 +250,7 @@ Week 4 — Results page:
   PSP Rate Registry contribution form (3-field anonymous form, post email capture)
 
 Week 5 — Infrastructure and legal:
-  Plausible Cloud, Resend, security headers, privacy policy, Sentry, legal review
+  PostHog Cloud, Resend, security headers, privacy policy, Sentry, legal review
 
 Week 6 — Launch:
   SEO metadata, mobile audit, performance, soft launch, public launch
@@ -451,7 +451,7 @@ SR-05: RLS append-only consents enforced at database level. See Section 10.
 SR-06: Security headers in next.config.ts before first deploy.
   HSTS, X-Frame-Options DENY, X-Content-Type-Options nosniff,
   Referrer-Policy, Permissions-Policy, Content-Security-Policy.
-  CSP must whitelist plausible.io.
+  CSP must whitelist app.posthog.com and *.posthog.com.
 
 SR-07: CORS exact origin matching.
   allowed.includes(origin) not origin.includes('nosurcharging.com.au')
@@ -662,8 +662,10 @@ ENVIRONMENT VARIABLES (Phase 1, both environments):
   CALC_AVG_TXN_ONLINE=95
   CALC_AVG_TXN_TICKETING=120
 
-  # Analytics
-  NEXT_PUBLIC_PLAUSIBLE_DOMAIN=nosurcharging.com.au
+  # Analytics — PostHog (same key value for both — NEXT_PUBLIC_ exposes to browser)
+  NEXT_PUBLIC_POSTHOG_KEY=phc_...
+  NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
+  POSTHOG_NODE_KEY=phc_...
 
   # Email
   RESEND_API_KEY=
@@ -685,41 +687,71 @@ Full detail: docs/deployment/deployment-strategy.md
 
 ---
 
-## 15. Analytics — Plausible Cloud
+## 15. Analytics — PostHog
 
-Use Plausible Cloud ($9/month). DO NOT self-host. DO NOT create a Railway service.
+Use PostHog Cloud (US or EU host). The previous decision was Plausible — it
+was migrated out in April 2026 because PostHog gives us funnels, identified
+users, and feature flags in a single tool. DO NOT self-host. DO NOT create a
+Railway service.
 
-Script in app/layout.tsx:
-  <script
-    defer
-    data-domain={process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN}
-    src="https://plausible.io/js/script.tagged-events.js"
-  />
+Privacy posture (ships before consent banner is in place):
+  - autocapture: false        — only explicit Analytics.* calls send events
+  - session_recording: off    — no DOM snapshots, no rendered text capture
+  - persistence: localStorage+cookie
+  - identify(): SHA-256 hash of email — never raw
 
-Helper (lib/analytics.ts):
-  export function trackEvent(name, props) {
-    if (typeof window === 'undefined') return;
-    if (!window.plausible) return;
-    window.plausible(name, { props: { country: 'AU', ...props } });
-  }
+Provider initialisation (apps/web/lib/analytics.ts):
+  posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
+    api_host:        process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://app.posthog.com',
+    capture_pageview: false,   // App Router — manual via PostHogProvider
+    autocapture:      false,
+    persistence:     'localStorage+cookie',
+  });
+
+Two surfaces:
+  - Analytics.* — typed API for new events. Snake_case names, defined props.
+    Example: Analytics.resultsViewed({ category, pl_swing, volume_tier, ... })
+  - trackEvent(name, props) — legacy wrapper kept for first-interaction events
+    (Expert mode activated, Card mix entered) that don't fit funnel boundaries.
+    Auto-converts the name to snake_case. Prefer Analytics.* for new code.
+
+Server-side (apps/web/lib/posthog-node.ts):
+  trackServerEvent(distinctId, eventName, props) — used by the Calendly
+  webhook to fire consulting_booked. distinctId is SHA-256(email) so it
+  joins the same merchant identity as the client-side identifyUser.
 
 Every event includes { country: 'AU' } — required for multi-market analytics.
 
-Events to instrument before launch:
-  Assessment started
-  Step completed        { step: '1'|'2'|'3'|'4' }
-  Plan type selected    { type: 'flat'|'costplus' }
-  Expert mode activated
-  Card mix entered      { fields_filled: number }
-  PSP selected          { psp: string }
-  Surcharging selected  { value: 'yes'|'no' }
-  Industry selected     { industry: string }
-  Results viewed        { category: '1'|'2'|'3'|'4' }
-  Slider used
-  Assumptions opened
-  Email captured
-  CTA clicked           { category: '1'|'2'|'3'|'4' }
-  Assessment abandoned  { at_step: '1'|'2'|'3'|'4' }
+Funnel events (snake_case, current as of April 2026):
+  homepage_viewed                { referrer, utm_*, is_mobile }
+  cta_clicked_homepage           { cta_location: 'nav'|'hero'|'bottom' }
+  assessment_started
+  step_completed                 { step, ...step-specific props }
+  zero_cost_rate_selected        { mode }
+  blended_rates_entered          { debit_provided, credit_provided }
+  strategic_rate_exit_viewed     { trigger: 'self_select'|'result_page' }
+  assessment_abandoned           { at_step, time_spent_seconds }
+  assessment_submission_complete { category }
+  results_viewed                 { category, pl_swing, pl_swing_bucket, volume_tier, psp, plan_type, industry, surcharging, accuracy_pct, is_mobile }
+  section_visited                { section, category, time_since_results_viewed_seconds }
+  cta_clicked                    { cta_type, cta_location, category, pl_swing?, volume_tier?, psp? }
+  result_looks_off_clicked       { category, accuracy_pct }
+  feedback_opened                { category }
+  feedback_submitted             { category, rating? }
+  slider_used                    { category, pass_through_pct }
+  assumptions_opened             { category }
+  registry_form_started          { category, psp }
+  registry_contributed           { psp, plan_type, volume_tier, industry }
+  email_captured                 { capture_moment, category, pl_swing, volume_tier, psp }
+  consulting_booked              { source, has_intake_answers, event_time }  (server-side)
+
+Required env vars:
+  NEXT_PUBLIC_POSTHOG_KEY=phc_...        # public — ships in browser bundle
+  NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
+  POSTHOG_NODE_KEY=phc_...               # server-side; same value as the public key
+
+CSP: app.posthog.com and *.posthog.com are whitelisted in script-src and
+connect-src in next.config.mjs.
 
 ---
 

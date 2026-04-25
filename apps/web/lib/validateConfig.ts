@@ -7,12 +7,14 @@
 //   b. IP_HASH_SECRET present and >= 32 chars
 //   c. DATABASE_URL uses port 6543 (PgBouncer), not 5432
 //   d. EMAIL_ENCRYPTION_KEY present
+//   e. NEXT_PUBLIC_POSTHOG_KEY present and starts with 'phc_'
 
 export function validateConfig(): void {
   validateCardMix();
   validateIPHashSecret();
   validateDatabaseURL();
   validateEmailEncryptionKey();
+  validatePostHogKey();
 }
 
 // a. Card mix vars must sum to 1.0
@@ -86,5 +88,20 @@ function validateEmailEncryptionKey(): void {
   const key = process.env.EMAIL_ENCRYPTION_KEY;
   if (!key) {
     throw new Error('EMAIL_ENCRYPTION_KEY environment variable is not set. Required for email encryption at rest.');
+  }
+}
+
+// e. NEXT_PUBLIC_POSTHOG_KEY must be present and look valid
+function validatePostHogKey(): void {
+  const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+  if (!key) {
+    throw new Error(
+      'NEXT_PUBLIC_POSTHOG_KEY environment variable is not set. Required for analytics (PostHog).',
+    );
+  }
+  if (!key.startsWith('phc_')) {
+    throw new Error(
+      `NEXT_PUBLIC_POSTHOG_KEY looks invalid — expected to start with 'phc_', got '${key.slice(0, 8)}...'.`,
+    );
   }
 }

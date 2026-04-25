@@ -17,6 +17,11 @@ vi.mock('@/actions/contributeRate', () => ({
 
 vi.mock('@/lib/analytics', () => ({
   trackEvent: vi.fn(),
+  Analytics: {
+    registryFormStarted: vi.fn(),
+    registryContributed: vi.fn(),
+  },
+  getVolumeTier: vi.fn(() => '500k-1m'),
 }));
 
 import { PSPRegistrySection } from '@/components/results/sections/PSPRegistrySection';

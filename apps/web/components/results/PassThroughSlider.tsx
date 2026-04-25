@@ -14,7 +14,7 @@
 import { useRef } from 'react';
 import { resolveAssessmentInputs } from '@nosurcharging/calculations/rules/resolver';
 import { calculateMetrics } from '@nosurcharging/calculations/calculations';
-import { trackEvent } from '@/lib/analytics';
+import { Analytics } from '@/lib/analytics';
 import type {
   AssessmentOutputs,
   RawAssessmentData,
@@ -65,7 +65,7 @@ export function PassThroughSlider({
     onOutputsChange(newOutputs, pt);
 
     if (!sliderUsedTracked.current) {
-      trackEvent('Slider used');
+      Analytics.sliderUsed({ category, pass_through_pct: Math.round(pt * 100) });
       sliderUsedTracked.current = true;
     }
   };

@@ -5,6 +5,7 @@ import { SubTabStrip } from '@/components/results/SubTabStrip';
 import { PSPRateRegistry } from '@/components/results/PSPRateRegistry';
 import { getRegistryCount, getRegistryBenchmarks } from '@/actions/getRegistryData';
 import type { BenchmarkRow } from '@/actions/getRegistryData';
+import { getVolumeTier } from '@/lib/analytics';
 
 interface PSPRegistrySectionProps {
   assessmentId: string;
@@ -25,7 +26,7 @@ const GOAL = 1000;
 
 export const PSPRegistrySection = forwardRef<HTMLElement, PSPRegistrySectionProps>(
   function PSPRegistrySection(props, ref) {
-    const { assessmentId, pspName, planType, volume, industry } = props;
+    const { assessmentId, pspName, planType, volume, industry, category } = props;
 
     const [activeTab, setActiveTab] = useState('contribute');
     const [count, setCount] = useState<number | null>(null);
@@ -192,6 +193,8 @@ export const PSPRegistrySection = forwardRef<HTMLElement, PSPRegistrySectionProp
                 planType={planType}
                 volume={volume}
                 industry={industry}
+                category={category}
+                volumeTier={getVolumeTier(volume)}
                 onContributed={handleContributed}
               />
             )}

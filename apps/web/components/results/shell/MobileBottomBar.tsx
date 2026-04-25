@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { trackEvent } from '@/lib/analytics';
+import { Analytics } from '@/lib/analytics';
 
 interface MobileBottomBarProps {
   category: 1 | 2 | 3 | 4;
@@ -27,7 +27,11 @@ export function MobileBottomBar({ category }: MobileBottomBarProps) {
   }, []);
 
   const handleCTA = () => {
-    trackEvent('CTA clicked', { category: String(category), source: 'mobile_bottom_bar' });
+    Analytics.ctaClicked({
+      cta_type: 'consulting',
+      cta_location: 'mobile_bottom_bar',
+      category,
+    });
   };
 
   return (

@@ -13,6 +13,7 @@
 // Target: <80KB gzipped JS. All sections are pure SSR after the
 // Phase 2 rewrite — no 'use client' directives in the homepage tree.
 
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { ProofBar } from '@/components/homepage/ProofBar';
 import { HeroSection } from '@/components/homepage/HeroSection';
@@ -20,10 +21,17 @@ import { TrustBar } from '@/components/homepage/TrustBar';
 import { PreviewSection } from '@/components/homepage/PreviewSection';
 import { FeaturesSection } from '@/components/homepage/FeaturesSection';
 import { Footer } from '@/components/homepage/Footer';
+import { HomepageAnalytics } from '@/components/homepage/HomepageAnalytics';
 
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-paper">
+      {/* Analytics island — homepage_viewed on mount + CTA click delegation
+          via [data-cta]. Keeps every section server-rendered. */}
+      <Suspense>
+        <HomepageAnalytics />
+      </Suspense>
+
       {/* Navigation — sticky, ink background */}
       <nav
         className="sticky top-0 z-20 flex items-center justify-between bg-ink px-5"
@@ -47,6 +55,7 @@ export default function HomePage() {
             reserved pill shape as AccentButton and the hero CTA below. */}
         <Link
           href="/assessment"
+          data-cta="nav"
           className="bg-accent text-white transition-opacity duration-150 hover:opacity-90"
           style={{
             fontSize: '12px',
@@ -101,6 +110,7 @@ export default function HomePage() {
             border-radius. */}
         <Link
           href="/assessment"
+          data-cta="bottom"
           className="mt-7 inline-block bg-accent text-white transition-opacity duration-150 hover:opacity-90 focus-visible:opacity-90"
           style={{
             fontSize: '14px',

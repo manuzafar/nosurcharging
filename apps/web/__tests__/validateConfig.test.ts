@@ -14,6 +14,7 @@ describe('validateConfig', () => {
     vi.stubEnv('CALC_CARD_MIX_EFTPOS', '0.08');
     vi.stubEnv('CALC_CARD_MIX_AMEX', '0.05');
     vi.stubEnv('CALC_CARD_MIX_FOREIGN', '0.05');
+    vi.stubEnv('NEXT_PUBLIC_POSTHOG_KEY', 'phc_test_key_for_unit_tests');
   });
 
   afterEach(() => {
@@ -52,5 +53,15 @@ describe('validateConfig', () => {
   it('does not throw when DATABASE_URL is not set (build-only context)', () => {
     vi.stubEnv('DATABASE_URL', '');
     expect(() => validateConfig()).not.toThrow();
+  });
+
+  it('throws when NEXT_PUBLIC_POSTHOG_KEY is missing', () => {
+    vi.stubEnv('NEXT_PUBLIC_POSTHOG_KEY', '');
+    expect(() => validateConfig()).toThrow('NEXT_PUBLIC_POSTHOG_KEY');
+  });
+
+  it('throws when NEXT_PUBLIC_POSTHOG_KEY has the wrong prefix', () => {
+    vi.stubEnv('NEXT_PUBLIC_POSTHOG_KEY', 'sk_secret_key');
+    expect(() => validateConfig()).toThrow("expected to start with 'phc_'");
   });
 });

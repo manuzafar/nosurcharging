@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { DM_Sans, DM_Serif_Display, JetBrains_Mono } from 'next/font/google';
 import { validateConfig } from '@/lib/validateConfig';
+import { PostHogProvider } from '@/components/PostHogProvider';
 import './globals.css';
 
 // Validate environment variables once on first render.
@@ -69,18 +71,11 @@ export default function RootLayout({
       lang="en"
       className={`${sans.variable} ${serif.variable} ${mono.variable}`}
     >
-      <head>
-        <script
-          async
-          src="https://plausible.io/js/pa-8DBVtuLndaE6PXL0VuXcj.js"
-        />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()`,
-          }}
-        />
-      </head>
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        <Suspense>
+          <PostHogProvider>{children}</PostHogProvider>
+        </Suspense>
+      </body>
     </html>
   );
 }

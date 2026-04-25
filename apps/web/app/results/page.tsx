@@ -12,13 +12,14 @@
 //   actions: ActionItem[] (immutable after initial load — slider does NOT touch)
 //   passThrough: number (0-1, driven by PassThroughSlider, default 0.45)
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getAssessment } from '@/actions/getAssessment';
 import type { StoredAssessment } from '@/actions/getAssessment';
 import type { AssessmentOutputs, ZeroCostOutputs, RawAssessmentData, ResolutionContext, ResolutionTrace, ActionItem } from '@nosurcharging/calculations/types';
 import { resolveAssessmentInputs } from '@nosurcharging/calculations/rules/resolver';
 import { sanitiseForHTML } from '@/lib/sanitise';
+import { Analytics, getVolumeTier, getPlSwingBucket } from '@/lib/analytics';
 import { useScrollSpy } from '@/hooks/useScrollSpy';
 
 import { SkeletonLoader } from '@/components/results/SkeletonLoader';
@@ -72,6 +73,12 @@ function ResultsContent() {
   // Accuracy — base 20%, updated live by RefinementPanel via onAccuracyChange
   const [accuracy, setAccuracy] = useState(20);
 
+  // Analytics refs — set when results_viewed fires so section_visited
+  // can compute time_since_results_viewed_seconds. visitedSections
+  // dedupes per-page-load: each section fires section_visited at most once.
+  const resultsViewTimeRef = useRef<number>(0);
+  const visitedSections = useRef(new Set<string>());
+
   // Scroll spy — must be unconditional (Rules of Hooks).
   // Pass !loading so the observer starts AFTER sections are in the DOM.
   const { activeSection, scrollToSection } = useScrollSpy(!loading);
@@ -108,8 +115,48 @@ function ResultsContent() {
       setOutputs(data.outputs as AssessmentOutputs);
       setActions((data.outputs as { actions?: ActionItem[] }).actions ?? []);
       setLoading(false);
+
+      // Fire results_viewed for the standard Cat 1-4 path. Strategic and
+      // zero-cost variants don't reach here (they returned earlier above).
+      // Set the time ref BEFORE the event so any section_visited that
+      // races in computes a sane time_since_results_viewed_seconds.
+      resultsViewTimeRef.current = Date.now();
+      const stdOutputs = data.outputs as AssessmentOutputs;
+      const rawInputs = data.inputs as Record<string, unknown>;
+      Analytics.resultsViewed({
+        assessment_id: assessmentId,
+        category: stdOutputs.category,
+        psp: (rawInputs.psp as string) ?? 'unknown',
+        plan_type: (rawInputs.planType as string) ?? 'unknown',
+        industry: (rawInputs.industry as string) ?? 'unknown',
+        volume_tier: getVolumeTier((rawInputs.volume as number) ?? 0),
+        pl_swing: stdOutputs.plSwing,
+        pl_swing_bucket: getPlSwingBucket(stdOutputs.plSwing),
+        surcharging: (rawInputs.surcharging as boolean) ?? false,
+        accuracy_pct: 20,
+        is_mobile: typeof window !== 'undefined' ? window.innerWidth < 768 : false,
+      });
     });
   }, [assessmentId, router]);
+
+  // section_visited — fires at most once per section per page load.
+  // Skips 'overview' since that's the initial mount value and would fire
+  // before resultsViewTimeRef is set.
+  useEffect(() => {
+    if (!outputs) return;
+    if (activeSection === 'overview') return;
+    if (visitedSections.current.has(activeSection)) return;
+    visitedSections.current.add(activeSection);
+    Analytics.sectionVisited({
+      section: activeSection,
+      category: outputs.category,
+      time_since_results_viewed_seconds:
+        resultsViewTimeRef.current > 0
+          ? Math.round((Date.now() - resultsViewTimeRef.current) / 1000)
+          : 0,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSection]);
 
   // Resolved inputs for the RefinementPanel. Memoised on `assessment` so
   // it runs once per page load. Must live above the conditional returns
@@ -298,6 +345,8 @@ function ResultsContent() {
             category={category}
             pspName={pspName}
             assessmentId={assessmentId ?? ''}
+            plSwing={outputs.plSwing}
+            volumeTier={getVolumeTier(volume)}
           />
         </main>
       </div>
