@@ -6,6 +6,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createHmac } from 'crypto';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { Resend } from 'resend';
+import { trackServerEvent } from '@/lib/posthog-node';
+import { hashEmail } from '@/lib/hashEmail';
 
 // Lazy-init: Resend throws if API key is missing at construction.
 // In CI, RESEND_API_KEY is not set during build (only at runtime).
@@ -74,6 +76,25 @@ export async function POST(request: NextRequest) {
     if (insertError) {
       // Log error but still return 200 (webhook resilience)
       console.error('[calendly] Insert failed:', insertError.message);
+    }
+  }
+
+  // 4b. Fire consulting_booked to PostHog — distinct_id = SHA-256(email) so
+  // it joins the same funnel as the client-side identifyUser hash. Best-
+  // effort; trackServerEvent never throws.
+  if (invitee.email) {
+    try {
+      const distinctId = await hashEmail(invitee.email);
+      await trackServerEvent(distinctId, 'consulting_booked', {
+        source: 'calendly',
+        has_intake_answers: answers.length > 0,
+        event_time: eventTime ?? null,
+        // Note: assessment_id is not available in the Calendly payload.
+        // Adding an intake question that asks for the merchant's results
+        // page URL would let us join booking events to assessment data.
+      });
+    } catch (err) {
+      console.error('[calendly] PostHog event failed:', (err as Error).message);
     }
   }
 
