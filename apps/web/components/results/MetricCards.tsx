@@ -76,7 +76,7 @@ export function MetricCards({ outputs, planType = 'flat' }: MetricCardsProps) {
           </p>
           <p
             className="mt-1.5 font-mono font-medium text-financial-standard"
-            style={{ color: cell.colour }}
+            style={{ color: cell.colour, fontSize: 'clamp(14px, 4.5vw, 22px)' }}
           >
             {cell.value}
           </p>
