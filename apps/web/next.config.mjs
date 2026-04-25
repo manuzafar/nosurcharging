@@ -36,11 +36,11 @@ const nextConfig = {
               "default-src 'self'",
               // unsafe-eval required by Next.js dev mode (React Fast Refresh).
               // NOT included in production — process.env.NODE_ENV gates it.
-              `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''} https://plausible.io https://app.posthog.com https://*.posthog.com`,
+              `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''} https://app.posthog.com https://*.posthog.com`,
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob:",
               "font-src 'self'",
-              "connect-src 'self' https://plausible.io https://*.supabase.co https://*.sentry.io https://app.posthog.com https://*.posthog.com",
+              "connect-src 'self' https://*.supabase.co https://*.sentry.io https://app.posthog.com https://*.posthog.com",
               "frame-ancestors 'none'",
             ].join('; '),
           },

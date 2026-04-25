@@ -221,58 +221,65 @@ export const AU_CARD_MIX_DEFAULTS = {
 } as const;
 ```
 
-### 4.3 Analytics (Plausible Cloud)
+### 4.3 Analytics (PostHog Cloud)
 
-Plausible Cloud is used instead of self-hosted Plausible. The script tag is added to `app/layout.tsx`. No Railway service, no separate Postgres database, no subdomain.
+PostHog Cloud is used. The previous decision was Plausible Cloud — it was migrated out in April 2026 because PostHog gives us funnels, identified users (via hashed-email merge), and feature flags in a single tool. No Railway service, no separate Postgres database, no subdomain.
 
-**Why Plausible over Google Analytics 4:**
-GA4 requires a cookie consent banner. A consent banner on a financial trust tool creates friction and signals data harvesting — inconsistent with the independent brand positioning. Plausible is cookieless by design: it uses no cookies, stores no personal data, and requires no consent banner under GDPR or the Australian Privacy Act.
+**Why PostHog over GA4:**
+GA4 requires a cookie consent banner and is built around advertising attribution. PostHog runs without cookies for unidentified users when configured with `persistence: 'localStorage+cookie'` and no `autocapture`. We do not enable a consent banner at launch; the explicit `Analytics.*` calls only send merchant-classification data, never raw email or financial inputs.
 
-**Why Plausible over Cloudflare Analytics:**
-Cloudflare Analytics captures page views but cannot track custom events. The assessment funnel — step completion rates, plan type selections, PSP selections, abandonment by step — requires custom event tracking. Plausible's tagged-events script enables this.
+**Why PostHog over Plausible (the original decision):**
+Plausible was chosen for cookielessness and simplicity. It does not natively support funnels with branching, identified users, or conditional feature exposure. The migration to PostHog enables the conversion funnel from `homepage_viewed` → `step_completed` → `results_viewed` → `cta_clicked`/`email_captured` to be visualised directly, and lets the same merchant be recognised across sessions via SHA-256(email) identity.
 
-**Why Plausible Cloud over self-hosted:**
-Self-hosting adds a fourth Railway service, a separate Postgres database, a subdomain, and ongoing maintenance. Plausible Cloud at $9/month eliminates all of this. The tracking script is identical — the switch to self-hosted (if ever warranted by cost at scale) is a 30-minute migration.
+**Why PostHog Cloud over self-hosted:**
+Self-hosting adds at least three new Railway services (PostHog web, ClickHouse, plugin server), a Postgres database, and ongoing maintenance. PostHog Cloud's free tier is sufficient for Phase 1 launch volume; the switch to self-hosted (if ever warranted) is a config change.
 
-**Script in layout.tsx:**
+**Privacy posture at launch:**
+- `autocapture: false` — only explicit `Analytics.*` calls send events.
+- Session recording: not configured. No DOM snapshots, no rendered text capture.
+- `persistence: 'localStorage+cookie'` — required for funnel continuity across page loads.
+- Identity: SHA-256 hash of email, never raw. Both client (`identifyUser`) and server (Calendly webhook `consulting_booked`) use the same hash so the merchant maps to one PostHog user across surfaces.
 
-```tsx
-<script
-  defer
-  data-domain={process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN}
-  src="https://plausible.io/js/script.tagged-events.js"
-/>
-```
-
-**Analytics helper:**
+**Provider initialisation in lib/analytics.ts:**
 
 ```typescript
-// lib/analytics.ts
-export function trackEvent(
-  name: string,
-  props?: Record<string, string | number>
-) {
-  if (typeof window === 'undefined') return;
-  if (!(window as any).plausible) return;
-  (window as any).plausible(name, { props: { country: 'AU', ...props } });
-}
+posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
+  api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://app.posthog.com',
+  capture_pageview: false,         // App Router — manual via PostHogProvider
+  autocapture: false,
+  persistence: 'localStorage+cookie',
+});
 ```
 
-**Events instrumented (all with `country: 'AU'`):**
+**Two surfaces:**
+- `Analytics.*` — typed API for new events (snake_case names, defined props).
+- `trackEvent(name, props)` — legacy wrapper for first-interaction events that don't fit funnel boundaries (Expert mode activated, Card mix entered). Auto-converts the name to snake_case.
+
+Server-side events (Calendly webhook → `consulting_booked`) use `posthog-node` via `lib/posthog-node.ts`.
+
+**Funnel events instrumented (all with `country: 'AU'`):**
 
 | Event | Trigger | Key properties |
 |---|---|---|
-| Assessment started | Disclaimer accepted | — |
-| Step completed | Step advance | `step: 1-4` |
-| Plan type selected | Card selected | `type: flat\|costplus` |
-| Expert mode activated | Toggle clicked | — |
-| PSP selected | PSP pill selected | `psp: string` |
-| Results viewed | Results page rendered | `category: 1-4` |
-| Slider used | Pass-through slider moved | — |
-| Assumptions opened | Assumptions panel toggled | — |
-| Email captured | Email submit success | — |
-| CTA clicked | Discovery call button | `category: 1-4` |
-| Assessment abandoned | User leaves mid-assessment | `at_step: 1-4` |
+| `homepage_viewed` | Homepage mount | `referrer`, `utm_*`, `is_mobile` |
+| `cta_clicked_homepage` | Any homepage CTA | `cta_location: 'nav'\|'hero'\|'bottom'` |
+| `assessment_started` | Disclaimer accepted | — |
+| `step_completed` | Step advance | `step`, plus step-specific (`plan_type`, `psp`, `surcharging`, `industry`, `volume_tier`, ...) |
+| `zero_cost_rate_selected` | Zero-cost mode pick | `mode` |
+| `blended_rates_entered` | Blended rate fields touched | `debit_provided`, `credit_provided` |
+| `strategic_rate_exit_viewed` | Strategic-rate exit shown | `trigger: 'self_select'\|'result_page'` |
+| `assessment_abandoned` | beforeunload mid-flow | `at_step`, `time_spent_seconds` |
+| `assessment_submission_complete` | Reveal screen success | `category` |
+| `results_viewed` | Results page first paint | `category`, `pl_swing`, `pl_swing_bucket`, `volume_tier`, `psp`, `plan_type`, `industry`, `surcharging`, `accuracy_pct`, `is_mobile` |
+| `section_visited` | Scroll-spy enters section | `section`, `category`, `time_since_results_viewed_seconds` |
+| `slider_used` | Pass-through slider moved | `category`, `pass_through_pct` |
+| `assumptions_opened` | Assumptions panel expanded | `category` |
+| `result_looks_off_clicked` | Top-bar feedback link | `category`, `accuracy_pct` |
+| `feedback_opened` / `feedback_submitted` | Feedback modal | `category`, `rating?` |
+| `registry_form_started` / `registry_contributed` | PSP rate registry | `psp`, `plan_type`, `volume_tier`, `industry` |
+| `email_captured` | Email capture form success | `capture_moment`, `category`, `pl_swing`, `volume_tier`, `psp` |
+| `cta_clicked` | Consulting CTA clicked | `cta_type`, `cta_location`, `category`, `pl_swing?`, `volume_tier?`, `psp?` |
+| `consulting_booked` (server) | Calendly webhook invitee.created | `source: 'calendly'`, `has_intake_answers`, `event_time` |
 
 ---
 
@@ -327,13 +334,13 @@ Merchants are not technical users. Password-based auth creates support overhead 
 
 ---
 
-### Decision 2: Plausible Cloud not self-hosted
+### Decision 2: PostHog Cloud not self-hosted
 
-**What:** Use Plausible Cloud ($9/month) rather than a self-hosted Railway service.
+**What:** Use PostHog Cloud rather than a self-hosted Railway service. Migrated from Plausible Cloud in April 2026 — see §4.3 for full rationale.
 
-**Why:** Self-hosting saves $9/month but costs half a week of Phase 1 engineering time (Railway service setup, Postgres database, subdomain configuration, security patching). In the six weeks before October 2026, that engineering time is worth more than the annual cost of the cloud service ($108/year).
+**Why:** Self-hosting PostHog requires a web service, ClickHouse, plugin server, and a Postgres database. That is at least 3-4 Railway services and ongoing maintenance. PostHog Cloud's free tier covers Phase 1 launch volume. The migration to self-hosted (if ever warranted by data residency or cost at scale) is config-only.
 
-**Trade-off:** Plausible holds the analytics data. For a privacy-focused product this is a mild tension. Plausible's privacy policy explicitly states they do not sell data or use it for advertising. This is acceptable.
+**Trade-off:** PostHog Cloud holds the analytics data. To minimise the privacy footprint we ship with `autocapture: false` and no session recording — only the explicit `Analytics.*` calls reach PostHog, and identity uses a SHA-256 hash of email rather than the raw value.
 
 **Rejected alternative:** Google Analytics 4. Rejected because it requires a cookie consent banner, which creates friction and is inconsistent with the independent, trust-first brand.
 
@@ -916,8 +923,10 @@ DATABASE_URL=postgresql://postgres:[password]@[project].supabase.co:6543/postgre
 # Security
 IP_HASH_SECRET=[random 64-char hex]
 
-# Analytics
-NEXT_PUBLIC_PLAUSIBLE_DOMAIN=nosurcharging.com.au
+# Analytics — PostHog (same key value for both — NEXT_PUBLIC_ exposes to browser)
+NEXT_PUBLIC_POSTHOG_KEY=phc_...
+NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
+POSTHOG_NODE_KEY=phc_...
 
 # Email
 RESEND_API_KEY=[resend key]

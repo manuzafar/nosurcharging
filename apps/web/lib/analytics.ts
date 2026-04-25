@@ -1,6 +1,4 @@
-// Analytics — PostHog primary, Plausible parallel-run for 48h verification.
-// Phase 6 cutover removes the Plausible branch from trackEvent and the
-// Window.plausible global below.
+// Analytics — PostHog only.
 //
 // Privacy posture: autocapture: false, no session_recording — only the
 // explicit Analytics.* methods send events. Cookie consent ships in a
@@ -9,16 +7,6 @@
 // merchant-classification data, not PII.
 
 import posthog from 'posthog-js';
-
-// ── Plausible global — kept for parallel run, removed in Phase 6 ─────────────
-declare global {
-  interface Window {
-    plausible?: (
-      event: string,
-      options?: { props?: Record<string, string | number> },
-    ) => void;
-  }
-}
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 let phInitialised = false;
@@ -60,22 +48,18 @@ export function identifyUser(
   posthog.identify(emailHash, { country: 'AU', ...traits });
 }
 
-// ── Legacy dual-fire wrapper — PHASE 6: remove Plausible branch ───────────────
-// Existing callsites use trackEvent('Title Case Event', props). During the
-// parallel run we mirror to PostHog (snake_case) AND Plausible (Title Case)
-// so historical Plausible dashboards keep working through verification.
+// ── Legacy event wrapper ─────────────────────────────────────────────────────
+// Two callsites in assessment/page.tsx still use trackEvent for events that
+// fire at first-interaction (Expert mode activated, Card mix entered) rather
+// than at funnel boundaries. The wrapper normalises the name to snake_case
+// before sending to PostHog. Prefer the typed Analytics.* API for new events.
 export function trackEvent(
   name: string,
   props?: Record<string, string | number>,
 ): void {
-  if (typeof window === 'undefined') return;
-  if (phInitialised) {
-    const phName = name.toLowerCase().replace(/\s+/g, '_');
-    posthog.capture(phName, { country: 'AU', ...props });
-  }
-  if (window.plausible) {
-    window.plausible(name, { props: { country: 'AU', ...props } });
-  }
+  if (typeof window === 'undefined' || !phInitialised) return;
+  const phName = name.toLowerCase().replace(/\s+/g, '_');
+  posthog.capture(phName, { country: 'AU', ...props });
 }
 
 // ── Typed API — snake_case, PostHog only ──────────────────────────────────────

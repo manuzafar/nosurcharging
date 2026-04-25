@@ -21,7 +21,7 @@ Phase 1 is deliberately minimal: one Railway service, one database, three extern
        │          │
 ┌──────▼───┐  ┌──▼────────────────┐
 │ Supabase │  │ External Services  │
-│ PostgreSQL│  │  - Plausible Cloud │
+│ PostgreSQL│  │  - PostHog Cloud   │
 │ (SGP)    │  │  - Resend (email)  │
 │ Port 6543│  │  - Sentry          │
 └──────────┘  └────────────────────┘
@@ -33,7 +33,7 @@ Phase 1 is deliberately minimal: one Railway service, one database, three extern
 |---------|----------|--------|---------|
 | Web app | Railway | ap-southeast-2 (Sydney) | Next.js 14 — the only service |
 | Database | Supabase | ap-southeast-1 (Singapore) | PostgreSQL via PgBouncer (port 6543) |
-| Analytics | Plausible Cloud | EU | Privacy-first analytics ($9/month) |
+| Analytics | PostHog Cloud | US/EU | Funnels + identified users; autocapture off, no session recording |
 | Email | Resend | US | Transactional email |
 | DNS/WAF | Cloudflare | Global | DNS, WAF, SSL (free tier) |
 | Errors | Sentry | US | Error tracking with PII scrubbing |
@@ -189,7 +189,7 @@ Detail: [docs/deployment/deployment-strategy.md](./docs/deployment/deployment-st
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | Single service in Phase 1 | Next.js Server Actions | Invoice complexity in Phase 2 justifies API separation later, not now |
-| Plausible Cloud (not self-hosted) | $9/month managed | No Railway service to maintain; privacy-first; no cookie banner needed |
+| PostHog Cloud (not self-hosted) | Managed | Funnels and identified users in one tool; autocapture and session recording off at launch — privacy posture is explicit Analytics.* calls only, hashed-email identity |
 | Turborepo monorepo | Shared `packages/calculations` | Calculation engine is framework-independent; future API service imports it directly |
 | Supabase (not raw Postgres) | Auth + RLS + generated types | Phase 2 needs magic link auth; RLS enforces append-only consents at DB level |
 | Vitest (not Jest) | 10-20x faster, native ESM | Same API; no migration cost; monorepo benefits from speed |
