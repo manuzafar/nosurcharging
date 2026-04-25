@@ -5,11 +5,13 @@
 // Cat 3-4: $3,500 Reform Ready
 // PSP name interpolated into the headline. No "your PSP".
 
-import { trackEvent } from '@/lib/analytics';
+import { Analytics } from '@/lib/analytics';
 
 interface ConsultingCTAProps {
   category: 1 | 2 | 3 | 4;
   pspName: string;
+  plSwing?: number;
+  volumeTier?: string;
 }
 
 const CTA_CONFIG: Record<
@@ -42,13 +44,20 @@ const CTA_CONFIG: Record<
   },
 };
 
-export function ConsultingCTA({ category, pspName }: ConsultingCTAProps) {
+export function ConsultingCTA({ category, pspName, plSwing, volumeTier }: ConsultingCTAProps) {
   const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL ?? '#';
   const config = CTA_CONFIG[category];
   const title = config.title.replace('{psp}', pspName);
 
   const handleClick = () => {
-    trackEvent('CTA clicked', { category: String(category) });
+    Analytics.ctaClicked({
+      cta_type: 'consulting',
+      cta_location: 'help_section',
+      category,
+      pl_swing: plSwing,
+      volume_tier: volumeTier,
+      psp: pspName,
+    });
   };
 
   return (

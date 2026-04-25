@@ -9,7 +9,7 @@
 // Followed by the existing card-mix breakdown read from resolutionTrace.
 
 import { useState } from 'react';
-import { trackEvent } from '@/lib/analytics';
+import { Analytics } from '@/lib/analytics';
 import type { AssessmentOutputs, ResolutionTrace } from '@nosurcharging/calculations/types';
 
 interface AssumptionsPanelProps {
@@ -151,7 +151,7 @@ export function AssumptionsPanel({
         type="button"
         onClick={() => {
           if (!expanded) {
-            trackEvent('Assumptions opened');
+            Analytics.assumptionsOpened({ category: outputs.category });
           }
           setExpanded(!expanded);
         }}

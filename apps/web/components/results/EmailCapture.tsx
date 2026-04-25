@@ -8,13 +8,35 @@
 import { useId, useState } from 'react';
 import Link from 'next/link';
 import { captureEmail } from '@/actions/captureEmail';
-import { trackEvent } from '@/lib/analytics';
+import { Analytics, identifyUser, getPlSwingBucket } from '@/lib/analytics';
+import { hashEmail } from '@/lib/hashEmail';
+
+export type EmailCaptureMoment =
+  | 'hero_pnl'
+  | 'save_btn'
+  | 'neg_brief'
+  | 'assessment_start'
+  | 'help_section';
 
 interface EmailCaptureProps {
   assessmentId?: string;
+  // Analytics context — optional for backward compatibility, but every
+  // production callsite passes them so the event has full context.
+  captureMoment?: EmailCaptureMoment;
+  category?: number;
+  plSwing?: number;
+  volumeTier?: string;
+  psp?: string;
 }
 
-export function EmailCapture({ assessmentId }: EmailCaptureProps) {
+export function EmailCapture({
+  assessmentId,
+  captureMoment = 'help_section',
+  category,
+  plSwing,
+  volumeTier,
+  psp,
+}: EmailCaptureProps) {
   const [email, setEmail] = useState('');
   const [state, setState] = useState<'default' | 'loading' | 'success' | 'rate-limit' | 'error'>('default');
   const emailId = useId();
@@ -30,7 +52,28 @@ export function EmailCapture({ assessmentId }: EmailCaptureProps) {
 
     if (result.success) {
       setState('success');
-      trackEvent('Email captured');
+      Analytics.emailCaptured({
+        capture_moment: captureMoment,
+        category: category ?? 0,
+        pl_swing: plSwing ?? 0,
+        volume_tier: volumeTier ?? 'unknown',
+        psp: psp ?? 'unknown',
+      });
+      // Identify the merchant in PostHog using a SHA-256 hash of their
+      // email — never the raw value. Async; never throws (analytics
+      // failure must not break the success state).
+      hashEmail(email)
+        .then((hash) =>
+          identifyUser(hash, {
+            category,
+            psp,
+            volume_tier: volumeTier,
+            pl_swing_bucket: plSwing !== undefined ? getPlSwingBucket(plSwing) : undefined,
+          }),
+        )
+        .catch(() => {
+          /* swallowed — analytics must not affect product flow */
+        });
     } else if (result.error?.includes('already signed up')) {
       setState('rate-limit');
     } else {

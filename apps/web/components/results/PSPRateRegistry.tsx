@@ -4,9 +4,9 @@
 // PSP name and plan type pre-populated from assessment, read-only.
 // Phase 1: trust_score=1, quarantined=false.
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { contributeRate } from '@/actions/contributeRate';
-import { trackEvent } from '@/lib/analytics';
+import { Analytics } from '@/lib/analytics';
 
 interface PSPRateRegistryProps {
   assessmentId: string;
@@ -14,6 +14,8 @@ interface PSPRateRegistryProps {
   planType: 'flat' | 'costplus';
   volume: number;
   industry?: string;
+  category?: 1 | 2 | 3 | 4;
+  volumeTier?: string;
   onContributed?: () => void;
 }
 
@@ -27,10 +29,30 @@ function getVolumeBand(volume: number): '0-100k' | '100k-1m' | '1m-10m' | '10m-5
 
 const AU_STATES = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'] as const;
 
-export function PSPRateRegistry({ assessmentId, pspName, planType, volume, industry, onContributed }: PSPRateRegistryProps) {
+export function PSPRateRegistry({
+  assessmentId,
+  pspName,
+  planType,
+  volume,
+  industry,
+  category,
+  volumeTier,
+  onContributed,
+}: PSPRateRegistryProps) {
   const [rate, setRate] = useState('');
   const [stateCode, setStateCode] = useState('');
   const [state, setState] = useState<'default' | 'loading' | 'success' | 'error'>('default');
+  const formStartedTracked = useRef(false);
+
+  // Fire registry_form_started on first user interaction with any field.
+  const trackFormStarted = () => {
+    if (formStartedTracked.current) return;
+    formStartedTracked.current = true;
+    Analytics.registryFormStarted({
+      category: category ?? 0,
+      psp: pspName,
+    });
+  };
 
   if (state === 'success') {
     return (
@@ -59,7 +81,12 @@ export function PSPRateRegistry({ assessmentId, pspName, planType, volume, indus
 
     if (result.success) {
       setState('success');
-      trackEvent('Rate contributed', { psp: pspName, plan_type: planType });
+      Analytics.registryContributed({
+        psp: pspName,
+        plan_type: planType,
+        volume_tier: volumeTier ?? 'unknown',
+        industry: industry ?? 'unknown',
+      });
       onContributed?.();
     } else {
       setState('error');
@@ -114,7 +141,10 @@ export function PSPRateRegistry({ assessmentId, pspName, planType, volume, indus
               max="10"
               placeholder="1.40"
               value={rate}
-              onChange={(e) => setRate(e.target.value)}
+              onChange={(e) => {
+                trackFormStarted();
+                setRate(e.target.value);
+              }}
               className="w-full rounded-lg px-3 py-1.5 text-body-sm font-mono outline-none pr-7"
               style={{ border: '0.5px solid var(--color-border-secondary)' }}
             />

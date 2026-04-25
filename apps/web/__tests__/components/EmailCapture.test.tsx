@@ -12,6 +12,13 @@ vi.mock('@/actions/captureEmail', () => ({
 
 vi.mock('@/lib/analytics', () => ({
   trackEvent: vi.fn(),
+  Analytics: { emailCaptured: vi.fn() },
+  identifyUser: vi.fn(),
+  getPlSwingBucket: vi.fn(() => '0-5k_gain'),
+}));
+
+vi.mock('@/lib/hashEmail', () => ({
+  hashEmail: vi.fn().mockResolvedValue('mockhash'),
 }));
 
 import { EmailCapture } from '@/components/results/EmailCapture';

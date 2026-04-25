@@ -345,6 +345,8 @@ function ResultsContent() {
             category={category}
             pspName={pspName}
             assessmentId={assessmentId ?? ''}
+            plSwing={outputs.plSwing}
+            volumeTier={getVolumeTier(volume)}
           />
         </main>
       </div>

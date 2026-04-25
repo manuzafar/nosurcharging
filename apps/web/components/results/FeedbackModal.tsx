@@ -6,7 +6,7 @@
 import { useId, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { submitFeedback } from '@/actions/submitFeedback';
-import { trackEvent } from '@/lib/analytics';
+import { Analytics } from '@/lib/analytics';
 
 interface FeedbackModalProps {
   open: boolean;
@@ -40,7 +40,7 @@ export function FeedbackModal({ open, onClose, category, volume, assessmentId }:
   // Track open
   useEffect(() => {
     if (open) {
-      trackEvent('Feedback opened', { category: String(category) });
+      Analytics.feedbackOpened({ category });
     }
   }, [open, category]);
 
@@ -63,7 +63,7 @@ export function FeedbackModal({ open, onClose, category, volume, assessmentId }:
 
     if (result.success) {
       setState('success');
-      trackEvent('Feedback submitted', { category: String(category) });
+      Analytics.feedbackSubmitted({ category });
     } else {
       setState('error');
       setErrorMsg(result.error ?? 'Something went wrong. Try again.');

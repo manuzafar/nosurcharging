@@ -5,7 +5,7 @@
 // On mount: trackEvent('Strategic rate exit viewed', ...).
 
 import { useEffect } from 'react';
-import { trackEvent } from '@/lib/analytics';
+import { Analytics } from '@/lib/analytics';
 
 interface StrategicRateExitPageProps {
   onBack: () => void;
@@ -13,7 +13,7 @@ interface StrategicRateExitPageProps {
 
 export function StrategicRateExitPage({ onBack }: StrategicRateExitPageProps) {
   useEffect(() => {
-    trackEvent('Strategic rate exit viewed', { trigger: 'result_page' });
+    Analytics.strategicRateExitViewed({ trigger: 'result_page' });
   }, []);
 
   return (

@@ -2,16 +2,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-const trackEventMock = vi.fn();
+const ctaClickedMock = vi.fn();
 vi.mock('@/lib/analytics', () => ({
-  trackEvent: (...args: unknown[]) => trackEventMock(...args),
+  trackEvent: vi.fn(),
+  Analytics: {
+    ctaClicked: (...args: unknown[]) => ctaClickedMock(...args),
+  },
 }));
 
 import { ConsultingCTA } from '@/components/results/ConsultingCTA';
 
 describe('ConsultingCTA', () => {
   beforeEach(() => {
-    trackEventMock.mockClear();
+    ctaClickedMock.mockClear();
   });
 
   it('Cat 1 shows $2,500 and Payments Health Check', () => {
@@ -59,10 +62,24 @@ describe('ConsultingCTA', () => {
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
-  it('fires Plausible "CTA clicked" event with category prop on click', async () => {
+  it('fires Analytics.ctaClicked with consulting context on click', async () => {
     const user = userEvent.setup();
-    render(<ConsultingCTA category={3} pspName="Stripe" />);
+    render(
+      <ConsultingCTA
+        category={3}
+        pspName="Stripe"
+        plSwing={-12500}
+        volumeTier="1m-3m"
+      />,
+    );
     await user.click(screen.getByRole('link', { name: /Book a call/i }));
-    expect(trackEventMock).toHaveBeenCalledWith('CTA clicked', { category: '3' });
+    expect(ctaClickedMock).toHaveBeenCalledWith({
+      cta_type: 'consulting',
+      cta_location: 'help_section',
+      category: 3,
+      pl_swing: -12500,
+      volume_tier: '1m-3m',
+      psp: 'Stripe',
+    });
   });
 });
