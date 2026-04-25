@@ -149,8 +149,29 @@ vi.mock('@nosurcharging/calculations/calculations', () => ({
   })),
 }));
 
-// Silence analytics during the test
-vi.mock('@/lib/analytics', () => ({ trackEvent: vi.fn() }));
+// Silence analytics during the test — page imports Analytics + helpers,
+// downstream components still call trackEvent through the dual-fire wrapper.
+vi.mock('@/lib/analytics', () => ({
+  trackEvent: vi.fn(),
+  Analytics: {
+    resultsViewed: vi.fn(),
+    sectionVisited: vi.fn(),
+    resultLooksOff: vi.fn(),
+    sliderUsed: vi.fn(),
+    assumptionsOpened: vi.fn(),
+    ctaClicked: vi.fn(),
+    emailCaptured: vi.fn(),
+    feedbackOpened: vi.fn(),
+    feedbackSubmitted: vi.fn(),
+    registryFormStarted: vi.fn(),
+    registryContributed: vi.fn(),
+  },
+  getVolumeTier: vi.fn(() => '1m-3m'),
+  getPlSwingBucket: vi.fn(() => '0-5k_gain'),
+  initPostHog: vi.fn(),
+  capturePageview: vi.fn(),
+  identifyUser: vi.fn(),
+}));
 
 // Mock Recharts — jsdom can't render SVG and we don't care about the chart
 // for this regression test, we only care about ActionList.

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { SITUATION_PILLS } from '@/components/results/VerdictSection';
 import { FeedbackModal } from '@/components/results/FeedbackModal';
+import { Analytics } from '@/lib/analytics';
 
 interface ResultsTopBarProps {
   category: 1 | 2 | 3 | 4;
@@ -102,7 +103,10 @@ export function ResultsTopBar({ category, plSwing, accuracy, volume, assessmentI
         {/* Feedback link */}
         <button
           type="button"
-          onClick={() => setFeedbackOpen(true)}
+          onClick={() => {
+            Analytics.resultLooksOff({ category, accuracy_pct: accuracy });
+            setFeedbackOpen(true);
+          }}
           className="hidden sm:inline cursor-pointer"
           style={{
             color: 'var(--color-text-tertiary)',
