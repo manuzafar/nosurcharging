@@ -13,6 +13,8 @@ interface PSPRateRegistryProps {
   pspName: string;
   planType: 'flat' | 'costplus';
   volume: number;
+  industry?: string;
+  onContributed?: () => void;
 }
 
 function getVolumeBand(volume: number): '0-100k' | '100k-1m' | '1m-10m' | '10m-50m' | '50m+' {
@@ -23,8 +25,11 @@ function getVolumeBand(volume: number): '0-100k' | '100k-1m' | '1m-10m' | '10m-5
   return '50m+';
 }
 
-export function PSPRateRegistry({ assessmentId, pspName, planType, volume }: PSPRateRegistryProps) {
+const AU_STATES = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'] as const;
+
+export function PSPRateRegistry({ assessmentId, pspName, planType, volume, industry, onContributed }: PSPRateRegistryProps) {
   const [rate, setRate] = useState('');
+  const [stateCode, setStateCode] = useState('');
   const [state, setState] = useState<'default' | 'loading' | 'success' | 'error'>('default');
 
   if (state === 'success') {
@@ -48,11 +53,14 @@ export function PSPRateRegistry({ assessmentId, pspName, planType, volume }: PSP
       planType,
       effectiveRatePct: parsed,
       volumeBand: getVolumeBand(volume),
+      industry: industry || undefined,
+      stateCode: stateCode || undefined,
     });
 
     if (result.success) {
       setState('success');
       trackEvent('Rate contributed', { psp: pspName, plan_type: planType });
+      onContributed?.();
     } else {
       setState('error');
     }
@@ -117,6 +125,24 @@ export function PSPRateRegistry({ assessmentId, pspName, planType, volume }: PSP
               %
             </span>
           </div>
+        </div>
+
+        {/* State — optional */}
+        <div className="flex items-center gap-3">
+          <span className="text-caption w-24 shrink-0" style={{ color: 'var(--color-text-secondary)' }}>
+            State
+          </span>
+          <select
+            value={stateCode}
+            onChange={(e) => setStateCode(e.target.value)}
+            className="flex-1 rounded-lg px-3 py-1.5 text-body-sm outline-none"
+            style={{ border: '0.5px solid var(--color-border-secondary)', background: '#FFFFFF' }}
+          >
+            <option value="">Optional</option>
+            {AU_STATES.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
         </div>
 
         <button

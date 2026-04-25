@@ -14,6 +14,8 @@ export interface ContributeRateInput {
   planType: 'flat' | 'costplus';
   effectiveRatePct: number;
   volumeBand: '0-100k' | '100k-1m' | '1m-10m' | '10m-50m' | '50m+';
+  industry?: string;
+  stateCode?: string;
 }
 
 export interface ContributeRateResult {
@@ -71,6 +73,8 @@ export async function contributeRate(
     effective_rate_pct: input.effectiveRatePct / 100,
     trust_score: 1,
     quarantined: false,
+    industry: input.industry ?? null,
+    state_code: input.stateCode ?? null,
   });
 
   if (insertError) {

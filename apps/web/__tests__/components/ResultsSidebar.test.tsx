@@ -10,22 +10,24 @@ describe('ResultsSidebar', () => {
     category: 2 as const,
   };
 
-  it('renders all 8 section labels', () => {
+  it('renders all 9 section labels', () => {
     render(<ResultsSidebar {...defaultProps} />);
     expect(screen.getByText('Overview')).toBeInTheDocument();
     expect(screen.getByText('Actions')).toBeInTheDocument();
     expect(screen.getByText('Talk to customers')).toBeInTheDocument();
     expect(screen.getByText('Negotiation brief')).toBeInTheDocument();
     expect(screen.getByText('Readiness checklist')).toBeInTheDocument();
+    expect(screen.getByText('PSP Rate Registry')).toBeInTheDocument();
     expect(screen.getByText('Values & rates')).toBeInTheDocument();
     expect(screen.getByText('Refine estimate')).toBeInTheDocument();
     expect(screen.getByText('Get help')).toBeInTheDocument();
   });
 
-  it('renders group labels', () => {
+  it('renders group labels including Community', () => {
     render(<ResultsSidebar {...defaultProps} />);
     expect(screen.getByText('Result')).toBeInTheDocument();
     expect(screen.getByText('Prepare')).toBeInTheDocument();
+    expect(screen.getByText('Community')).toBeInTheDocument();
     expect(screen.getByText('Understand')).toBeInTheDocument();
     expect(screen.getByText('Next step')).toBeInTheDocument();
   });
@@ -68,7 +70,7 @@ describe('ResultsSidebar', () => {
   it('renders dividers between groups', () => {
     const { container } = render(<ResultsSidebar {...defaultProps} />);
     const dividers = container.querySelectorAll('[data-testid="sidebar-divider"]');
-    // 4 groups → 3 dividers (before "Prepare", "Understand", "Next step")
-    expect(dividers.length).toBe(3);
+    // 5 groups → 4 dividers (before "Prepare", "Community", "Understand", "Next step")
+    expect(dividers.length).toBe(4);
   });
 });

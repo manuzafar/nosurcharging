@@ -19,7 +19,7 @@ export function MobileMiniNav({ activeSection, onNavClick, plSwing }: MobileMini
 
   return (
     <div
-      className="md:hidden sticky z-40 flex items-center gap-2 px-3 border-b border-rule bg-paper-white"
+      className="md:hidden sticky z-40 flex items-center gap-2 px-3 border-b border-rule bg-paper-white [overflow-x:clip]"
       style={{ top: '44px', height: '40px' }}
     >
       {/* Fixed P&L anchor */}
@@ -34,7 +34,7 @@ export function MobileMiniNav({ activeSection, onNavClick, plSwing }: MobileMini
       </span>
 
       {/* Horizontal tabs */}
-      <div className="flex-1 overflow-x-auto scrollbar-hide">
+      <div className="flex-1 overflow-x-auto scrollbar-hide mask-fade-r">
         <div className="flex gap-1.5">
           {SECTIONS.map((section) => {
             const isActive = activeSection === section.id;

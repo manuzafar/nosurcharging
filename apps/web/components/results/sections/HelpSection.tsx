@@ -3,20 +3,17 @@
 import { forwardRef } from 'react';
 import { ConsultingCTA } from '@/components/results/ConsultingCTA';
 import { EmailCapture } from '@/components/results/EmailCapture';
-import { PSPRateRegistry } from '@/components/results/PSPRateRegistry';
 import { ResultsDisclaimer } from '@/components/results/ResultsDisclaimer';
 
 interface HelpSectionProps {
   category: 1 | 2 | 3 | 4;
   pspName: string;
   assessmentId: string;
-  planType: 'flat' | 'costplus' | 'blended';
-  volume: number;
 }
 
 export const HelpSection = forwardRef<HTMLElement, HelpSectionProps>(
   function HelpSection(props, ref) {
-    const { category, pspName, assessmentId, planType, volume } = props;
+    const { category, pspName, assessmentId } = props;
 
     return (
       <section id="help" data-section="help" ref={ref} className="pt-8">
@@ -36,15 +33,6 @@ export const HelpSection = forwardRef<HTMLElement, HelpSectionProps>(
 
         <div className="mt-6">
           <EmailCapture assessmentId={assessmentId} />
-        </div>
-
-        <div className="mt-8">
-          <PSPRateRegistry
-            assessmentId={assessmentId}
-            pspName={pspName}
-            planType={planType === 'blended' ? 'flat' : planType}
-            volume={volume}
-          />
         </div>
 
         <div className="mt-8 mb-4">

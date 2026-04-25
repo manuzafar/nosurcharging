@@ -196,6 +196,7 @@ export function VerdictSection({
                 ? 'var(--color-text-danger)'
                 : 'var(--color-text-success)',
               marginBottom: '6px',
+              fontSize: 'clamp(26px, 7vw, 44px)',
             }}
           >
             {plSwing > 0 && '+'}
@@ -219,7 +220,7 @@ export function VerdictSection({
         // Range display — overrides CLAUDE.md Rule 2 (44px) for the pair
         <div>
           <div className="mt-3">
-            <p className="font-mono text-financial-hero" style={{ color: rangeColour }}>
+            <p className="font-mono text-financial-hero" style={{ color: rangeColour, fontSize: 'clamp(26px, 7vw, 44px)' }}>
               {formatSignedDollar(plSwingLow)}
               <span className="font-sans mx-2" style={{ fontSize: '14px', color: 'var(--color-text-tertiary)' }}>
                 to
