@@ -122,6 +122,26 @@ nav.bg-ink button:focus-visible {
   outline-color: #72C4B0;
 }
 
+/* ── Horizontal scroll strips ─────────────────────────────────────────
+   Hide native scrollbar tracks on horizontally-scrolling strips
+   (MobileMiniNav, SubTabStrip). Tailwind's `scrollbar-hide` class is
+   referenced throughout the results page but no plugin is installed,
+   so we ship the rules ourselves. Cross-browser. */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Right-edge fade — signals "swipe to reveal more" on horizontal strips
+   without a JS scroll-position listener. Pair with .scrollbar-hide. */
+.mask-fade-r {
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 24px), transparent 100%);
+          mask-image: linear-gradient(to right, black calc(100% - 24px), transparent 100%);
+}
+
 /* ── Accessibility: reduced motion ────────────────────────────────────
    For users who've set prefers-reduced-motion: reduce, collapse every
    animation and transition to near-instant. We keep final states intact
