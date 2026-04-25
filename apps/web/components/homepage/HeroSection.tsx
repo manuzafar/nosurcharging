@@ -59,6 +59,7 @@ export function HeroSection() {
           Safari 16.4+), so the amber double-ring traces the pill shape. */}
       <Link
         href="/assessment"
+        data-cta="hero"
         className="mt-9 inline-block bg-accent text-white transition-opacity duration-150 hover:opacity-90 focus-visible:opacity-90"
         style={{
           fontSize: '14px',
