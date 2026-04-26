@@ -5,11 +5,51 @@
 
 import Link from 'next/link';
 
-const PROOF_ROW = [
-  'No account required',
-  'No Stripe or Square affiliation',
-  'Under five minutes',
+type ProofIcon = 'target' | 'shield' | 'zap';
+
+const PROOF_ROW: ReadonlyArray<{ text: string; icon: ProofIcon }> = [
+  { text: 'Personalised to your PSP and plan', icon: 'target' },
+  { text: 'Independent — no PSP affiliation', icon: 'shield' },
+  { text: 'No account required', icon: 'zap' },
 ] as const;
+
+// Lucide-style outlines, 14px, currentColor stroke so they inherit the text colour.
+function ProofIcon({ name }: { name: ProofIcon }) {
+  const common = {
+    width: 14,
+    height: 14,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.6,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    'aria-hidden': true,
+    className: 'shrink-0',
+  };
+  if (name === 'target') {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="10" />
+        <circle cx="12" cy="12" r="6" />
+        <circle cx="12" cy="12" r="2" />
+      </svg>
+    );
+  }
+  if (name === 'shield') {
+    return (
+      <svg {...common}>
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      </svg>
+    );
+  }
+  // zap
+  return (
+    <svg {...common}>
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    </svg>
+  );
+}
 
 export function HeroSection() {
   return (
@@ -46,11 +86,12 @@ export function HeroSection() {
 
       {/* Subheadline */}
       <p
-        className="mt-5 max-w-[420px] text-ink-secondary"
+        className="mt-5 max-w-[420px] text-left text-ink-secondary"
         style={{ fontSize: '15px', lineHeight: '1.6' }}
       >
-        The RBA is banning surcharges in October. Find out exactly what it
-        costs your business — in dollars, with Stripe named directly.
+        Find out what the October ban costs your business, with your payment
+        provider named directly. Personalised P&amp;L impact, negotiation
+        script, and week-by-week action plan.
       </p>
 
       {/* Primary CTA — pill shape under the Modern Fintech Hierarchy. The
@@ -70,33 +111,18 @@ export function HeroSection() {
           borderRadius: '9999px',
         }}
       >
-        Generate my free report →
+        Get my free report →
       </Link>
 
-      {/* Proof row */}
-      <div className="mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+      {/* Proof row — per-item icons in stronger ink-secondary, 13px medium */}
+      <div className="mt-10 flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
         {PROOF_ROW.map((item) => (
           <span
-            key={item}
-            className="flex items-center gap-1.5 text-[12px] text-ink-faint"
+            key={item.text}
+            className="flex items-center gap-2 text-[13px] font-medium text-ink-secondary"
           >
-            <svg
-              width="11"
-              height="11"
-              viewBox="0 0 11 11"
-              fill="none"
-              aria-hidden
-              className="shrink-0"
-            >
-              <path
-                d="M2.5 5.5L4.5 7.5L8.5 3.5"
-                stroke="#166534"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            {item}
+            <ProofIcon name={item.icon} />
+            {item.text}
           </span>
         ))}
       </div>

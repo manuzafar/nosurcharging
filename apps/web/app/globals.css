@@ -122,6 +122,21 @@ nav.bg-ink button:focus-visible {
   outline-color: #72C4B0;
 }
 
+/* ── Skeleton bars (homepage PreviewSection) ──────────────────────────
+   Static coloured blocks that stand in for body text and numbers in the
+   marketing report mockup. No shimmer, no animation — the report is a
+   loading-state poster. Structural chrome (badges, labels, tab pills,
+   dates, section headings) stays as live text. */
+.sk-warm  { background: #E8E4DE; border-radius: 3px; }
+.sk-red   { background: #F5DADA; border-radius: 3px; }
+.sk-em    { background: #C8E8E2; border-radius: 3px; }
+.sk-amber { background: #EDD9A8; border-radius: 3px; }
+.sk-hero  { height: 36px; }
+.sk-lg    { height: 14px; }
+.sk-md    { height: 11px; }
+.sk-sm    { height: 9px; }
+.sk-xs    { height: 8px; }
+
 /* ── Horizontal scroll strips ─────────────────────────────────────────
    Hide native scrollbar tracks on horizontally-scrolling strips
    (MobileMiniNav, SubTabStrip). Tailwind's `scrollbar-hide` class is
