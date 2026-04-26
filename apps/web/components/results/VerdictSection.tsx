@@ -169,7 +169,7 @@ export function VerdictSection({
             color: 'var(--color-text-tertiary)',
           }}
         >
-          Estimated · RBA averages
+          Estimated · market averages
         </span>
       </div>
 

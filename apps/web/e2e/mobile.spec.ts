@@ -10,7 +10,7 @@ test.describe('Mobile 375px', () => {
     await expect(page.getByText(/RBA Surcharge Ban/)).toBeVisible();
 
     // CTA button visible
-    await expect(page.getByRole('link', { name: /generate my free report/i }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: /get my free report/i }).first()).toBeVisible();
   });
 
   test('assessment flow works on mobile', async ({ page }) => {

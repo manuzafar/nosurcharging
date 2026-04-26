@@ -194,6 +194,21 @@ SSL is handled by Cloudflare. Railway provides the origin connection.
 
 ## 4. CI/CD Pipeline (GitHub Actions)
 
+### PR jobs (overview)
+
+Every PR targeting `staging` or `main` runs six jobs in `ci.yml`:
+
+| Job | What it does | Adds to PR time |
+|---|---|---|
+| `lint` | ESLint across the monorepo | ~30s |
+| `typecheck` | `tsc --noEmit` across all packages | ~30s |
+| `test` | Vitest unit + integration suite | ~1m |
+| `build` | Production build of `apps/web` | ~2m |
+| `e2e-smoke` | Playwright `e2e/homepage.spec.ts` against locally-built `next start` (closes the copy-drift gap that previously only surfaced on staging-deploy) | ~3m |
+| `copy-lint` | Greps `apps/web/` for retired phrases (forbidden CTA text, named PSPs, etc.) | ~5s |
+
+The full E2E suite (assessment + results flows that require a real Supabase) runs after merge in `deploy-staging.yml`, against the deployed staging URL. See [docs/testing/testing-strategy.md §7](../testing/testing-strategy.md) for the split rationale.
+
 ### Workflow 1 — PR checks (runs on every PR)
 
 ```yaml

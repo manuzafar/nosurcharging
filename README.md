@@ -9,7 +9,7 @@
 [![pnpm](https://img.shields.io/badge/pnpm-9.1.0-orange.svg)](https://pnpm.io/)
 [![Next.js](https://img.shields.io/badge/Next.js-14.2-black.svg)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6.svg)](https://www.typescriptlang.org/)
-[![Tests](https://img.shields.io/badge/tests-325%20passing-brightgreen.svg)](#testing)
+[![Tests](https://img.shields.io/badge/tests-489%20passing-brightgreen.svg)](#testing)
 
 ---
 
@@ -77,7 +77,7 @@ See [docs/domain/merchant-categories.md](./docs/domain/merchant-categories.md) f
 | Charts | Recharts | React-native chart composability |
 | Database | Supabase PostgreSQL | RLS, generated types, PgBouncer pooler |
 | Email | Resend | Transactional email |
-| Analytics | Plausible Cloud | Privacy-first, no cookie banner |
+| Analytics | PostHog Cloud | Funnels + identified users; autocapture off, no session recording |
 | Monorepo | Turborepo | Shared calculation engine |
 | Unit Tests | Vitest | 10-20x faster than Jest, native ESM |
 | E2E Tests | Playwright | Cross-browser testing |
@@ -96,11 +96,13 @@ nosurcharging/
 ├── apps/
 │   └── web/                     # Next.js 14 (only app in Phase 1)
 │       ├── app/
-│       │   ├── layout.tsx       # Root layout (Plausible script)
-│       │   ├── page.tsx         # Homepage (SSR)
+│       │   ├── layout.tsx       # Root layout (PostHogProvider)
+│       │   ├── page.tsx         # Homepage (SSR + 2 client islands)
 │       │   ├── assessment/      # Four-step assessment wizard
 │       │   ├── results/         # Results page with verdict + actions
 │       │   ├── privacy/         # Privacy policy
+│       │   ├── disclaimer/      # Long-form legal disclaimer
+│       │   ├── terms/           # Terms & conditions
 │       │   └── api/             # Health check + Phase 2 stubs
 │       ├── actions/             # Server actions (session, consent, assessment, email)
 │       ├── components/          # React components by domain
@@ -113,7 +115,7 @@ nosurcharging/
 │   │   ├── calculations.ts      # Pure calculation functions
 │   │   ├── categories.ts        # 2x2 category assignment
 │   │   ├── periods.ts           # Time-based rate switching
-│   │   └── __tests__/           # 86 calculation tests
+│   │   └── __tests__/           # 139 calculation tests
 │   └── db/
 │       ├── migrations/          # SQL migrations
 │       └── types.ts             # Supabase-generated types
@@ -200,12 +202,18 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md#calculation-engine) for diagrams, or [do
 
 ## Testing
 
-**325 tests** across 38 test files. Two frameworks:
+**489 tests** across 50 test files. Two frameworks:
 
 | Framework | Scope | Count | Command |
 |-----------|-------|-------|---------|
-| Vitest | Unit + integration | 325 | `pnpm test:unit` |
+| Vitest | Unit + integration | 489 (350 web + 139 calc) | `pnpm test:unit` |
 | Playwright | End-to-end | 6 flows | `pnpm test:e2e` |
+
+E2E tests run in two contexts:
+- **PR CI** (`e2e-smoke` job) — `e2e/homepage.spec.ts` against a locally-built `next start`. Catches copy drift before merge. ~3 minutes added to PR CI.
+- **Staging deploy** — full suite against the deployed staging URL, including assessment + results flows that need a real Supabase.
+
+A small **`copy-lint` job** in PR CI greps `apps/web/` for retired phrases (e.g. old CTAs, named PSPs in disclaimer copy) and fails if any reappear in source or tests.
 
 ### Coverage Requirements
 
@@ -272,8 +280,8 @@ Three fully isolated environments, each with its own Supabase project:
 | Staging | `staging` | staging.nosurcharging.com.au | Auto on merge to `staging` |
 | Production | `main` | nosurcharging.com.au | Manual approval on merge to `main` |
 
-CI pipeline (every PR): lint, typecheck, unit tests, build.
-Staging deploy adds E2E tests. Production deploy requires manual GitHub approval.
+CI pipeline (every PR): lint, typecheck, unit tests, build, **e2e-smoke** (homepage Playwright run), **copy-lint** (forbidden-phrase guard).
+Staging deploy runs the full E2E suite against the deployed URL. Production deploy requires manual GitHub approval.
 
 See [docs/deployment/deployment-strategy.md](./docs/deployment/deployment-strategy.md) for the full strategy.
 
@@ -322,4 +330,4 @@ This project is licensed under the Apache License, Version 2.0. See [LICENSE](./
 
 - **Reserve Bank of Australia** — Reform framework, interchange rate data, and statistical tables
 - **Open-source community** — Built on Next.js, Supabase, Tailwind CSS, Recharts, Vitest, Playwright, Turborepo, and many other excellent projects
-- **Plausible Analytics** — Privacy-first analytics without cookie banners
+- **PostHog** — Funnels and identified users with autocapture and session recording disabled at launch

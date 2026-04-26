@@ -52,9 +52,9 @@ describe('VerdictSection', () => {
     expect(text).not.toMatch(/Category\s*4/);
   });
 
-  it('renders the confidence note "Estimated · RBA averages"', () => {
+  it('renders the confidence note "Estimated · market averages"', () => {
     render(<VerdictSection outputs={makeOutputs()} {...COMMON_PROPS} />);
-    expect(screen.getByText(/Estimated · RBA averages/)).toBeInTheDocument();
+    expect(screen.getByText(/Estimated · market averages/)).toBeInTheDocument();
   });
 
   it('renders the daily anchor with correct math (-$7,500 → ~$21/day)', () => {
