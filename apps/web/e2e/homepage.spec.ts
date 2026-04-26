@@ -36,7 +36,12 @@ test.describe('Homepage', () => {
     await page.getByRole('link', { name: /privacy policy/i }).click();
     await page.waitForURL('/privacy');
 
-    await expect(page.getByText('What information we collect')).toBeVisible();
+    // Scope to the heading role — the same phrase appears as a substring
+    // inside the body of section 1 ("…explains what information we collect…")
+    // which trips Playwright's strict-mode check on the loose getByText.
+    await expect(
+      page.getByRole('heading', { name: 'What information we collect' }),
+    ).toBeVisible();
   });
 
   test('health check returns 200', async ({ request }) => {

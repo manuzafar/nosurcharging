@@ -36,8 +36,8 @@ const CARD_MIX_KEYS = [
 
 const CONFIDENCE_LABELS: Record<string, string> = {
   high: 'High confidence — calculated from your exact rates',
-  medium: 'Estimated — partial RBA averages used',
-  low: 'Estimated — RBA averages used for all inputs',
+  medium: 'Estimated — partial market averages used',
+  low: 'Estimated — market averages used for all inputs',
 };
 
 function formatCurrency(amount: number, sign: '+' | '-' | '' = ''): string {
