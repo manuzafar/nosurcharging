@@ -7,7 +7,7 @@ import Link from 'next/link';
 export function Footer() {
   return (
     <footer className="bg-paper px-5 py-6">
-      <div className="mx-auto flex max-w-results justify-end">
+      <div className="mx-auto flex max-w-results justify-center">
         <div className="flex flex-wrap items-center">
           <Link
             href="/disclaimer"
