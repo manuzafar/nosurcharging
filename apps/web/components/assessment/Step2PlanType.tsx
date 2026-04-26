@@ -374,7 +374,7 @@ export function Step2PlanType({
           className="ml-4 flex-shrink-0 text-caption"
           style={{ color: 'var(--color-text-tertiary)' }}
         >
-          $50M+ · individually negotiated
+          Large volume · individually negotiated
         </span>
       </div>
 
