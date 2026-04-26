@@ -1,18 +1,23 @@
 # Disclaimer Text
 
-**Version:** v1.0
-**Date:** April 2026
+**Version:** v1.1
+**Date:** April 2026 (post-legal-review pass)
 
-Record consent_version alongside every consent record. If text changes, increment version (v1.1) — historical consents reference the version shown at the time of consent.
+Record consent_version alongside every consent record. If text changes, increment version (v1.2) — historical consents reference the version shown at the time of consent.
+
+## Version history
+
+- **v1.1 — April 2026.** Removed "RBA published data" from the consent text and the first commitment-card body (the consent screen no longer cites a single named data source). Replaced "verify any figures with my PSP" with "seek independent advice from a qualified professional". Removed named PSPs (Stripe, Square, Tyro) from the independence statement. Added a Terms & conditions link alongside the Privacy policy link in the consent checkbox text. Long-form legal pages added at `/disclaimer` and `/terms`; `/privacy` rewritten to share their layout.
+- **v1.0 — April 2026.** Initial wording, pre-legal-review.
 
 ## Assessment entry consent (FR-23)
 
 Affirmative checkbox — not a banner, not pre-checked.
 
-consent_type: "disclaimer" | consent_version: "v1.0"
+consent_type: "disclaimer" | consent_version: "v1.1"
 
 Exact text:
-"I understand that this assessment provides illustrative estimates only. It is not financial advice. Figures are based on RBA published data and the information I provide. I should verify any figures with my PSP before making business decisions."
+"I understand that this assessment provides illustrative estimates only. It is not financial advice. Figures are based on the information I provide. I should seek independent advice from a qualified professional before making business decisions."
 
 ## Results page inline disclaimer (FR-22)
 

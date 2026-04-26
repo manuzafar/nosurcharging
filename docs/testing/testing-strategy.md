@@ -640,6 +640,37 @@ describe('submitAssessment server action', () => {
 
 ## 7. End-to-End Tests (Playwright)
 
+### Where E2E runs
+
+E2E tests run in two distinct contexts. The split exists because the full
+suite needs a real Supabase to exercise assessment + results flows, and we
+don't want PR CI gated on a hot DB.
+
+| Context | Workflow file | Job | Tests | Backed by |
+|---|---|---|---|---|
+| **PR CI** | `.github/workflows/ci.yml` | `e2e-smoke` | `e2e/homepage.spec.ts` only | `next start` against the freshly-built app, placeholder Supabase env. ~3 min added to PR CI. |
+| **Staging deploy** | `.github/workflows/deploy-staging.yml` | `e2e` | Full suite (homepage + amex + card-mix + layman + wizard + mobile) | The deployed staging URL with real Supabase. |
+
+The `e2e-smoke` job catches copy drift before merge — the regression class
+that the static homepage tests cover (CTA text, proof-row claims, hero
+subtext, privacy section title). DB-dependent flows (sessions, consents,
+submissions) are validated post-merge against staging.
+
+### Forbidden-phrase linter
+
+A `copy-lint` job in PR CI greps `apps/web/` for retired phrases and fails
+the build if any reappear in source or tests. Phrases are added to the
+list in `.github/workflows/ci.yml` after copy is decisively retired
+site-wide. Current entries:
+
+- "Generate my free report" (replaced with "Get my free report")
+- "Stripe, Square, Tyro," (named PSPs removed from independence statement)
+- "$50M+ · individually negotiated" (misleading threshold removed)
+
+This is intentionally cheap: bash + grep, ~5 seconds per PR. Test files
+and code comments are in scope — if a mock asserts on retired copy,
+that's exactly the drift the linter is meant to surface.
+
 ### Configuration
 
 ```typescript
