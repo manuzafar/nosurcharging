@@ -25,6 +25,7 @@ import { useScrollSpy } from '@/hooks/useScrollSpy';
 import { SkeletonLoader } from '@/components/results/SkeletonLoader';
 import { StrategicRateExitPage } from '@/components/results/StrategicRateExitPage';
 import { ZeroCostResultsVariant } from '@/components/results/ZeroCostResultsVariant';
+import { Footer } from '@/components/homepage/Footer';
 
 // Shell
 import { ResultsTopBar } from '@/components/results/shell/ResultsTopBar';
@@ -352,6 +353,8 @@ function ResultsContent() {
       </div>
 
       <MobileBottomBar category={category} />
+
+      <Footer />
     </div>
   );
 }
