@@ -506,7 +506,7 @@ export function Step2PlanType({
             Optional: enter your rates for a more accurate estimate
           </p>
           <p className="mt-1 text-caption text-gray-400">
-            Find on your monthly statement. Leave blank to use RBA averages.
+            Find on your monthly statement. Leave blank to use market averages.
           </p>
           <div className="mt-3 flex gap-4">
             <div>

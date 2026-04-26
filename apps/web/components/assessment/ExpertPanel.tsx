@@ -55,7 +55,7 @@ export function ExpertPanel({ expertRates, onChange }: ExpertPanelProps) {
             Your actual interchange rates
           </p>
           <p className="mt-1 text-caption text-gray-500">
-            Leave blank to use RBA averages
+            Leave blank to use market averages
           </p>
 
           <div className="mt-3 grid grid-cols-3 gap-3">
@@ -110,7 +110,7 @@ export function ExpertPanel({ expertRates, onChange }: ExpertPanelProps) {
           </div>
 
           <p className="mt-3 text-caption text-gray-500">
-            Scheme fees default to RBA averages. Unregulated. Unchanged by reform.
+            Scheme fees default to market averages. Unregulated. Unchanged by reform.
           </p>
 
           {/* Confidence badge — updates live. Exact colours from CB-02 spec.
@@ -135,7 +135,7 @@ export function ExpertPanel({ expertRates, onChange }: ExpertPanelProps) {
           >
             {hasAnyInput
               ? 'Calculated from your exact rates'
-              : 'Will use RBA averages'}
+              : 'Will use market averages'}
           </div>
         </div>
       </div>
