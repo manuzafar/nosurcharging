@@ -7,6 +7,7 @@
 // Strategic rate selection replaces flow with inline exit page (URL unchanged).
 
 import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { StepCounter } from '@/components/ui/StepCounter';
@@ -190,17 +191,31 @@ export default function AssessmentPage() {
 
   return (
     <main className="min-h-screen bg-paper">
-      {/* Site-wide disclaimer (FR-02). Hidden during disclaimer phase —
-          the dedicated commitments screen is the disclaimer at that point. */}
-      {phase !== 'disclaimer' && (
-        <div className="border-b border-rule py-2 text-center">
-          <p className="text-micro text-ink-faint">
-            nosurcharging.com.au provides general guidance only. Not financial
-            advice. Verify with your payment provider before making business
-            decisions.
-          </p>
-        </div>
-      )}
+      {/* Branded nav — matches the homepage nav (ink bg, italic accent
+          logo). No CTA on the right because the assessment has its own
+          Next/Back navigation. Renders on every phase including the
+          disclaimer screen. */}
+      <nav
+        className="sticky top-0 z-20 flex items-center bg-ink px-5"
+        style={{ height: '52px' }}
+      >
+        <Link
+          href="/"
+          className="font-serif font-medium text-white"
+          style={{ fontSize: '16px' }}
+        >
+          no
+          <span className="italic" style={{ color: '#72C4B0' }}>
+            surcharging
+          </span>
+          <span
+            className="hidden text-white/60 min-[400px]:inline"
+            style={{ fontSize: '13px' }}
+          >
+            .com.au
+          </span>
+        </Link>
+      </nav>
 
       {/* Reveal screen is full-screen overlay */}
       {phase === 'reveal' && (
