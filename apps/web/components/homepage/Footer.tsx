@@ -1,36 +1,42 @@
-// Site footer — ux-spec §1.8.
-// Layout: flex space-between with the disclaimer block on the left and
-// the privacy policy link on the right. Paper background, no top border.
+// Site footer — links only. The four-sentence in-line disclaimer was
+// removed in favour of the dedicated /disclaimer, /terms, and /privacy
+// pages, which carry the full legal disclosure.
 
 import Link from 'next/link';
 
 export function Footer() {
   return (
     <footer className="bg-paper px-5 py-6">
-      <div className="mx-auto flex max-w-results flex-col items-start justify-between gap-3 min-[500px]:flex-row min-[500px]:items-center">
-        <p
-          className="text-ink-faint"
-          style={{
-            fontSize: '11px',
-            lineHeight: '1.6',
-            maxWidth: '440px',
-          }}
-        >
-          General guidance only. Not financial advice. Based on RBA
-          Conclusions Paper, March 2026. Verify with your payment provider
-          before making business decisions.
-        </p>
-
-        <Link
-          href="/privacy"
-          className="text-ink-faint underline shrink-0"
-          style={{
-            fontSize: '11px',
-            textUnderlineOffset: '2px',
-          }}
-        >
-          Privacy policy
-        </Link>
+      <div className="mx-auto flex max-w-results justify-center">
+        <div className="flex flex-wrap items-center">
+          <Link
+            href="/disclaimer"
+            className="text-ink-faint hover:underline"
+            style={{ fontSize: '11px', textUnderlineOffset: '2px' }}
+          >
+            Legal disclaimer
+          </Link>
+          <span className="text-ink-faint mx-2" aria-hidden>
+            ·
+          </span>
+          <Link
+            href="/terms"
+            className="text-ink-faint hover:underline"
+            style={{ fontSize: '11px', textUnderlineOffset: '2px' }}
+          >
+            Terms &amp; conditions
+          </Link>
+          <span className="text-ink-faint mx-2" aria-hidden>
+            ·
+          </span>
+          <Link
+            href="/privacy"
+            className="text-ink-faint hover:underline"
+            style={{ fontSize: '11px', textUnderlineOffset: '2px' }}
+          >
+            Privacy policy
+          </Link>
+        </div>
       </div>
     </footer>
   );

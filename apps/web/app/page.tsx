@@ -1,21 +1,20 @@
-// Homepage — SSR. ux-spec §1.1-1.8.
+// Homepage — SSR with two opt-in client islands. ux-spec §1.1-1.8.
 //
 // Section order:
 //   1. Sticky nav (ink bg, logo + single CTA)
-//   2. ProofBar (accent-light strip)
-//   3. HeroSection (paper canvas, italic Your)
-//   4. TrustBar (paper-white surface, three columns)
-//   5. PreviewSection (situations 2x2 grid)
-//   6. FeaturesSection (four questions)
-//   7. Bottom CTA (inline)
-//   8. Footer
+//   2. HeroSection (paper canvas, italic Your)
+//   3. TrustBar (paper-white surface, three columns)
+//   4. PreviewSection ('use client' — auto-cycling report scrollytelling)
+//   5. FeaturesSection (four questions)
+//   6. Bottom CTA (inline)
+//   7. Footer
 //
-// Target: <80KB gzipped JS. All sections are pure SSR after the
-// Phase 2 rewrite — no 'use client' directives in the homepage tree.
+// Target: <80KB gzipped JS. The homepage is mostly SSR. Two opt-in
+// client islands (HomepageAnalytics + PreviewSection) are wrapped in
+// <Suspense> so SSR continues for the rest of the tree.
 
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { ProofBar } from '@/components/homepage/ProofBar';
 import { HeroSection } from '@/components/homepage/HeroSection';
 import { TrustBar } from '@/components/homepage/TrustBar';
 import { PreviewSection } from '@/components/homepage/PreviewSection';
@@ -64,21 +63,22 @@ export default function HomePage() {
             borderRadius: '9999px',
           }}
         >
-          Generate my free report →
+          Get my free report →
         </Link>
       </nav>
-
-      {/* Section 2 — Proof bar */}
-      <ProofBar />
 
       {/* Section 3 — Hero */}
       <HeroSection />
 
-      {/* Section 4 — Trust bar */}
-      <TrustBar />
+      {/* Section 3 — Live countdown to 1 October 2026 (TrustBar) */}
+      <Suspense fallback={<div className="h-[49px] border-y border-rule bg-paper-white" />}>
+        <TrustBar />
+      </Suspense>
 
-      {/* Section 5 — Situations preview */}
-      <PreviewSection />
+      {/* Section 4 — "What you'll receive" scrollytelling report mock */}
+      <Suspense fallback={<div className="h-[600px] bg-[#0F0D09]" />}>
+        <PreviewSection />
+      </Suspense>
 
       {/* Section 6 — How it works (four questions) */}
       <FeaturesSection />
@@ -121,7 +121,7 @@ export default function HomePage() {
             borderRadius: '9999px',
           }}
         >
-          Generate my free report →
+          Get my free report →
         </Link>
       </section>
 

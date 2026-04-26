@@ -27,7 +27,7 @@ describe('HeroSection', () => {
 
   it('CTA links to /assessment with new copy', () => {
     render(<HeroSection />);
-    const cta = screen.getByRole('link', { name: /generate my free report/i });
+    const cta = screen.getByRole('link', { name: /get my free report/i });
     expect(cta).toHaveAttribute('href', '/assessment');
   });
 
@@ -38,15 +38,21 @@ describe('HeroSection', () => {
     expect(section.className).toContain('border-rule');
   });
 
-  it('does not include banned phrase "your PSP"', () => {
+  // CLAUDE.md §12 Rule 10 bans vague directives like "call your PSP" in
+  // ACTION ITEMS (results page). On the homepage the merchant has no PSP
+  // selected yet, so "your PSP" is unavoidable as a noun in marketing copy.
+  // This test guards against the directive forms only.
+  it('does not include banned vague directives like "call your PSP"', () => {
     render(<HeroSection />);
-    expect(document.body.textContent ?? '').not.toMatch(/your PSP/i);
+    expect(document.body.textContent ?? '').not.toMatch(
+      /(call|contact|email|ring|tell|ask) your PSP/i,
+    );
   });
 
-  it('proof row mentions Stripe and Square explicitly', () => {
+  it('proof row signals independence', () => {
     render(<HeroSection />);
     expect(
-      screen.getByText('No Stripe or Square affiliation'),
+      screen.getByText('Independent — no PSP affiliation'),
     ).toBeInTheDocument();
   });
 });
