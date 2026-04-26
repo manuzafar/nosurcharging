@@ -5,8 +5,10 @@
 // Exact wording from docs/legal/disclaimer-text.md — do not change without
 // bumping the version and re-running the legal review.
 // v1.1 (Apr 2026): "verify with my PSP" → "seek independent advice from a
-// qualified professional"; named PSPs removed from independence statement;
-// Terms & conditions link added alongside Privacy policy.
+// qualified professional"; "RBA published data" removed from the consent text
+// and the first commitment body (the consent screen no longer cites a single
+// data source); named PSPs removed from independence statement; Terms &
+// conditions link added alongside Privacy policy.
 //
 // Visual treatment per docs/design/revamp-ux-spec.md §2 — paper canvas,
 // four commitment items, white checkbox area, centred natural-width CTA.
@@ -21,7 +23,7 @@ import { createSession } from '@/actions/createSession';
 import { recordConsent } from '@/actions/recordConsent';
 
 const DISCLAIMER_TEXT =
-  'I understand that this assessment provides illustrative estimates only. It is not financial advice. Figures are based on RBA published data and the information I provide. I should seek independent advice from a qualified professional before making business decisions.';
+  'I understand that this assessment provides illustrative estimates only. It is not financial advice. Figures are based on the information I provide. I should seek independent advice from a qualified professional before making business decisions.';
 const DISCLAIMER_VERSION = 'v1.1';
 
 interface CommitmentItem {
@@ -32,7 +34,7 @@ interface CommitmentItem {
 const COMMITMENTS: CommitmentItem[] = [
   {
     title: 'This is an estimate, not a guarantee.',
-    body: 'We use your inputs and RBA data to calculate your likely impact. Your actual result depends on what your payment provider does after October.',
+    body: 'We use your inputs to calculate your likely impact. Your actual result depends on what your payment provider does after October.',
   },
   {
     title: 'We explain everything.',
