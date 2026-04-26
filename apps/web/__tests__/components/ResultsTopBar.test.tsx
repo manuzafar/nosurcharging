@@ -15,6 +15,14 @@ vi.mock('@/components/results/FeedbackModal', () => ({
     open ? <div data-testid="feedback-modal"><button onClick={onClose}>Close</button></div> : null,
 }));
 
+// Mock analytics
+vi.mock('@/lib/analytics', () => ({
+  Analytics: {
+    resultLooksOff: vi.fn(),
+    ctaClicked: vi.fn(),
+  },
+}));
+
 const defaultProps = {
   category: 1 as const,
   plSwing: 1700,
@@ -24,44 +32,46 @@ const defaultProps = {
 };
 
 describe('ResultsTopBar', () => {
-  it('renders the brand link with full domain', () => {
+  it('renders the branded logo linking to home', () => {
     render(<ResultsTopBar {...defaultProps} />);
-    const link = screen.getByText('nosurcharging.com.au');
-    expect(link).toBeInTheDocument();
-    expect(link.closest('a')).toHaveAttribute('href', '/');
+    // Logo splits "no" / "surcharging" / ".com.au" into spans — assert
+    // by anchor href and the italic accent portion.
+    const link = screen.getByRole('link', { name: /surcharging/i });
+    expect(link).toHaveAttribute('href', '/');
+    expect(screen.getByText('surcharging')).toBeInTheDocument();
+    expect(screen.getByText('.com.au')).toBeInTheDocument();
   });
 
-  it('renders the category pill', () => {
+  it('renders the situation pill', () => {
     render(<ResultsTopBar {...defaultProps} category={2} plSwing={765} accuracy={45} />);
     expect(screen.getByText('Situation 2')).toBeInTheDocument();
   });
 
-  it('shows positive P&L in success colour', () => {
+  it('shows positive P&L in emerald colour at 15px monospace 700', () => {
     render(<ResultsTopBar {...defaultProps} />);
     const plEl = screen.getByText('+$1,700');
     expect(plEl).toBeInTheDocument();
-    expect(plEl).toHaveStyle({ color: 'var(--color-text-success)' });
+    expect(plEl).toHaveStyle({ color: '#1A6B5A', fontSize: '15px', fontWeight: 700 });
   });
 
-  it('shows negative P&L in danger colour', () => {
+  it('shows negative P&L in coral/red colour', () => {
     render(<ResultsTopBar {...defaultProps} category={3} plSwing={-99500} />);
     const plEl = screen.getByText('−$99,500');
     expect(plEl).toBeInTheDocument();
-    expect(plEl).toHaveStyle({ color: 'var(--color-text-danger)' });
+    expect(plEl).toHaveStyle({ color: '#E57373' });
   });
 
-  it('renders accuracy bar with correct width', () => {
-    const { container } = render(<ResultsTopBar {...defaultProps} accuracy={45} />);
-    const bar = container.querySelector('[style*="width: 45%"]');
-    expect(bar).toBeInTheDocument();
-  });
-
-  it('renders accuracy percentage text', () => {
+  it('renders accuracy as inline text with bullet separator', () => {
     render(<ResultsTopBar {...defaultProps} accuracy={45} />);
-    expect(screen.getByText('45%')).toBeInTheDocument();
+    expect(screen.getByText('Accuracy ▪ 45%')).toBeInTheDocument();
   });
 
-  it('renders feedback link', () => {
+  it('rounds accuracy to whole percent', () => {
+    render(<ResultsTopBar {...defaultProps} accuracy={45.7} />);
+    expect(screen.getByText('Accuracy ▪ 46%')).toBeInTheDocument();
+  });
+
+  it('renders the "Result looks off?" feedback link', () => {
     render(<ResultsTopBar {...defaultProps} />);
     expect(screen.getByText('Result looks off?')).toBeInTheDocument();
   });
@@ -73,9 +83,19 @@ describe('ResultsTopBar', () => {
     expect(screen.getByTestId('feedback-modal')).toBeInTheDocument();
   });
 
-  it('P&L number renders at 18px with weight 500', () => {
+  it('renders the "Save result" outline button', () => {
     render(<ResultsTopBar {...defaultProps} />);
-    const plEl = screen.getByText('+$1,700');
-    expect(plEl).toHaveStyle({ fontSize: '18px', fontWeight: 500 });
+    expect(screen.getByRole('button', { name: 'Save result' })).toBeInTheDocument();
+  });
+
+  it('renders the "Get help" primary CTA', () => {
+    render(<ResultsTopBar {...defaultProps} />);
+    expect(screen.getByRole('link', { name: 'Get help' })).toBeInTheDocument();
+  });
+
+  it('header uses dark ink background and 56px height', () => {
+    const { container } = render(<ResultsTopBar {...defaultProps} />);
+    const header = container.querySelector('header')!;
+    expect(header).toHaveStyle({ background: '#1A1409', height: '56px' });
   });
 });
