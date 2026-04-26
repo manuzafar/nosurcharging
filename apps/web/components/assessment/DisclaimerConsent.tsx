@@ -1,9 +1,12 @@
 'use client';
 
 // FR-23: Assessment entry consent. Affirmative checkbox, not pre-checked.
-// consent_type: "disclaimer", consent_version: "v1.0"
+// consent_type: "disclaimer", consent_version: "v1.1"
 // Exact wording from docs/legal/disclaimer-text.md — do not change without
 // bumping the version and re-running the legal review.
+// v1.1 (Apr 2026): "verify with my PSP" → "seek independent advice from a
+// qualified professional"; named PSPs removed from independence statement;
+// Terms & conditions link added alongside Privacy policy.
 //
 // Visual treatment per docs/design/revamp-ux-spec.md §2 — paper canvas,
 // four commitment items, white checkbox area, centred natural-width CTA.
@@ -18,8 +21,8 @@ import { createSession } from '@/actions/createSession';
 import { recordConsent } from '@/actions/recordConsent';
 
 const DISCLAIMER_TEXT =
-  'I understand that this assessment provides illustrative estimates only. It is not financial advice. Figures are based on RBA published data and the information I provide. I should verify any figures with my PSP before making business decisions.';
-const DISCLAIMER_VERSION = 'v1.0';
+  'I understand that this assessment provides illustrative estimates only. It is not financial advice. Figures are based on RBA published data and the information I provide. I should seek independent advice from a qualified professional before making business decisions.';
+const DISCLAIMER_VERSION = 'v1.1';
 
 interface CommitmentItem {
   title: string;
@@ -37,7 +40,7 @@ const COMMITMENTS: CommitmentItem[] = [
   },
   {
     title: 'We are independent.',
-    body: "No relationship with Stripe, Square, Tyro, or any payment provider. We're not trying to sell you a new provider.",
+    body: "We have no commercial relationship with any payment service provider, bank, or acquirer. We're not trying to sell you a new provider.",
   },
   {
     title: 'This is not financial advice.',
@@ -179,6 +182,14 @@ export function DisclaimerConsent({ onAccept }: DisclaimerConsentProps) {
         ))}
       </div>
 
+      {/* Bridge line above the consent checkbox */}
+      <p
+        className="text-ink-faint"
+        style={{ fontSize: '11px', marginBottom: '8px' }}
+      >
+        By starting this assessment you confirm:
+      </p>
+
       {/* Checkbox area — white background, accent tick only */}
       <label
         className="flex cursor-pointer items-start bg-paper-white border border-rule"
@@ -196,6 +207,15 @@ export function DisclaimerConsent({ onAccept }: DisclaimerConsentProps) {
           style={{ fontSize: '12px', lineHeight: '1.6' }}
         >
           {DISCLAIMER_TEXT}{' '}
+          By continuing I agree to the{' '}
+          <Link
+            href="/terms"
+            className="text-accent underline"
+            style={{ textUnderlineOffset: '2px' }}
+          >
+            Terms &amp; conditions
+          </Link>
+          {' '}and have read the{' '}
           <Link
             href="/privacy"
             className="text-accent underline"

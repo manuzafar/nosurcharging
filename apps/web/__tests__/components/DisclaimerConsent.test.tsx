@@ -63,7 +63,7 @@ describe('DisclaimerConsent', () => {
     expect(mockCreateSession).toHaveBeenCalledTimes(1);
   });
 
-  it('recordConsent is called with exact disclaimer text v1.0', async () => {
+  it('recordConsent is called with exact disclaimer text v1.1', async () => {
     render(<DisclaimerConsent onAccept={onAccept} />);
 
     await user.click(screen.getByRole('checkbox'));
@@ -73,9 +73,9 @@ describe('DisclaimerConsent', () => {
     expect(mockRecordConsent).toHaveBeenCalledWith({
       consentType: 'disclaimer',
       consentText: expect.stringContaining(
-        'I understand that this assessment provides illustrative estimates only',
+        'seek independent advice from a qualified professional',
       ),
-      consentVersion: 'v1.0',
+      consentVersion: 'v1.1',
       consented: true,
       sessionId: 'test-session-id',
     });
@@ -117,11 +117,14 @@ describe('DisclaimerConsent', () => {
     ).toBeInTheDocument();
   });
 
-  it('uses "payment provider" wording in the commitment items', () => {
+  it('uses neutral "payment provider" wording without naming specific PSPs', () => {
     render(<DisclaimerConsent onAccept={onAccept} />);
     const text = document.body.textContent ?? '';
     expect(text).toMatch(/what your payment provider does after October/);
-    expect(text).toMatch(/Stripe, Square, Tyro, or any payment provider/);
+    expect(text).toMatch(/no commercial relationship with any payment service provider/);
+    // v1.1 legal review — the homepage hero may still reference Stripe/Square
+    // by name, but the assessment consent screen must not single any out.
+    expect(text).not.toMatch(/Stripe, Square, Tyro/);
   });
 
   it('blocks progression when recordConsent returns success: false', async () => {
