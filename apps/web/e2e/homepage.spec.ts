@@ -5,21 +5,19 @@ test.describe('Homepage', () => {
     await page.goto('/');
 
     await expect(page.getByText(/RBA Surcharge Ban/)).toBeVisible();
-    await expect(page.getByRole('link', { name: /generate my free report/i }).first()).toBeVisible();
-    // Proof row items
+    await expect(page.getByRole('link', { name: /get my free report/i }).first()).toBeVisible();
+    // Proof row items (post-Apr 2026 redesign — chip-style claims)
     await expect(page.getByText('No account required').first()).toBeVisible();
-    await expect(page.getByText('No Stripe or Square affiliation').first()).toBeVisible();
+    await expect(page.getByText('Independent — no PSP affiliation').first()).toBeVisible();
   });
 
-  test('preview section shows four situations', async ({ page }) => {
+  test('preview scrollytelling section renders', async ({ page }) => {
     await page.goto('/');
 
-    // Situation 1 card should be visible in the 2x2 grid
-    await expect(page.getByText('Situation 1').first()).toBeVisible();
-
-    // Situation 3 card should also be visible (static grid, not tabs)
-    await expect(page.getByText('Situation 3').first()).toBeVisible();
-    await expect(page.getByText(/surcharge revenue disappears/i)).toBeVisible();
+    // The "What you'll receive" eyebrow + report mock replaced the old
+    // four-situation grid in Apr 2026.
+    await expect(page.getByText(/What you.?ll receive/).first()).toBeVisible();
+    await expect(page.getByText(/A complete reform report/)).toBeVisible();
   });
 
   test('features section renders four questions', async ({ page }) => {
@@ -38,7 +36,7 @@ test.describe('Homepage', () => {
     await page.getByRole('link', { name: /privacy policy/i }).click();
     await page.waitForURL('/privacy');
 
-    await expect(page.getByText('What we collect')).toBeVisible();
+    await expect(page.getByText('What information we collect')).toBeVisible();
   });
 
   test('health check returns 200', async ({ request }) => {
