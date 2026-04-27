@@ -127,10 +127,18 @@ export function Step3Surcharging({
         </button>
       </div>
 
-      {/* Conditional: network checkboxes + surcharge rate */}
+      {/* Conditional: network checkboxes + surcharge rate.
+          The wrapper uses overflow-hidden + max-h transition for the slide
+          animation. The focus-visible ring on the rate input below extends
+          ~4px outside the input edge (per the global :focus-visible rule
+          in globals.css). overflow:hidden clips outlines at the parent's
+          padding edge, so we reserve 8px on every side (p-2) to leave the
+          ring with a comfortable 4px of clearance. Padding does not affect
+          the max-h-0 collapsed state because box-sizing: border-box clamps
+          the entire box to 0px. */}
       <div
         className={`overflow-hidden transition-all duration-250 ease-out ${
-          surcharging === true ? 'mt-4 max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+          surcharging === true ? 'mt-4 max-h-[500px] opacity-100 p-2' : 'max-h-0 opacity-0'
         }`}
       >
         {/* Network checkboxes (CB-05) */}

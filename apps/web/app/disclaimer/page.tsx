@@ -3,7 +3,7 @@
 // docs/legal/disclaimer-text.md before public launch (hard gate).
 
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { BackButton } from '@/components/ui/BackButton';
 
 export const metadata: Metadata = {
   title: 'Legal Disclaimer — nosurcharging.com.au',
@@ -17,17 +17,7 @@ export default function DisclaimerPage() {
       <article
         className="mx-auto max-w-results px-5 pt-16 pb-20"
       >
-        <Link
-          href="/"
-          className="block text-accent hover:underline"
-          style={{
-            fontSize: '13px',
-            textUnderlineOffset: '2px',
-            marginBottom: '40px',
-          }}
-        >
-          ← Back
-        </Link>
+        <BackButton />
 
         <h1
           className="font-serif text-ink"
