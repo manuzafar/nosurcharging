@@ -839,3 +839,34 @@ describe('Phase 2 audit fix — resolver-default debit rate floors saving at zer
     expect(result.debitSaving).toBeGreaterThan(0);
   });
 });
+
+// ══════════════════════════════════════════════════════════════════
+// Phase 3 audit fix — travel industry ATV
+// ══════════════════════════════════════════════════════════════════
+// 'travel' was missing from AU_AVG_TXN_BY_INDUSTRY, so a travel
+// merchant fell back to the $65 default — overstating debit
+// transaction count by 5x (real travel ATV is ~$300-600). Added
+// travel: 350 to the constant.
+
+describe('Phase 3 audit fix — travel industry resolves to $350 ATV', () => {
+  const ctx: ResolutionContext = { country: 'AU', industry: 'travel' };
+
+  it('avgTransactionValue = 350 for travel industry (was falling back to 65)', () => {
+    const resolved = resolveAssessmentInputs(
+      {
+        volume: 5_000_000,
+        planType: 'costplus',
+        msfRate: 0.014,
+        surcharging: false,
+        surchargeRate: 0,
+        surchargeNetworks: [],
+        industry: 'travel',
+        psp: 'Stripe',
+        passThrough: 0,
+        country: 'AU',
+      },
+      ctx,
+    );
+    expect(resolved.avgTransactionValue).toBe(350);
+  });
+});
