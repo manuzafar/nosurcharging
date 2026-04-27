@@ -226,11 +226,17 @@ export function resolveAssessmentInputs(
   };
 
   // Resolve expert interchange rates
-  // Default debitCents = 9 (RBA current average), creditPct = 0.47 (RBA confirmed market average)
+  // Default debitCents = 7 (RBA Conclusions Paper March 2026: weighted-average
+  // domestic debit/prepaid interchange has fallen to ~6c; 8c is the cap, not the
+  // current average). 7c is a midpoint estimate — sits below the 8c cap so the
+  // engine correctly produces zero debit saving for the typical merchant who is
+  // already below the cap. Merchants who are actually paying close to 9c can
+  // override via expert mode.
+  // creditPct = 0.47 (RBA confirmed market average)
   // marginPct = 0.10 (10bps assumed PSP margin)
   const debitCents = resolveValue('expertRates.debitCents', [
     { source: 'merchant_input', value: ctx.merchantInput?.expertRates?.debitCents },
-    { source: 'regulatory_constant', value: 9 },
+    { source: 'regulatory_constant', value: 7 },
   ]);
   const creditPct = resolveValue('expertRates.creditPct', [
     { source: 'merchant_input', value: ctx.merchantInput?.expertRates?.creditPct },
