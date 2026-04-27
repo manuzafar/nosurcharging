@@ -156,9 +156,9 @@ describe('PassThroughSlider', () => {
       />,
     );
 
-    // Updated intro: "RBA estimates ~45%... Stripe keeps the full $1,725 interchange saving"
+    // Intro reads: "Our central scenario assumes ~45% pass-through... full $1,725 interchange saving stays with Stripe"
     expect(
-      screen.getByText(/RBA estimates ~45% of merchants/i),
+      screen.getByText(/central scenario assumes ~45% pass-through/i),
     ).toBeInTheDocument();
     expect(screen.getByText(/\$1,725/)).toBeInTheDocument();
   });

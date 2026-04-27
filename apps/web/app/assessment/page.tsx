@@ -131,7 +131,7 @@ export default function AssessmentPage() {
     surchargeNetworks,
     industry: industry!,
     psp: psp!,
-    passThrough: 0.45, // CB-08 override: 45% (RBA market average)
+    passThrough: 0.45, // CB-08 override: 45% — central scenario assumption
     merchantInput: Object.keys(merchantInput).length > 0 ? merchantInput : undefined,
     msfRateMode: planType === 'zero_cost' ? msfRateMode : undefined,
     customMSFRate: planType === 'zero_cost' && msfRateMode === 'custom' ? customMSFRate ?? undefined : undefined,

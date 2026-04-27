@@ -97,7 +97,7 @@ export function PassThroughSlider({
           marginBottom: '16px',
         }}
       >
-        The RBA estimates ~45% of merchants will see some pass-through from their PSP.
+        Our central scenario assumes ~45% pass-through — the actual figure depends on {pspName}.
         At 0%, the full {formatDollar(outputs.icSaving)} interchange saving stays with {pspName}.
         At 100%, it passes through entirely.
       </p>

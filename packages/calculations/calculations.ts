@@ -177,7 +177,7 @@ export function calculateMetrics(
       plSwingHigh = icSaving;
     }
     rangeDriver = 'pass_through';
-    rangeNote   = 'Range shows 0% to 100% PSP pass-through. The RBA estimates ~45% average.';
+    rangeNote   = 'Range shows 0% to 100% PSP pass-through. Central scenario assumes 45% — actual depends on your provider.';
   } else {
     // Cost-plus: range is card mix accuracy (±20%)
     const lowIC  = round2(icSaving * 0.80);
