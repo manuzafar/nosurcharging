@@ -242,7 +242,7 @@ export function VerdictSection({
             </span>
             <span className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
               {rangeDriver === 'pass_through'
-                ? '— at 45% PSP pass-through (RBA market estimate)'
+                ? '— at 45% PSP pass-through (central scenario assumption)'
                 : '— at estimated card mix'}
             </span>
           </div>

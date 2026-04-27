@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { calculateMetrics, calculateZeroCostMetrics } from '../calculations';
 import { detectStrategicRate, getCategory } from '../categories';
-import type { ResolvedAssessmentInputs } from '../types';
+import { resolveAssessmentInputs } from '../rules/resolver';
+import type {
+  ResolvedAssessmentInputs,
+  RawAssessmentData,
+  ResolutionContext,
+} from '../types';
 
 // Pre-reform test date — all scenarios use this
 const PRE_REFORM = new Date('2026-04-01T00:00:00Z');
@@ -764,5 +769,104 @@ describe('Sprint 3 — minMonthlyFee floor on annualMSF', () => {
     const a = calculateMetrics(baseInputs, PRE_REFORM);
     const b = calculateMetrics({ ...baseInputs, minMonthlyFee: undefined }, PRE_REFORM);
     expect(a.annualMSF).toBe(b.annualMSF);
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════
+// Phase 2 audit fix — resolver default debitCents 9 → 7
+// ══════════════════════════════════════════════════════════════════
+// The RBA Conclusions Paper (March 2026) states the weighted-average
+// domestic debit/prepaid interchange has fallen to ~6c. Using 9c as the
+// default overstates current cost and the projected saving for the
+// typical merchant. The resolver default is now 7c (midpoint estimate),
+// which is below the 8c reform cap — so the engine produces zero debit
+// saving for any merchant who falls back to the default.
+//
+// This test goes through the resolver (NOT the makeInputs fixture), so
+// it exercises the production codepath a merchant who doesn't supply
+// expert rates would actually take.
+
+describe('Phase 2 audit fix — resolver-default debit rate floors saving at zero', () => {
+  function rawDefaults(overrides: Partial<RawAssessmentData> = {}): RawAssessmentData {
+    return {
+      volume: 2_000_000,
+      planType: 'costplus',
+      msfRate: 0.014,
+      surcharging: false,
+      surchargeRate: 0,
+      surchargeNetworks: [],
+      industry: 'retail',
+      psp: 'Stripe',
+      passThrough: 0,
+      country: 'AU',
+      ...overrides,
+    };
+  }
+
+  const ctx: ResolutionContext = { country: 'AU', industry: 'retail' };
+
+  it('resolver default for debitCents is 7 (post-audit, was 9)', () => {
+    const resolved = resolveAssessmentInputs(rawDefaults(), ctx);
+    expect(resolved.expertRates.debitCents).toBe(7);
+  });
+
+  it('debit saving is zero when resolver default applies (7c < 8c reform cap)', () => {
+    const resolved = resolveAssessmentInputs(rawDefaults(), ctx);
+    const result = calculateMetrics(resolved, PRE_REFORM);
+    expect(result.debitSaving).toBe(0);
+  });
+
+  it('credit saving still flows through (creditPct 0.47% → 0.30% reform cap)', () => {
+    const resolved = resolveAssessmentInputs(rawDefaults(), ctx);
+    const result = calculateMetrics(resolved, PRE_REFORM);
+    // Industry 'retail' card mix: visa_credit 0.18 + mc_credit 0.12 = 0.30
+    // creditSaving = 2,000,000 × 0.30 × (0.0047 - 0.003) = $1,020
+    expect(result.creditSaving).toBeCloseTo(1020.0, 1);
+  });
+
+  it('merchant-supplied expert debitCents overrides the resolver default', () => {
+    const resolved = resolveAssessmentInputs(
+      rawDefaults(),
+      {
+        country: 'AU',
+        industry: 'retail',
+        merchantInput: { expertRates: { debitCents: 9 } },
+      },
+    );
+    expect(resolved.expertRates.debitCents).toBe(9);
+    const result = calculateMetrics(resolved, PRE_REFORM);
+    // 9c → 8c cap, debit saving > 0
+    expect(result.debitSaving).toBeGreaterThan(0);
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════
+// Phase 3 audit fix — travel industry ATV
+// ══════════════════════════════════════════════════════════════════
+// 'travel' was missing from AU_AVG_TXN_BY_INDUSTRY, so a travel
+// merchant fell back to the $65 default — overstating debit
+// transaction count by 5x (real travel ATV is ~$300-600). Added
+// travel: 350 to the constant.
+
+describe('Phase 3 audit fix — travel industry resolves to $350 ATV', () => {
+  const ctx: ResolutionContext = { country: 'AU', industry: 'travel' };
+
+  it('avgTransactionValue = 350 for travel industry (was falling back to 65)', () => {
+    const resolved = resolveAssessmentInputs(
+      {
+        volume: 5_000_000,
+        planType: 'costplus',
+        msfRate: 0.014,
+        surcharging: false,
+        surchargeRate: 0,
+        surchargeNetworks: [],
+        industry: 'travel',
+        psp: 'Stripe',
+        passThrough: 0,
+        country: 'AU',
+      },
+      ctx,
+    );
+    expect(resolved.avgTransactionValue).toBe(350);
   });
 });

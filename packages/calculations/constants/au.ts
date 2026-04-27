@@ -94,6 +94,7 @@ export const AU_AVG_TXN_BY_INDUSTRY: Record<string, number> = {
   retail: 65,
   online: 95,
   ticketing: 120,
+  travel: 350, // Australian travel/accommodation ATV — was missing, fell back to $65
   other: 65,
 };
 
