@@ -158,7 +158,7 @@ export interface AssessmentOutputs {
 
 export interface StrategicRateDetection {
   detected: boolean;
-  triggerReason: 'volume_threshold' | 'self_reported' | null;
+  triggerReason: 'self_reported' | null;
 }
 
 // ── Action list ──────────────────────────────────────────────────

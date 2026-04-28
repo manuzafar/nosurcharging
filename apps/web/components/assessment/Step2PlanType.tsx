@@ -23,7 +23,10 @@ const PSP_OPTIONS = [
 ] as const;
 
 interface Step2PlanTypeProps {
-  planType: 'flat' | 'costplus' | 'blended' | 'zero_cost' | null;
+  // 'strategic_rate' is accepted for parent-state compatibility, but the
+  // strategic tile uses its own internal `strategicSelected` boolean —
+  // the component never reads `planType === 'strategic_rate'` directly.
+  planType: 'flat' | 'costplus' | 'blended' | 'zero_cost' | 'strategic_rate' | null;
   msfRateMode: 'unselected' | 'market_estimate' | 'custom';
   customMSFRate: number | null;
   blendedDebitRate: number | null;
@@ -352,7 +355,7 @@ export function Step2PlanType({
       <div
         role="radio"
         aria-checked={strategicSelected}
-        aria-label="My bank or PSP negotiated a custom rate for my business"
+        aria-label="I'm on a custom rate I negotiated for my business"
         tabIndex={0}
         onClick={handleStrategicSelect}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleStrategicSelect(); } }}
@@ -361,7 +364,10 @@ export function Step2PlanType({
       >
         <div>
           <p className="text-body font-medium" style={{ color: 'var(--color-text-primary)' }}>
-            My bank or PSP negotiated a custom rate for my business
+            I&apos;m on a custom rate I negotiated for my business
+          </p>
+          <p className="text-caption italic" style={{ color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+            A rate agreement specific to my business — not a standard published plan
           </p>
           <p
             className="font-mono"

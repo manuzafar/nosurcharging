@@ -100,16 +100,13 @@ export async function submitAssessment(
     return { success: false, error: 'Rate limit exceeded. Please try again later.' };
   }
 
-  // 5. Validate required fields
-  if (!formData.psp) {
-    return { success: false, error: 'PSP is required — assessment cannot be submitted without PSP selection.' };
-  }
-
-  // 6. Strategic rate interception — before resolve/calculate pipeline
-  const safePsp = sanitiseForHTML(formData.psp);
-  const strategicCheck = formData.planTypeUnknown
-    ? { detected: false, triggerReason: null as string | null }
-    : detectStrategicRate(formData.planType, formData.volume, formData.psp);
+  // 5. Strategic rate interception — runs BEFORE the PSP-required check
+  // because the strategic tile in Step 2 doesn't gate on PSP selection.
+  // Fires only when the merchant explicitly selects the strategic-rate tile
+  // (planType === 'strategic_rate'). The previous volume-and-PSP heuristic
+  // was removed — large-bank merchants on flat/cost-plus tiles now get a
+  // normal Cat 1-4 result, never a surprise routing to category 6.
+  const strategicCheck = detectStrategicRate(formData.planType);
   if (strategicCheck.detected) {
     // Migration 007: strategic_rate moved from category=5 to category=6 to
     // free up slot 5 for first-class zero_cost.
@@ -121,7 +118,12 @@ export async function submitAssessment(
         country_code: 'AU',
         category: 6,
         variant_type: 'strategic_rate',
-        inputs: { volume: formData.volume, psp: formData.psp, industry: formData.industry, planType: formData.planType },
+        inputs: {
+          volume: formData.volume,
+          psp: formData.psp ?? null,
+          industry: formData.industry,
+          planType: formData.planType,
+        },
         outputs: { strategic_rate: true, triggerReason: strategicCheck.triggerReason },
         ip_hash: ipHash,
       })
@@ -129,6 +131,12 @@ export async function submitAssessment(
       .single();
     return { success: true, assessmentId: inserted?.id, strategicRateExit: true };
   }
+
+  // 6. PSP required for all non-strategic paths (Cat 1-5)
+  if (!formData.psp) {
+    return { success: false, error: 'PSP is required — assessment cannot be submitted without PSP selection.' };
+  }
+  const safePsp = sanitiseForHTML(formData.psp);
 
   // 7. Build raw assessment data
   const raw: RawAssessmentData = {
