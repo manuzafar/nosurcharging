@@ -41,13 +41,11 @@ export function RevealScreen({ formData, onComplete, onError }: RevealScreenProp
         return;
       }
 
-      // Handle strategic rate exit and zero-cost (no standard category)
+      // Handle strategic rate exit; all standard paths (Cat 1-5) flow
+      // through the unified results shell.
       if (r.strategicRateExit) {
         setCategoryLabel('Strategic rate — specialist guidance');
         trackEvent('assessment_submission_complete', { category: 'strategic_rate' });
-      } else if (r.outputs && 'modelType' in r.outputs) {
-        setCategoryLabel('Zero-cost — action required');
-        trackEvent('assessment_submission_complete', { category: 'zero_cost' });
       } else {
         const cat = (r.outputs as { category: number })?.category;
         const verdicts: Record<number, string> = {
@@ -55,6 +53,7 @@ export function RevealScreen({ formData, onComplete, onError }: RevealScreenProp
           2: 'Category 2 — conditional saving',
           3: 'Category 3 — repricing required',
           4: 'Category 4 — act immediately',
+          5: 'Category 5 — your zero-cost plan ends',
         };
         setCategoryLabel(verdicts[cat] ?? '');
         trackEvent('assessment_submission_complete', { category: String(cat) });

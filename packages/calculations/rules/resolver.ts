@@ -291,6 +291,12 @@ export function resolveAssessmentInputs(
   // Normalise planType: strategic_rate should never reach here, but defensive
   const resolvedPlanType = raw.planType === 'strategic_rate' ? 'flat' as const : raw.planType;
 
+  // Cat 5 routing flag — single source of truth for the engine.
+  // Engine reads `isZeroCost` and gates the Cat 5 P&L branch; raw
+  // surcharging/surchargeRate/surchargeNetworks/passThrough are preserved
+  // (separate Amex surcharge, etc.) but ignored for the Cat 5 P&L formula.
+  const isZeroCost = resolvedPlanType === 'zero_cost';
+
   // Min monthly fee — merchant_input only (Phase 1). Trace recorded so
   // AssumptionsPanel / RefinementPanel know whether the floor was user-supplied.
   const minMonthlyFee = ctx.merchantInput?.minMonthlyFee;
@@ -321,6 +327,7 @@ export function resolveAssessmentInputs(
     },
     resolutionTrace: trace,
     confidence,
+    isZeroCost,
     estimatedMSFRate,
     debitRate,
     creditRate,

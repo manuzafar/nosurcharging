@@ -3,7 +3,7 @@
 import type { AssessmentOutputs } from '@nosurcharging/calculations/types';
 
 interface WhatsChangingProps {
-  category: 1 | 2 | 3 | 4;
+  category: 1 | 2 | 3 | 4 | 5;
   outputs: AssessmentOutputs;
   pspName: string;
 }
@@ -12,7 +12,7 @@ function formatDollar(value: number): string {
   return '$' + Math.abs(Math.round(value)).toLocaleString('en-AU');
 }
 
-function getDependsBody(category: 1 | 2 | 3 | 4, pspName: string): string {
+function getDependsBody(category: 1 | 2 | 3 | 4 | 5, pspName: string): string {
   switch (category) {
     case 1:
       return `Your cost-plus plan means the IC saving flows automatically. ${pspName} passes through the lower interchange rates — no action needed on your part.`;
@@ -22,11 +22,14 @@ function getDependsBody(category: 1 | 2 | 3 | 4, pspName: string): string {
       return `Your cost-plus plan means the IC saving flows automatically, which partially offsets your surcharge revenue loss. Contact ${pspName} to discuss your options.`;
     case 4:
       return `Your flat-rate plan means ${pspName} keeps the IC saving unless you negotiate. Combined with losing surcharge revenue, your position depends entirely on what ${pspName} offers.`;
+    case 5:
+      return `Zero-cost EFTPOS ends. ${pspName} moves you to a flat-rate plan, so the IC saving stays with ${pspName} during the transition. Get the post-October rate in writing this week.`;
   }
 }
 
 export function WhatsChanging({ category, outputs, pspName }: WhatsChangingProps) {
   const isSurcharging = category === 3 || category === 4;
+  const isZeroCost = category === 5;
 
   return (
     <div className="mt-4">
@@ -49,7 +52,19 @@ export function WhatsChanging({ category, outputs, pspName }: WhatsChangingProps
           <p style={{ fontSize: '14px', color: 'var(--color-text-primary)', fontWeight: 500, marginBottom: '8px' }}>
             Surcharge ban
           </p>
-          {isSurcharging ? (
+          {isZeroCost ? (
+            <>
+              <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '8px' }}>
+                The PSP-mediated surcharge that covers your card costs ends on 1 October 2026 for Visa, Mastercard, and eftpos.
+              </p>
+              <p className="font-mono" style={{ fontSize: '18px', color: 'var(--color-text-danger, #C53030)', fontWeight: 500 }}>
+                −{formatDollar(outputs.octNet)}
+              </p>
+              <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginTop: '2px' }}>
+                annual cost from October ({pspName} flat rate)
+              </p>
+            </>
+          ) : isSurcharging ? (
             <>
               <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '8px' }}>
                 Your surcharge revenue on Visa, Mastercard, and eftpos disappears on 1 October 2026.

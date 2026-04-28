@@ -7,7 +7,7 @@ interface ResultsSidebarProps {
   activeSection: SectionId;
   onNavClick: (id: SectionId) => void;
   urgentCount: number;
-  category: 1 | 2 | 3 | 4;
+  category: 1 | 2 | 3 | 4 | 5;
 }
 
 const GROUP_LABELS: Record<SectionMeta['group'], string> = {
@@ -18,11 +18,12 @@ const GROUP_LABELS: Record<SectionMeta['group'], string> = {
   next: 'Next step',
 };
 
-const CTA_PRICE: Record<1 | 2 | 3 | 4, string> = {
+const CTA_PRICE: Record<1 | 2 | 3 | 4 | 5, string> = {
   1: '$2,500',
   2: '$2,500',
   3: '$3,500',
   4: '$3,500',
+  5: '$3,500', // Cat 5: full plan transition + repricing — same complexity tier as Cat 3/4
 };
 
 export function ResultsSidebar({

@@ -14,7 +14,7 @@ interface PSPRateRegistryProps {
   planType: 'flat' | 'costplus';
   volume: number;
   industry?: string;
-  category?: 1 | 2 | 3 | 4;
+  category?: 1 | 2 | 3 | 4 | 5;
   volumeTier?: string;
   onContributed?: () => void;
 }

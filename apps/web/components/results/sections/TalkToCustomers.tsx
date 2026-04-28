@@ -4,7 +4,7 @@ import { forwardRef, useState } from 'react';
 import { SubTabStrip } from '@/components/results/SubTabStrip';
 
 interface TalkToCustomersProps {
-  category: 1 | 2 | 3 | 4;
+  category: 1 | 2 | 3 | 4 | 5;
   pspName: string;
 }
 
@@ -15,8 +15,11 @@ const TEMPLATE_TABS = [
   { key: 'staff', label: 'Staff briefing' },
 ];
 
-function getTemplates(category: 1 | 2 | 3 | 4, pspName: string): Record<string, string> {
-  const isSurcharging = category === 3 || category === 4;
+function getTemplates(category: 1 | 2 | 3 | 4 | 5, pspName: string): Record<string, string> {
+  // Cat 5 (zero_cost) merchants stop charging the customer-facing surcharge
+  // — structurally identical to Cat 3/4 from the customer's point of view —
+  // so they get the same surcharge-removal templates.
+  const isSurcharging = category === 3 || category === 4 || category === 5;
 
   const surchargeRemoval = isSurcharging
     ? `We're pleased to let you know that from 1 October 2026, we will no longer be adding a surcharge to Visa, Mastercard, and eftpos card payments. This follows new regulations by the Reserve Bank of Australia that ban surcharging on these networks.`

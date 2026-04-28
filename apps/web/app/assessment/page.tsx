@@ -356,13 +356,22 @@ export default function AssessmentPage() {
 
                   setMerchantInput(input);
                 }}
-                onNext={() => goToStep('step3')}
+                onNext={() => {
+                  // Cat 5 pre-fill: zero-cost surcharge mechanism always covers
+                  // Visa/Mastercard/eftpos. Pre-set so Step 3 can ask only the
+                  // remaining question (separate Amex surcharge).
+                  if (planType === 'zero_cost' && surchargeNetworks.length === 0) {
+                    setSurchargeNetworks(['visa', 'mastercard', 'eftpos']);
+                  }
+                  goToStep('step3');
+                }}
                 onBack={() => goToStep('step1')}
               />
             )}
 
             {phase === 'step3' && (
               <Step3Surcharging
+                mode={planType === 'zero_cost' ? 'zero_cost' : 'standard'}
                 surcharging={surcharging}
                 surchargeRate={surchargeRate}
                 surchargeNetworks={surchargeNetworks}

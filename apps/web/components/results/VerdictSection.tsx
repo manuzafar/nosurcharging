@@ -18,7 +18,7 @@ interface VerdictSectionProps {
   outputs: AssessmentOutputs;
   volume: number;
   pspName: string;
-  planType: 'flat' | 'costplus' | 'blended';
+  planType: 'flat' | 'costplus' | 'blended' | 'zero_cost';
   msfRate: number;
   surcharging: boolean;
   surchargeRate: number;
@@ -26,7 +26,7 @@ interface VerdictSectionProps {
 
 // Situation pill variants — 20px pill radius under the Modern Fintech Hierarchy
 export const SITUATION_PILLS: Record<
-  1 | 2 | 3 | 4,
+  1 | 2 | 3 | 4 | 5,
   { background: string; color: string }
 > = {
   1: {
@@ -42,6 +42,10 @@ export const SITUATION_PILLS: Record<
     color: 'var(--color-text-danger)',
   },
   4: {
+    background: 'var(--color-background-danger)',
+    color: 'var(--color-text-danger)',
+  },
+  5: {
     background: 'var(--color-background-danger)',
     color: 'var(--color-text-danger)',
   },
@@ -76,12 +80,18 @@ function formatPct(rate: number): string {
 function buildContextLine(
   volume: number,
   pspName: string,
-  planType: 'flat' | 'costplus' | 'blended',
+  planType: 'flat' | 'costplus' | 'blended' | 'zero_cost',
   msfRate: number,
   surcharging: boolean,
   surchargeRate: number,
 ): string {
   const parts: string[] = [`${formatVolumeShort(volume)} annual card revenue`];
+
+  if (planType === 'zero_cost') {
+    // Zero-cost has no current rate — just identify the plan structure.
+    parts.push(`${pspName} zero-cost EFTPOS`);
+    return parts.join(' · ');
+  }
 
   if (planType === 'flat') {
     parts.push(`${pspName} flat rate ${formatPct(msfRate)}`);
@@ -98,12 +108,13 @@ function buildContextLine(
   return parts.join(' · ');
 }
 
-function getCategoryBody(category: 1 | 2 | 3 | 4, psp: string): string {
-  const bodies: Record<1 | 2 | 3 | 4, string> = {
+function getCategoryBody(category: 1 | 2 | 3 | 4 | 5, psp: string): string {
+  const bodies: Record<1 | 2 | 3 | 4 | 5, string> = {
     1: `Your cost-plus plan means interchange savings flow to you automatically on 1 October. No action is needed to capture the saving — it will appear on your next ${psp} statement after the reform date. You should still verify this with ${psp} in writing before October.`,
     2: `The interchange saving exists, but whether you see it depends on ${psp}. On a flat rate, ${psp} could absorb the full saving and keep your rate unchanged. You need to ask them directly — and get it in writing — whether they will pass through the saving.`,
     3: `Your surcharge revenue on Visa, Mastercard, and eftpos disappears on 1 October. The interchange saving offsets only a fraction of that lost revenue. You need to reprice your products or services to absorb the shortfall, and renegotiate with ${psp}.`,
     4: `You face two challenges simultaneously: your surcharge revenue disappears, and your flat rate may not pass through the interchange saving. You need to act on both fronts — reprice to absorb the surcharge loss, and negotiate with ${psp} for rate transparency.`,
+    5: `You currently pay $0 for card acceptance — your customers cover it through the surcharge ${psp} adds at the terminal. From 1 October, that surcharge cannot apply to Visa, Mastercard, or eftpos. ${psp} will move you to a standard flat-rate plan, and you'll pay for card acceptance from your own margin for the first time. Get the post-October rate from ${psp} in writing this week.`,
   };
   return bodies[category];
 }
@@ -243,7 +254,9 @@ export function VerdictSection({
             <span className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
               {rangeDriver === 'pass_through'
                 ? '— at 45% PSP pass-through (central scenario assumption)'
-                : '— at estimated card mix'}
+                : rangeDriver === 'post_reform_rate'
+                  ? '— at 1.4% market estimate (centre)'
+                  : '— at estimated card mix'}
             </span>
           </div>
 

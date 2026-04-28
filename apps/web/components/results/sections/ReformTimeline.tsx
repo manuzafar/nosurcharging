@@ -3,7 +3,7 @@
 import { AU_REFORM_DATES } from '@nosurcharging/calculations/constants/au';
 
 interface ReformTimelineProps {
-  category: 1 | 2 | 3 | 4;
+  category: 1 | 2 | 3 | 4 | 5;
   pspName: string;
   now?: Date;
 }
@@ -19,7 +19,7 @@ function formatDate(d: Date): string {
   return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function getUrgencyText(category: 1 | 2 | 3 | 4, pspName: string): string {
+function getUrgencyText(category: 1 | 2 | 3 | 4 | 5, pspName: string): string {
   switch (category) {
     case 1:
       return 'Your IC rates drop automatically. No action required, but confirm with ' + pspName + '.';
@@ -29,6 +29,8 @@ function getUrgencyText(category: 1 | 2 | 3 | 4, pspName: string): string {
       return 'Your surcharge revenue on designated networks stops. Contact ' + pspName + ' immediately.';
     case 4:
       return 'Your surcharge revenue stops and your flat rate won\'t drop automatically. Contact ' + pspName + ' now.';
+    case 5:
+      return 'Your zero-cost plan ends. ' + pspName + ' moves you to a flat rate. Get the post-October rate in writing this week.';
   }
 }
 

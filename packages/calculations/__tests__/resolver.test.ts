@@ -286,6 +286,54 @@ describe('Confidence scoring', () => {
 // Resolution trace
 // ══════════════════════════════════════════════════════════════════
 
+// ══════════════════════════════════════════════════════════════════
+// Zero-cost overrides — Cat 5 routing
+// ══════════════════════════════════════════════════════════════════
+
+describe('Zero-cost overrides', () => {
+  const ctx: ResolutionContext = { country: 'AU', industry: 'retail' };
+
+  it('isZeroCost = true when planType is zero_cost', () => {
+    const r = resolveAssessmentInputs(
+      { ...baseRaw, planType: 'zero_cost', msfRateMode: 'market_estimate' },
+      ctx,
+    );
+    expect(r.isZeroCost).toBe(true);
+    expect(r.estimatedMSFRate).toBe(0.014);
+  });
+
+  it('isZeroCost = false for flat / costplus / blended', () => {
+    expect(resolveAssessmentInputs({ ...baseRaw, planType: 'flat' }, ctx).isZeroCost).toBe(false);
+    expect(resolveAssessmentInputs({ ...baseRaw, planType: 'costplus' }, ctx).isZeroCost).toBe(false);
+    expect(resolveAssessmentInputs({ ...baseRaw, planType: 'blended' }, ctx).isZeroCost).toBe(false);
+  });
+
+  it('Amex separate surcharge data preserved (not stripped) for zero_cost', () => {
+    const r = resolveAssessmentInputs(
+      {
+        ...baseRaw,
+        planType: 'zero_cost',
+        msfRateMode: 'market_estimate',
+        surcharging: true,
+        surchargeRate: 0.015,
+        surchargeNetworks: ['visa', 'mastercard', 'eftpos', 'amex'],
+      },
+      ctx,
+    );
+    expect(r.surcharging).toBe(true);
+    expect(r.surchargeNetworks).toContain('amex');
+    expect(r.surchargeRate).toBe(0.015);
+  });
+
+  it('custom MSF rate flows through the resolver', () => {
+    const r = resolveAssessmentInputs(
+      { ...baseRaw, planType: 'zero_cost', msfRateMode: 'custom', customMSFRate: 0.013 },
+      ctx,
+    );
+    expect(r.estimatedMSFRate).toBe(0.013);
+  });
+});
+
 describe('Resolution trace', () => {
   it('labels merchant input as "Your input"', () => {
     const resolved = resolveAssessmentInputs(baseRaw, {

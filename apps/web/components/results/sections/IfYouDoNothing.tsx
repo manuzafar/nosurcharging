@@ -3,7 +3,7 @@
 import type { AssessmentOutputs } from '@nosurcharging/calculations/types';
 
 interface IfYouDoNothingProps {
-  category: 1 | 2 | 3 | 4;
+  category: 1 | 2 | 3 | 4 | 5;
   outputs: AssessmentOutputs;
   pspName: string;
 }
@@ -41,7 +41,7 @@ export function IfYouDoNothing({ category, outputs, pspName }: IfYouDoNothingPro
     );
   }
 
-  // Cat 3/4: escalating cost grid
+  // Cat 3/4/5: escalating cost grid
   const annual = Math.abs(outputs.plSwing);
   const items: GridItem[] = [
     {
@@ -73,7 +73,9 @@ export function IfYouDoNothing({ category, outputs, pspName }: IfYouDoNothingPro
   return (
     <div className="mt-4">
       <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginBottom: '16px' }}>
-        If you take no action before 1 October 2026, this is what the surcharge ban costs you.
+        {category === 5
+          ? 'If you take no action before 1 October 2026, this is what your new flat-rate cost will be.'
+          : 'If you take no action before 1 October 2026, this is what the surcharge ban costs you.'}
       </p>
 
       <div className="grid grid-cols-2 gap-3">
@@ -105,9 +107,9 @@ export function IfYouDoNothing({ category, outputs, pspName }: IfYouDoNothingPro
         }}
       >
         <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-          The surcharge ban removes your revenue instantly on 1 October. But {pspName} has no
-          obligation to reduce your rates on the same date. The asymmetry works against you
-          every day you wait.
+          {category === 5
+            ? `Your zero-cost mechanism ends on 1 October. ${pspName} will move you to a standard flat rate from that day. Negotiating later won't recover the months you've already paid at the default rate — start the conversation now.`
+            : `The surcharge ban removes your revenue instantly on 1 October. But ${pspName} has no obligation to reduce your rates on the same date. The asymmetry works against you every day you wait.`}
         </p>
       </div>
     </div>

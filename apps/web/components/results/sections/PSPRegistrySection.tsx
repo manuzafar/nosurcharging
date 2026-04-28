@@ -12,7 +12,7 @@ interface PSPRegistrySectionProps {
   pspName: string;
   planType: 'flat' | 'costplus';
   volume: number;
-  category: 1 | 2 | 3 | 4;
+  category: 1 | 2 | 3 | 4 | 5;
   industry: string;
 }
 
@@ -50,6 +50,12 @@ export const PSPRegistrySection = forwardRef<HTMLElement, PSPRegistrySectionProp
       },
       [benchmarkLoaded, pspName, planType],
     );
+
+    // Cat 5 (zero_cost) merchants don't have a current rate to contribute —
+    // they pay $0 today via the PSP-mediated surcharge. Hide the registry
+    // section entirely to avoid asking them to contribute "0%". Early return
+    // must follow all hooks (Rules of Hooks).
+    if (category === 5) return null;
 
     const handleContributed = () => {
       setContributed(true);

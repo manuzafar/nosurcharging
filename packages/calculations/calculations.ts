@@ -7,8 +7,8 @@
 
 import { getCategory } from './categories';
 import { getRatesForPeriod, getCurrentPeriod } from './periods';
-import { AU_SCHEME_FEES, AU_DEBIT_PCT_RATES, ZERO_COST_MSF_RANGE } from './constants/au';
-import type { ResolvedAssessmentInputs, AssessmentOutputs, ZeroCostOutputs } from './types';
+import { AU_SCHEME_FEES, AU_DEBIT_PCT_RATES } from './constants/au';
+import type { ResolvedAssessmentInputs, AssessmentOutputs } from './types';
 
 function round2(value: number): number {
   return Math.round(value * 100) / 100;
@@ -146,10 +146,21 @@ export function calculateMetrics(
   const surchargeRevenue = round2(volume * surchargeRate * designatedSurchargeShare);
 
   // ── P&L calculation by plan type ───────────────────────────────
+  // Cat 5 (zero_cost) routes via inputs.isZeroCost — the engine ignores
+  // surcharging/passThrough/surchargeRate for the P&L formula. Those raw
+  // values are still preserved on the resolved inputs for AssumptionsPanel
+  // transparency (e.g. separate Amex surcharge note).
+  const isZeroCost = inputs.isZeroCost === true;
+  const zeroCostMSF = inputs.estimatedMSFRate ?? 0.014;
+
   let netToday: number;
   let octNet: number;
 
-  if (planType === 'costplus') {
+  if (isZeroCost) {
+    // PSP-mediated surcharge zeroes net today; flat-rate cost from October.
+    netToday = 0;
+    octNet = round2(volume * zeroCostMSF);
+  } else if (planType === 'costplus') {
     netToday = round2(grossCOA - surchargeRevenue);
     octNet = round2(grossCOA - icSaving);
   } else {
@@ -166,7 +177,14 @@ export function calculateMetrics(
   let rangeDriver: AssessmentOutputs['rangeDriver'];
   let rangeNote: string;
 
-  if (planType === 'flat' || planType === 'blended') {
+  if (isZeroCost) {
+    // Range driven by post-reform rate uncertainty (1.2%–1.6%).
+    // plSwingLow is the more-negative (worst case) per Cat 4 sign convention.
+    plSwingLow  = round2(-1 * volume * 0.016);
+    plSwingHigh = round2(-1 * volume * 0.012);
+    rangeDriver = 'post_reform_rate';
+    rangeNote   = 'Range shows 1.2%–1.6% post-reform rate scenarios. Centre uses 1.4% market benchmark.';
+  } else if (planType === 'flat' || planType === 'blended') {
     // Range is pass-through uncertainty (does NOT reference passThrough)
     if (surcharging) {
       const netTodayFlat = round2(annualMSF - surchargeRevenue);
@@ -209,28 +227,7 @@ export function calculateMetrics(
     oct2026Scheme,
     confidence: inputs.confidence,
     period,
+    estimatedMSFRate: isZeroCost ? zeroCostMSF : undefined,
   };
 }
 
-export function calculateZeroCostMetrics(
-  inputs: ResolvedAssessmentInputs,
-  now: Date = new Date(),
-): ZeroCostOutputs {
-  const { volume } = inputs;
-  const effectiveRate = inputs.estimatedMSFRate ?? ZERO_COST_MSF_RANGE.default;
-  return {
-    modelType:        'zero_cost',
-    preReformNetCost: 0,
-    postReformNetCost: round2(volume * effectiveRate),
-    reformImpact:     round2(volume * effectiveRate),
-    plSwingLow:       round2(volume * ZERO_COST_MSF_RANGE.low),
-    plSwing:          round2(volume * effectiveRate),
-    plSwingHigh:      round2(volume * ZERO_COST_MSF_RANGE.high),
-    rangeDriver:      'post_reform_rate',
-    rangeNote:        'Range shows 1.2%–1.6% post-reform rate scenarios. Centre uses RBA 1.4% benchmark.',
-    estimatedMSFRate: effectiveRate,
-    confidence:       'directional',
-    urgency:          'critical',
-    period:           getCurrentPeriod(now),
-  };
-}

@@ -26,7 +26,7 @@ function formatPct(rate: number): string {
 // ── Public entry point ───────────────────────────────────────────
 
 export function buildActions(
-  category: 1 | 2 | 3 | 4 | 'zero_cost',
+  category: 1 | 2 | 3 | 4 | 5,
   psp: string,
   industry: string,
   ctx: ActionContext,
@@ -34,8 +34,6 @@ export function buildActions(
 ): ActionItem[] {
   // industry reserved for Phase 2 industry-specific copy
   void industry;
-
-  if (category === 'zero_cost') return buildZeroCostActions(psp);
 
   const isBlended = planType === 'blended';
 
@@ -48,6 +46,8 @@ export function buildActions(
       return buildCat3Actions(psp, ctx);
     case 4:
       return buildCat4Actions(psp, ctx, isBlended);
+    case 5:
+      return buildCat5Actions(psp);
   }
 }
 
@@ -219,27 +219,28 @@ function buildCat4Actions(psp: string, ctx: ActionContext, isBlended: boolean = 
   return actions;
 }
 
-// ── Zero-cost actions ────────────────────────────────────────────
+// ── Category 5: zero-cost EFTPOS ────────────────────────────────
+// Plan ends 1 October. Merchant moves from $0 net to flat-rate cost.
 
-function buildZeroCostActions(psp: string): ActionItem[] {
+function buildCat5Actions(psp: string): ActionItem[] {
   return [
     {
       priority: 'urgent',
-      timeAnchor: 'This week',
+      timeAnchor: 'THIS WEEK',
       text: `Call ${psp} and ask what plan you will be transferred to`,
       script: `My zero-cost plan is built on the surcharge mechanism. When the surcharge ban takes effect on 1 October 2026, that mechanism ends. What plan will I be transferred to, and at what rate? I need a written quote before October.`,
       why: `Your zero-cost model cannot survive the surcharge ban. You need to know your post-reform rate now to plan cash flow.`,
     },
     {
       priority: 'urgent',
-      timeAnchor: 'This week',
+      timeAnchor: 'THIS WEEK',
       text: `Calculate your new monthly payment cost`,
       script: `Multiply your monthly card turnover by your expected post-reform rate (use 1.4% if you don't have a confirmed rate). This is your new monthly payment cost from 1 October. Build it into your cash flow now.`,
       why: `Going from $0 to a percentage-based fee is a material change. Cash flow planning needs to start immediately.`,
     },
     {
       priority: 'urgent',
-      timeAnchor: 'Before August 2026',
+      timeAnchor: 'BEFORE 1 AUGUST 2026',
       text: `Get quotes from at least two other payment providers`,
       script: `I am currently on zero-cost EFTPOS. What is your best rate for a merchant switching off that model?`,
       why: `Use ${psp}'s quote as your benchmark. Competition drives better rates.`,

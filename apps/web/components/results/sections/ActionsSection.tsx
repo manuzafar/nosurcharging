@@ -15,7 +15,7 @@ const ACTIONS_TABS = [
 
 interface ActionsSectionProps {
   actions: ActionItem[];
-  category: 1 | 2 | 3 | 4;
+  category: 1 | 2 | 3 | 4 | 5;
   outputs: AssessmentOutputs;
   passThrough: number;
   volume: number;

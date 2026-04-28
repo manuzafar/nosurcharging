@@ -4,7 +4,7 @@ import { useState } from 'react';
 import type { AssessmentOutputs } from '@nosurcharging/calculations/types';
 
 interface YourOptionsProps {
-  category: 1 | 2 | 3 | 4;
+  category: 1 | 2 | 3 | 4 | 5;
   outputs: AssessmentOutputs;
   passThrough: number;
   volume: number;

@@ -142,4 +142,72 @@ describe('VerdictSection', () => {
     expect(text).not.toMatch(/your PSP/i);
     expect(text).not.toMatch(/your provider/i);
   });
+
+  describe('Category 5 — zero-cost EFTPOS', () => {
+    function cat5Outputs(): AssessmentOutputs {
+      return makeOutputs({
+        category: 5,
+        netToday: 0,
+        octNet: 8_400,
+        plSwing: -8_400,
+        plSwingLow: -9_600,
+        plSwingHigh: -7_200,
+        rangeDriver: 'post_reform_rate',
+        rangeNote: 'Range shows 1.2%–1.6% post-reform rate scenarios. Centre uses 1.4% market benchmark.',
+        estimatedMSFRate: 0.014,
+      });
+    }
+
+    it('renders "Situation 5" pill', () => {
+      render(<VerdictSection outputs={cat5Outputs()} {...COMMON_PROPS} planType="zero_cost" />);
+      expect(screen.getByText(/Situation 5/)).toBeInTheDocument();
+    });
+
+    it('renders the Cat 5 verdict headline', () => {
+      render(<VerdictSection outputs={cat5Outputs()} {...COMMON_PROPS} planType="zero_cost" />);
+      expect(
+        screen.getByText('Your zero-cost plan ends on 1 October.'),
+      ).toBeInTheDocument();
+    });
+
+    it('context line shows "zero-cost EFTPOS" not flat-rate %', () => {
+      render(
+        <VerdictSection
+          outputs={cat5Outputs()}
+          volume={600_000}
+          pspName="Square"
+          planType="zero_cost"
+          msfRate={0}
+          surcharging={false}
+          surchargeRate={0}
+        />,
+      );
+      const text = document.body.textContent ?? '';
+      expect(text).toContain('Square zero-cost EFTPOS');
+      expect(text).not.toContain('flat rate');
+    });
+
+    it('body explains the PSP-mediated surcharge ending and the post-October rate', () => {
+      render(<VerdictSection outputs={cat5Outputs()} {...COMMON_PROPS} pspName="Square" planType="zero_cost" />);
+      const text = document.body.textContent ?? '';
+      expect(text).toContain('You currently pay $0');
+      expect(text).toContain('flat-rate plan');
+      expect(text).toContain('Square');
+      expect(text).not.toMatch(/your PSP/i);
+    });
+
+    it('range expected line uses the 1.4% market estimate descriptor', () => {
+      render(<VerdictSection outputs={cat5Outputs()} {...COMMON_PROPS} planType="zero_cost" />);
+      const text = document.body.textContent ?? '';
+      expect(text).toContain('1.4% market estimate');
+    });
+
+    it('daily anchor reads as "in net payments cost" for the negative plSwing', () => {
+      render(<VerdictSection outputs={cat5Outputs()} {...COMMON_PROPS} planType="zero_cost" />);
+      const text = document.body.textContent ?? '';
+      // Math.round(8400 / 365) = 23
+      expect(text).toContain('$23 more per day');
+      expect(text).toContain('in net payments cost');
+    });
+  });
 });
