@@ -31,7 +31,7 @@ export default function AssessmentPage() {
 
   // Form state — persists across steps
   const [volume, setVolume] = useState(0);
-  const [planType, setPlanType] = useState<'flat' | 'costplus' | 'blended' | 'zero_cost' | null>(null);
+  const [planType, setPlanType] = useState<'flat' | 'costplus' | 'blended' | 'zero_cost' | 'strategic_rate' | null>(null);
   const [psp, setPsp] = useState<string | null>(null);
   const [merchantInput, setMerchantInput] = useState<MerchantInputOverrides>({});
   const [surcharging, setSurcharging] = useState<boolean | null>(null);
@@ -44,7 +44,6 @@ export default function AssessmentPage() {
   const [customMSFRate, setCustomMSFRate] = useState<number | null>(null);
   const [blendedDebitRate, setBlendedDebitRate] = useState<number | null>(null);
   const [blendedCreditRate, setBlendedCreditRate] = useState<number | null>(null);
-  const [strategicRateSelected, setStrategicRateSelected] = useState(false);
   const [planTypeUnknown, setPlanTypeUnknown] = useState(false);
 
   // Flat-rate MSF — SPRINT_BRIEF.md Sprint 2 UX-06. Default 1.4% (market
@@ -151,40 +150,21 @@ export default function AssessmentPage() {
     setPhase('error');
   };
 
-  // Strategic rate inline exit — replaces entire flow, URL unchanged
-  if (strategicRateSelected) {
-    return (
-      <main className="min-h-screen bg-paper">
-        <div className="mx-auto max-w-assessment px-5 py-8">
-          <div className="text-center">
-            <p className="text-label tracking-widest text-accent">STRATEGIC RATE</p>
-            <h2 className="mt-4 font-serif text-heading-lg">
-              You may have a strategic interchange rate
-            </h2>
-            <p className="mt-4 text-body text-gray-600">
-              Merchants processing over $50M annually or with self-reported strategic rates
-              typically have individually negotiated interchange arrangements that fall
-              outside standard category analysis.
-            </p>
-            <p className="mt-4 text-body text-gray-600">
-              Our standard assessment cannot accurately model your position.
-              We recommend specialist guidance for your pricing review.
-            </p>
-            <div className="mt-8">
-              <button
-                type="button"
-                onClick={() => setStrategicRateSelected(false)}
-                className="rounded-lg border border-gray-200 px-6 py-2 text-body-sm text-gray-600
-                  hover:border-gray-300 transition-colors duration-150"
-              >
-                Back to assessment
-              </button>
-            </div>
-          </div>
-        </div>
-      </main>
-    );
-  }
+  // Strategic-rate handler. Sets planType, fills the calc-only fields with
+  // safe defaults (none affect the strategic-rate output — submitAssessment
+  // intercepts on planType before resolve/calculate runs), and jumps the
+  // phase straight to 'reveal'. The reveal screen submits the row, the
+  // server returns strategicRateExit:true, and the merchant lands on
+  // /results which renders <StrategicRateExitPage />.
+  const handleStrategicRateSelected = () => {
+    setPlanType('strategic_rate');
+    setSurcharging(false);
+    setSurchargeNetworks([]);
+    setSurchargeRate(0);
+    setIndustry((prev) => prev ?? 'other');
+    setPhase('reveal');
+    Analytics.strategicRateExitViewed({ trigger: 'self_select' });
+  };
 
   const currentStep =
     phase === 'step1' ? 1 : phase === 'step2' ? 2 : phase === 'step3' ? 3 : phase === 'step4' ? 4 : 0;
@@ -309,10 +289,7 @@ export default function AssessmentPage() {
                     credit_provided: credit !== null,
                   });
                 }}
-                onStrategicRateSelected={() => {
-                  setStrategicRateSelected(true);
-                  Analytics.strategicRateExitViewed({ trigger: 'self_select' });
-                }}
+                onStrategicRateSelected={handleStrategicRateSelected}
                 onPspChange={(name) => {
                   setPsp(name);
                   // SPRINT_BRIEF.md Sprint 2 UX-06: pre-fill flat-rate MSF

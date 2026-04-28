@@ -650,34 +650,24 @@ describe('Scenario 9 — ATV-dependent debit', () => {
 // Scenario 10 — Strategic rate detection + getCategory defensive
 // ══════════════════════════════════════════════════════════════════
 
-describe('Scenario 10 — Strategic rate detection', () => {
+describe('Scenario 10 — Strategic rate detection (tile-only)', () => {
   it('self-reported strategic_rate → detected', () => {
-    const result = detectStrategicRate('strategic_rate', 1_000_000, 'Stripe');
+    const result = detectStrategicRate('strategic_rate');
     expect(result.detected).toBe(true);
     expect(result.triggerReason).toBe('self_reported');
   });
 
-  it('$50M+ volume at CommBank → detected', () => {
-    const result = detectStrategicRate('flat', 50_000_000, 'CommBank');
-    expect(result.detected).toBe(true);
-    expect(result.triggerReason).toBe('volume_threshold');
-  });
-
-  it('$50M+ volume at Stripe → NOT detected (not a bank)', () => {
-    const result = detectStrategicRate('flat', 50_000_000, 'Stripe');
+  it('flat planType → not detected', () => {
+    const result = detectStrategicRate('flat');
     expect(result.detected).toBe(false);
     expect(result.triggerReason).toBeNull();
   });
 
-  it('$10M at CommBank → NOT detected (volume too low)', () => {
-    const result = detectStrategicRate('flat', 10_000_000, 'CommBank');
-    expect(result.detected).toBe(false);
-  });
-
-  it('$50M+ at ANZ → detected', () => {
-    const result = detectStrategicRate('costplus', 60_000_000, 'ANZ Worldline');
-    expect(result.detected).toBe(true);
-    expect(result.triggerReason).toBe('volume_threshold');
+  it('costplus / blended / zero_cost / unknown → not detected', () => {
+    expect(detectStrategicRate('costplus').detected).toBe(false);
+    expect(detectStrategicRate('blended').detected).toBe(false);
+    expect(detectStrategicRate('zero_cost').detected).toBe(false);
+    expect(detectStrategicRate('something_else').detected).toBe(false);
   });
 });
 

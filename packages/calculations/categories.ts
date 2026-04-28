@@ -26,15 +26,15 @@ export function getCategory(
   throw new Error(`Invalid category inputs: planType=${planType}, surcharging=${surcharging}`);
 }
 
-export function detectStrategicRate(
-  planType: string, volume: number, psp: string,
-): StrategicRateDetection {
-  const selfReported = planType === 'strategic_rate';
-  const pspIsCapable = ['commbank','nab','westpac','anz'].some(kw => psp.toLowerCase().includes(kw));
-  const volumeAndPSP = volume >= 50_000_000 && pspIsCapable;
+// Strategic-rate detection is explicit-tile-only — fires iff the merchant
+// picks the strategic rate tile in Step 2. The previous volume-and-PSP
+// heuristic ($50M+ at CommBank/NAB/Westpac/ANZ) was removed because it
+// surprised large-bank merchants who wanted a normal Cat 1-4 result.
+export function detectStrategicRate(planType: string): StrategicRateDetection {
+  const detected = planType === 'strategic_rate';
   return {
-    detected:      selfReported || volumeAndPSP,
-    triggerReason: selfReported ? 'self_reported' : volumeAndPSP ? 'volume_threshold' : null,
+    detected,
+    triggerReason: detected ? 'self_reported' : null,
   };
 }
 
