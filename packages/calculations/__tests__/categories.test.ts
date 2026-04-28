@@ -17,4 +17,14 @@ describe('getCategory', () => {
   it('returns 4 for flat rate + surcharging', () => {
     expect(getCategory('flat', true)).toBe(4);
   });
+
+  it('returns 5 for zero_cost (regardless of surcharging)', () => {
+    expect(getCategory('zero_cost', false)).toBe(5);
+  });
+
+  it('returns 5 for zero_cost with surcharging=true (Amex separate)', () => {
+    // Cat 5 short-circuits before the surcharging check — separate Amex
+    // surcharge doesn't move the category.
+    expect(getCategory('zero_cost', true)).toBe(5);
+  });
 });

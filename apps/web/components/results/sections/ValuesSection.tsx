@@ -12,7 +12,7 @@ interface ValuesSectionProps {
   resolutionTrace: ResolutionTrace;
   volume: number;
   pspName: string;
-  planType: 'flat' | 'costplus' | 'blended';
+  planType: 'flat' | 'costplus' | 'blended' | 'zero_cost';
   msfRate: number;
   surcharging: boolean;
   surchargeRate: number;

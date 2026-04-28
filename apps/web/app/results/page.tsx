@@ -4,8 +4,8 @@
 //
 // Routing:
 //   strategicRateExit → StrategicRateExitPage (no dollar figures)
-//   ZeroCostOutputs   → ZeroCostResultsVariant (critical banner, before/after)
 //   standard          → full results with sidebar, sections, sticky top bar
+//                       (Cat 1-5 all flow through this single shell)
 //
 // State managed here:
 //   outputs: AssessmentOutputs (from server, updated by slider/refinement)
@@ -16,7 +16,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getAssessment } from '@/actions/getAssessment';
 import type { StoredAssessment } from '@/actions/getAssessment';
-import type { AssessmentOutputs, ZeroCostOutputs, RawAssessmentData, ResolutionContext, ResolutionTrace, ActionItem } from '@nosurcharging/calculations/types';
+import type { AssessmentOutputs, RawAssessmentData, ResolutionContext, ActionItem } from '@nosurcharging/calculations/types';
 import { resolveAssessmentInputs } from '@nosurcharging/calculations/rules/resolver';
 import { sanitiseForHTML } from '@/lib/sanitise';
 import { Analytics, getVolumeTier, getPlSwingBucket } from '@/lib/analytics';
@@ -24,7 +24,6 @@ import { useScrollSpy } from '@/hooks/useScrollSpy';
 
 import { SkeletonLoader } from '@/components/results/SkeletonLoader';
 import { StrategicRateExitPage } from '@/components/results/StrategicRateExitPage';
-import { ZeroCostResultsVariant } from '@/components/results/ZeroCostResultsVariant';
 import { Footer } from '@/components/homepage/Footer';
 
 // Shell
@@ -68,9 +67,8 @@ function ResultsContent() {
   const [actions, setActions] = useState<ActionItem[]>([]);
   const [passThrough, setPassThrough] = useState(0.45); // CB-08: 45% default
   const [loading, setLoading] = useState(true);
-  // Track variant routing
+  // Strategic rate exit is the only non-standard route post-Cat-5-refactor.
   const [isStrategicExit, setIsStrategicExit] = useState(false);
-  const [zeroCostOutputs, setZeroCostOutputs] = useState<ZeroCostOutputs | null>(null);
   // Accuracy — base 20%, updated live by RefinementPanel via onAccuracyChange
   const [accuracy, setAccuracy] = useState(20);
 
@@ -106,19 +104,12 @@ function ResultsContent() {
         return;
       }
 
-      if (data.variant_type === 'zero_cost' || (data.outputs && 'modelType' in data.outputs)) {
-        setZeroCostOutputs(data.outputs as ZeroCostOutputs);
-        setActions((data.outputs as { actions?: ActionItem[] }).actions ?? []);
-        setLoading(false);
-        return;
-      }
-
       setOutputs(data.outputs as AssessmentOutputs);
       setActions((data.outputs as { actions?: ActionItem[] }).actions ?? []);
       setLoading(false);
 
-      // Fire results_viewed for the standard Cat 1-4 path. Strategic and
-      // zero-cost variants don't reach here (they returned earlier above).
+      // Fire results_viewed for the standard Cat 1-5 path. Strategic-rate
+      // exit returned earlier above.
       // Set the time ref BEFORE the event so any section_visited that
       // races in computes a sane time_since_results_viewed_seconds.
       resultsViewTimeRef.current = Date.now();
@@ -167,6 +158,9 @@ function ResultsContent() {
     const stored = assessment.inputs as Record<string, unknown>;
     const rawPlanType = (stored.planType as RawAssessmentData['planType']) ?? 'flat';
     // Refinement only applies to the standard Cat 1-4 flow.
+    // Strategic rate exit doesn't run refinement (no rate context). Cat 5
+    // (zero_cost) does flow through the main shell, but RefinementPanel only
+    // applies to flat/costplus/blended cost composition — skip for Cat 5.
     if (rawPlanType === 'zero_cost' || rawPlanType === 'strategic_rate') return null;
     const rawForResolve: RawAssessmentData = {
       volume: (stored.volume as number) ?? 0,
@@ -197,19 +191,6 @@ function ResultsContent() {
     return <StrategicRateExitPage onBack={() => router.push('/assessment')} />;
   }
 
-  // Zero-cost variant
-  if (zeroCostOutputs && assessment) {
-    const storedInputs = assessment.inputs as Record<string, unknown>;
-    return (
-      <ZeroCostResultsVariant
-        outputs={zeroCostOutputs}
-        volume={(storedInputs.volume as number) ?? 0}
-        pspName={sanitiseForHTML((storedInputs.psp as string) ?? 'Unknown')}
-        actions={actions}
-      />
-    );
-  }
-
   if (!assessment || !outputs) {
     return <SkeletonLoader />;
   }
@@ -219,7 +200,7 @@ function ResultsContent() {
   const category = outputs.category;
   const volume = (storedInputs.volume as number) ?? 0;
   const pspName = sanitiseForHTML((storedInputs.psp as string) ?? 'Unknown');
-  const planType = (storedInputs.planType as 'flat' | 'costplus' | 'blended') ?? 'flat';
+  const planType = (storedInputs.planType as 'flat' | 'costplus' | 'blended' | 'zero_cost') ?? 'flat';
   // Use freshly computed resolutionTrace from resolvedInputs (PB-3)
   const resolutionTrace = resolvedInputs?.resolutionTrace ?? {};
 
@@ -311,7 +292,7 @@ function ResultsContent() {
           <PSPRegistrySection
             assessmentId={assessmentId ?? ''}
             pspName={pspName}
-            planType={planType === 'blended' ? 'flat' : planType}
+            planType={planType === 'blended' || planType === 'zero_cost' ? 'flat' : planType}
             volume={volume}
             category={category}
             industry={(storedInputs.industry as string) ?? 'other'}

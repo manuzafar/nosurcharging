@@ -5,9 +5,9 @@ import type { AssessmentOutputs } from '@nosurcharging/calculations/types';
 
 interface NegotiationBriefProps {
   pspName: string;
-  planType: 'flat' | 'costplus' | 'blended';
+  planType: 'flat' | 'costplus' | 'blended' | 'zero_cost';
   volume: number;
-  category: 1 | 2 | 3 | 4;
+  category: 1 | 2 | 3 | 4 | 5;
   outputs: AssessmentOutputs;
 }
 
@@ -100,9 +100,15 @@ const ALT_PSPS = [
 export const NegotiationBrief = forwardRef<HTMLElement, NegotiationBriefProps>(
   function NegotiationBrief({ pspName, planType, volume, category, outputs }, ref) {
     const contact = getContact(pspName);
-    const planLabel = planType === 'costplus' ? 'cost-plus (IC+)' : planType === 'blended' ? 'blended' : 'flat rate';
+    const planLabel =
+      planType === 'costplus' ? 'cost-plus (IC+)'
+      : planType === 'blended' ? 'blended'
+      : planType === 'zero_cost' ? 'zero-cost EFTPOS'
+      : 'flat rate';
 
-    const scriptText = `"I process ${formatVolume(volume)} annually on a ${planLabel} plan with ${pspName}. With the RBA's interchange cuts taking effect on 1 October, I'd like to understand how my rates will change. Can you confirm whether the IC reduction will be passed through to me, and what my new effective rate will be?"`;
+    const scriptText = category === 5
+      ? `"I process ${formatVolume(volume)} annually on ${pspName}'s zero-cost EFTPOS plan. The surcharge mechanism that covers my card costs ends on 1 October when the RBA's surcharge ban takes effect. Which plan will I be transferred to, and what will my effective rate be? I need a written quote before October so I can plan cash flow and compare alternatives."`
+      : `"I process ${formatVolume(volume)} annually on a ${planLabel} plan with ${pspName}. With the RBA's interchange cuts taking effect on 1 October, I'd like to understand how my rates will change. Can you confirm whether the IC reduction will be passed through to me, and what my new effective rate will be?"`;
 
     return (
       <section id="negotiate" data-section="negotiate" ref={ref} className="pt-8">

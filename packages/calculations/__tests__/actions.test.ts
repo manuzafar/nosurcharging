@@ -131,10 +131,45 @@ describe('buildActions', () => {
     });
   });
 
+  describe('Category 5 (zero-cost EFTPOS)', () => {
+    const actions = buildActions(5, 'Square', 'retail', CTX, 'zero_cost');
+
+    it('returns 3 actions', () => {
+      expect(actions).toHaveLength(3);
+    });
+
+    it('every action has non-empty text + script + why', () => {
+      for (const action of actions) {
+        expect(action.text).toBeTruthy();
+        expect(action.script).toBeTruthy();
+        expect(action.why).toBeTruthy();
+      }
+    });
+
+    it('all three actions are URGENT', () => {
+      for (const action of actions) {
+        expect(action.priority).toBe('urgent');
+      }
+    });
+
+    it('first action asks Square what plan the merchant will be transferred to', () => {
+      expect(actions[0]!.text).toMatch(/Square/);
+      expect(actions[0]!.text).toMatch(/transferred/);
+    });
+
+    it('second action references the post-reform 1.4% rate', () => {
+      expect(actions[1]!.script).toContain('1.4%');
+    });
+
+    it('third action interpolates Square as the benchmark provider', () => {
+      expect(actions[2]!.why).toMatch(/Square/);
+    });
+  });
+
   describe('banned phrases', () => {
     it('no action across any category contains "your PSP"', () => {
-      for (const cat of [1, 2, 3, 4] as const) {
-        const actions = buildActions(cat, 'Stripe', 'retail', CTX);
+      for (const cat of [1, 2, 3, 4, 5] as const) {
+        const actions = buildActions(cat, 'Stripe', 'retail', CTX, cat === 5 ? 'zero_cost' : undefined);
         const flat = actions
           .flatMap((a) => [a.text, a.script ?? '', a.why ?? ''])
           .join(' ');
@@ -143,8 +178,8 @@ describe('buildActions', () => {
     });
 
     it('no action across any category contains "your provider"', () => {
-      for (const cat of [1, 2, 3, 4] as const) {
-        const actions = buildActions(cat, 'Stripe', 'retail', CTX);
+      for (const cat of [1, 2, 3, 4, 5] as const) {
+        const actions = buildActions(cat, 'Stripe', 'retail', CTX, cat === 5 ? 'zero_cost' : undefined);
         const flat = actions
           .flatMap((a) => [a.text, a.script ?? '', a.why ?? ''])
           .join(' ');

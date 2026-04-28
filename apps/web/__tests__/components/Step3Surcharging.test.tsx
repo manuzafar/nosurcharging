@@ -131,4 +131,88 @@ describe('Step3Surcharging', () => {
     );
     expect(screen.getByRole('button', { name: /next/i })).toBeEnabled();
   });
+
+  describe('mode="zero_cost" — Cat 5 simplified Amex-only question', () => {
+    it('renders the simplified zero-cost heading and Amex question', () => {
+      render(
+        <Step3Surcharging
+          {...defaultProps}
+          mode="zero_cost"
+          surchargeNetworks={['visa', 'mastercard', 'eftpos']}
+        />,
+      );
+      expect(screen.getByText(/one last question about amex/i)).toBeInTheDocument();
+      expect(screen.getByText(/separately surcharge amex/i)).toBeInTheDocument();
+    });
+
+    it('does NOT show PayPal/BNPL/Visa+Mastercard checkbox options', () => {
+      render(
+        <Step3Surcharging
+          {...defaultProps}
+          mode="zero_cost"
+          surchargeNetworks={['visa', 'mastercard', 'eftpos']}
+        />,
+      );
+      // No standard "Which networks do you surcharge?" multi-select
+      expect(screen.queryByText(/which networks do you surcharge/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/bnpl/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/paypal/i)).not.toBeInTheDocument();
+      // No standalone Visa & Mastercard checkbox option
+      expect(screen.queryByRole('checkbox', { name: /visa.*mastercard/i })).not.toBeInTheDocument();
+    });
+
+    it('clicking Yes appends "amex" to surchargeNetworks (preserving designated three)', async () => {
+      render(
+        <Step3Surcharging
+          {...defaultProps}
+          mode="zero_cost"
+          surchargeNetworks={['visa', 'mastercard', 'eftpos']}
+        />,
+      );
+      await user.click(screen.getByText('Yes'));
+      expect(onSurchargingChange).toHaveBeenCalledWith(true);
+      expect(onNetworksChange).toHaveBeenCalledWith(['visa', 'mastercard', 'eftpos', 'amex']);
+    });
+
+    it('clicking No removes "amex" and zeroes the rate', async () => {
+      render(
+        <Step3Surcharging
+          {...defaultProps}
+          mode="zero_cost"
+          surcharging={true}
+          surchargeRate={0.015}
+          surchargeNetworks={['visa', 'mastercard', 'eftpos', 'amex']}
+        />,
+      );
+      await user.click(screen.getByText('No'));
+      expect(onSurchargingChange).toHaveBeenCalledWith(false);
+      expect(onSurchargeRateChange).toHaveBeenCalledWith(0);
+      expect(onNetworksChange).toHaveBeenCalledWith(['visa', 'mastercard', 'eftpos']);
+    });
+
+    it('Next disabled when Yes selected but no Amex rate entered', () => {
+      render(
+        <Step3Surcharging
+          {...defaultProps}
+          mode="zero_cost"
+          surcharging={true}
+          surchargeRate={0}
+          surchargeNetworks={['visa', 'mastercard', 'eftpos', 'amex']}
+        />,
+      );
+      expect(screen.getByRole('button', { name: /next/i })).toBeDisabled();
+    });
+
+    it('Next enabled when No selected', () => {
+      render(
+        <Step3Surcharging
+          {...defaultProps}
+          mode="zero_cost"
+          surcharging={false}
+          surchargeNetworks={['visa', 'mastercard', 'eftpos']}
+        />,
+      );
+      expect(screen.getByRole('button', { name: /next/i })).toBeEnabled();
+    });
+  });
 });

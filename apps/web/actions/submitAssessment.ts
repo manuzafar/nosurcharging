@@ -23,7 +23,7 @@ import { hashIP, getClientIP } from '@/lib/security';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { getSessionId } from './createSession';
 import { resolveAssessmentInputs } from '@nosurcharging/calculations/rules/resolver';
-import { calculateMetrics, calculateZeroCostMetrics } from '@nosurcharging/calculations/calculations';
+import { calculateMetrics } from '@nosurcharging/calculations/calculations';
 import { buildActions } from '@nosurcharging/calculations/actions';
 import { detectStrategicRate } from '@nosurcharging/calculations/categories';
 import { sanitiseForHTML } from '@/lib/security';
@@ -32,7 +32,6 @@ import type {
   ResolutionContext,
   MerchantInputOverrides,
   AssessmentOutputs,
-  ZeroCostOutputs,
   ActionItem,
 } from '@nosurcharging/calculations/types';
 
@@ -57,7 +56,7 @@ export interface AssessmentFormData {
 export interface AssessmentResult {
   success: boolean;
   assessmentId?: string;
-  outputs?: AssessmentOutputs | ZeroCostOutputs;
+  outputs?: AssessmentOutputs;
   actions?: ActionItem[];
   strategicRateExit?: boolean;
   error?: string;
@@ -112,13 +111,15 @@ export async function submitAssessment(
     ? { detected: false, triggerReason: null as string | null }
     : detectStrategicRate(formData.planType, formData.volume, formData.psp);
   if (strategicCheck.detected) {
+    // Migration 007: strategic_rate moved from category=5 to category=6 to
+    // free up slot 5 for first-class zero_cost.
     const { data: inserted } = await supabaseAdmin
       .from('assessments')
       .insert({
         session_id: sessionId,
         idempotency_key: idempotencyKey,
         country_code: 'AU',
-        category: 5,
+        category: 6,
         variant_type: 'strategic_rate',
         inputs: { volume: formData.volume, psp: formData.psp, industry: formData.industry, planType: formData.planType },
         outputs: { strategic_rate: true, triggerReason: strategicCheck.triggerReason },
@@ -157,28 +158,30 @@ export async function submitAssessment(
     },
   };
 
-  // 9. resolveAssessmentInputs() → route to correct engine
+  // 9. resolveAssessmentInputs() → calculateMetrics for all non-strategic paths.
+  // Cat 5 (zero_cost) is now first-class — same engine, isZeroCost flag routes
+  // the P&L branch internally.
   const resolved = resolveAssessmentInputs(raw, ctx);
-  const outputs: AssessmentOutputs | ZeroCostOutputs =
-    formData.planType === 'zero_cost'
-      ? calculateZeroCostMetrics(resolved)
-      : calculateMetrics(resolved);
+  const outputs: AssessmentOutputs = calculateMetrics(resolved);
 
   // 10. Build action list
-  const categoryArg = formData.planType === 'zero_cost'
-    ? ('zero_cost' as const)
-    : (outputs as AssessmentOutputs).category;
-  const actions = buildActions(categoryArg, safePsp, formData.industry, {
-    volume: formData.volume,
-    surchargeRate: formData.surchargeRate,
-    surchargeRevenue: 'surchargeRevenue' in outputs ? outputs.surchargeRevenue : 0,
-    icSaving: 'icSaving' in outputs ? outputs.icSaving : 0,
-  }, formData.planType === 'strategic_rate' ? undefined : formData.planType as 'flat' | 'costplus' | 'blended' | 'zero_cost');
+  const actions = buildActions(
+    outputs.category,
+    safePsp,
+    formData.industry,
+    {
+      volume: formData.volume,
+      surchargeRate: formData.surchargeRate,
+      surchargeRevenue: outputs.surchargeRevenue,
+      icSaving: outputs.icSaving,
+    },
+    formData.planType === 'strategic_rate'
+      ? undefined
+      : (formData.planType as 'flat' | 'costplus' | 'blended' | 'zero_cost'),
+  );
 
-  // 11. Category and variant_type sentinels
-  const categoryValue = formData.planType === 'zero_cost'
-    ? 0  // sentinel — see migration 005
-    : (outputs as AssessmentOutputs).category;
+  // 11. variant_type retained for back-compat queries; category drives routing
+  const categoryValue = outputs.category;
   const variantType = formData.planType === 'zero_cost' ? 'zero_cost' : 'standard';
 
   // 12. INSERT with idempotency key — use .select() to get generated ID

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateMetrics, calculateZeroCostMetrics } from '../calculations';
+import { calculateMetrics } from '../calculations';
 import { detectStrategicRate, getCategory } from '../categories';
 import { resolveAssessmentInputs } from '../rules/resolver';
 import type {
@@ -475,46 +475,111 @@ describe('Lower-of kink invariants', () => {
 });
 
 // ══════════════════════════════════════════════════════════════════
-// Scenario 7 — Zero-cost
+// Scenario 7 — Cat 5: $600K, zero_cost, market estimate (1.4%)
+// netToday = 0; octNet = volume × estimatedMSFRate; plSwing = -octNet
+// Range: low = -volume×0.016 (worst), high = -volume×0.012 (best)
 // ══════════════════════════════════════════════════════════════════
 
-describe('Scenario 7 — Zero-cost', () => {
-  it('preReformNetCost is literal 0', () => {
-    const inputs = makeInputs({ volume: 600_000, planType: 'zero_cost' });
-    const result = calculateZeroCostMetrics(inputs, PRE_REFORM);
-    expect(result.preReformNetCost).toBe(0);
+describe('Scenario 7 — Cat 5: $600K, zero_cost, market estimate (1.4%)', () => {
+  const inputs = makeInputs({
+    volume: 600_000,
+    planType: 'zero_cost',
+    isZeroCost: true,
+    estimatedMSFRate: 0.014,
+    surcharging: false,
+    surchargeRate: 0,
+    surchargeNetworks: [],
+    passThrough: 0,
+  });
+  const result = calculateMetrics(inputs, PRE_REFORM);
+
+  it('assigns category 5', () => {
+    expect(result.category).toBe(5);
   });
 
-  it('plSwing at $600K volume = $8,400', () => {
-    const inputs = makeInputs({ volume: 600_000, planType: 'zero_cost' });
-    const result = calculateZeroCostMetrics(inputs, PRE_REFORM);
-    // 600,000 × 0.014 = 8,400
-    expect(result.plSwing).toBeCloseTo(8400.00, 1);
+  it('netToday = $0 (PSP-mediated surcharge zeroes net)', () => {
+    expect(result.netToday).toBeCloseTo(0, 1);
   });
 
-  it('plSwingLow = volume × 1.2%', () => {
-    const inputs = makeInputs({ volume: 600_000, planType: 'zero_cost' });
-    const result = calculateZeroCostMetrics(inputs, PRE_REFORM);
-    expect(result.plSwingLow).toBeCloseTo(7200.00, 1);
+  it('octNet = $8,400 (600K × 1.4%)', () => {
+    expect(result.octNet).toBeCloseTo(8400.0, 1);
   });
 
-  it('plSwingHigh = volume × 1.6%', () => {
-    const inputs = makeInputs({ volume: 600_000, planType: 'zero_cost' });
-    const result = calculateZeroCostMetrics(inputs, PRE_REFORM);
-    expect(result.plSwingHigh).toBeCloseTo(9600.00, 1);
+  it('plSwing = -$8,400 (netToday − octNet)', () => {
+    expect(result.plSwing).toBeCloseTo(-8400.0, 1);
   });
 
-  it('confidence is always directional', () => {
-    const inputs = makeInputs({ volume: 600_000, planType: 'zero_cost' });
-    const result = calculateZeroCostMetrics(inputs, PRE_REFORM);
-    expect(result.confidence).toBe('directional');
+  it('plSwingLow = -$9,600 (worst case, 1.6% rate)', () => {
+    expect(result.plSwingLow).toBeCloseTo(-9600.0, 1);
   });
 
-  it('uses custom estimatedMSFRate when provided', () => {
-    const inputs = makeInputs({ volume: 600_000, planType: 'zero_cost', estimatedMSFRate: 0.013 });
-    const result = calculateZeroCostMetrics(inputs, PRE_REFORM);
-    expect(result.plSwing).toBeCloseTo(7800.00, 1);
+  it('plSwingHigh = -$7,200 (best case, 1.2% rate)', () => {
+    expect(result.plSwingHigh).toBeCloseTo(-7200.0, 1);
+  });
+
+  it('plSwingLow ≤ plSwing ≤ plSwingHigh (range invariant holds)', () => {
+    expect(result.plSwingLow).toBeLessThanOrEqual(result.plSwing);
+    expect(result.plSwing).toBeLessThanOrEqual(result.plSwingHigh);
+  });
+
+  it('rangeDriver = post_reform_rate', () => {
+    expect(result.rangeDriver).toBe('post_reform_rate');
+  });
+
+  it('icSaving still computed for transparency (>0)', () => {
+    expect(result.icSaving).toBeGreaterThan(0);
+  });
+
+  it('todayScheme === oct2026Scheme (scheme fees invariant holds)', () => {
+    expect(result.todayScheme).toBe(result.oct2026Scheme);
+  });
+
+  it('debitSaving >= 0 (invariant holds)', () => {
+    expect(result.debitSaving).toBeGreaterThanOrEqual(0);
+  });
+
+  it('estimatedMSFRate echoed in outputs', () => {
+    expect(result.estimatedMSFRate).toBe(0.014);
+  });
+});
+
+describe('Scenario 7b — Cat 5 with custom rate (1.3%)', () => {
+  it('uses custom estimatedMSFRate', () => {
+    const inputs = makeInputs({
+      volume: 600_000,
+      planType: 'zero_cost',
+      isZeroCost: true,
+      estimatedMSFRate: 0.013,
+    });
+    const result = calculateMetrics(inputs, PRE_REFORM);
+    expect(result.octNet).toBeCloseTo(7800.0, 1);
+    expect(result.plSwing).toBeCloseTo(-7800.0, 1);
     expect(result.estimatedMSFRate).toBe(0.013);
+  });
+});
+
+describe('Scenario 7c — Cat 5 with separate Amex surcharge (preserved, ignored by P&L)', () => {
+  it('plSwing identical with/without Amex flag', () => {
+    const base = makeInputs({
+      volume: 600_000,
+      planType: 'zero_cost',
+      isZeroCost: true,
+      estimatedMSFRate: 0.014,
+    });
+    const withAmex = makeInputs({
+      volume: 600_000,
+      planType: 'zero_cost',
+      isZeroCost: true,
+      estimatedMSFRate: 0.014,
+      surcharging: true,
+      surchargeRate: 0.015,
+      surchargeNetworks: ['visa', 'mastercard', 'eftpos', 'amex'],
+    });
+    const r1 = calculateMetrics(base, PRE_REFORM);
+    const r2 = calculateMetrics(withAmex, PRE_REFORM);
+    expect(r1.plSwing).toBeCloseTo(r2.plSwing, 1);
+    expect(r2.surchargeRevenue).toBeGreaterThanOrEqual(0);
+    expect(r2.category).toBe(5);
   });
 });
 
@@ -616,7 +681,7 @@ describe('Scenario 10 — Strategic rate detection', () => {
   });
 });
 
-describe('getCategory defensive — blended and zero_cost normalise', () => {
+describe('getCategory — blended normalises, zero_cost short-circuits', () => {
   it('blended + not surcharging → category 2', () => {
     expect(getCategory('blended', false)).toBe(2);
   });
@@ -625,8 +690,9 @@ describe('getCategory defensive — blended and zero_cost normalise', () => {
     expect(getCategory('blended', true)).toBe(4);
   });
 
-  it('zero_cost + not surcharging → category 2 (defensive)', () => {
-    expect(getCategory('zero_cost', false)).toBe(2);
+  it('zero_cost short-circuits to category 5', () => {
+    expect(getCategory('zero_cost', false)).toBe(5);
+    expect(getCategory('zero_cost', true)).toBe(5);
   });
 });
 

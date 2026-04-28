@@ -112,6 +112,10 @@ export interface ResolvedAssessmentInputs {
   resolutionTrace: ResolutionTrace;
   confidence: Confidence;
   // strategic_rate never reaches the engine — intercepted in submitAssessment.ts
+  // Cat 5 routing flag — true iff planType === 'zero_cost'. Engine reads this
+  // first to gate the Cat 5 P&L branch (ignores surcharging/passThrough/
+  // surchargeRate). Optional during phased rollout; resolver populates it.
+  isZeroCost?: boolean;
   estimatedMSFRate?: number;  // zero-cost: resolved post-reform rate
   debitRate?: number;         // blended: debit rate as proportion (e.g. 0.009)
   creditRate?: number;        // blended: credit rate as proportion (e.g. 0.018)
@@ -124,7 +128,7 @@ export interface ResolvedAssessmentInputs {
 // ── Assessment outputs ───────────────────────────────────────────
 
 export interface AssessmentOutputs {
-  category: 1 | 2 | 3 | 4;
+  category: 1 | 2 | 3 | 4 | 5;
   icSaving: number;
   debitSaving: number;
   creditSaving: number;
@@ -136,32 +140,18 @@ export interface AssessmentOutputs {
   netToday: number;
   octNet: number;
   plSwing: number;
-  plSwingLow: number;   // Cat2/blended: 0%PT. Costplus: icSaving×0.80. Fixed at submission.
-  plSwingHigh: number;  // Cat2/blended: 100%PT. Costplus: icSaving×1.20. Fixed at submission.
-  rangeDriver: 'pass_through' | 'card_mix';
+  plSwingLow: number;   // Cat2/blended: 0%PT. Costplus: icSaving×0.80. Cat5: −volume×0.016. Fixed at submission.
+  plSwingHigh: number;  // Cat2/blended: 100%PT. Costplus: icSaving×1.20. Cat5: −volume×0.012. Fixed at submission.
+  rangeDriver: 'pass_through' | 'card_mix' | 'post_reform_rate';
   rangeNote: string;
   todayScheme: number;
   oct2026Scheme: number;
   confidence: Confidence;
   period: ReformPeriod;
-}
-
-// ── Zero-cost outputs ────────────────────────────────────────────
-
-export interface ZeroCostOutputs {
-  modelType: 'zero_cost';
-  preReformNetCost: 0;           // LITERAL TYPE — compiler enforces invariant
-  postReformNetCost: number;
-  reformImpact: number;
-  plSwingLow: number;
-  plSwing: number;
-  plSwingHigh: number;
-  rangeDriver: 'post_reform_rate';
-  rangeNote: string;
-  estimatedMSFRate: number;
-  confidence: 'directional';
-  urgency: 'critical';
-  period: ReformPeriod;
+  // Cat 5 only — resolved post-reform flat rate (e.g. 0.014 for 1.4%).
+  // Echoed from ResolvedAssessmentInputs.estimatedMSFRate so MetricCards
+  // can render it without re-reading the trace. Optional for Cat 1-4.
+  estimatedMSFRate?: number;
 }
 
 // ── Strategic rate detection ─────────────────────────────────────

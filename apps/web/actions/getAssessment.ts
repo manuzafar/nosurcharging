@@ -5,14 +5,16 @@
 // Service role bypasses RLS (assessments table has SELECT USING(false) for anon).
 
 import { supabaseAdmin } from '@/lib/supabase/server';
-import type { AssessmentOutputs, ZeroCostOutputs, ActionItem } from '@nosurcharging/calculations/types';
+import type { AssessmentOutputs, ActionItem } from '@nosurcharging/calculations/types';
 
 export interface StoredAssessment {
   id: string;
   category: number;
+  // variant_type retained for back-compat queries on legacy zero_cost rows.
+  // Post-migration-007, category alone is authoritative for routing.
   variant_type: 'standard' | 'zero_cost' | 'strategic_rate';
   inputs: Record<string, unknown>;
-  outputs: (AssessmentOutputs | ZeroCostOutputs) & { actions?: ActionItem[] };
+  outputs: AssessmentOutputs & { actions?: ActionItem[] };
   created_at: string;
 }
 

@@ -6,7 +6,7 @@ import { EmailCapture } from '@/components/results/EmailCapture';
 import { ResultsDisclaimer } from '@/components/results/ResultsDisclaimer';
 
 interface HelpSectionProps {
-  category: 1 | 2 | 3 | 4;
+  category: 1 | 2 | 3 | 4 | 5;
   pspName: string;
   assessmentId: string;
   plSwing?: number;

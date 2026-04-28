@@ -11,7 +11,7 @@ import { Analytics } from '@/lib/analytics';
 interface FeedbackModalProps {
   open: boolean;
   onClose: () => void;
-  category: 1 | 2 | 3 | 4;
+  category: 1 | 2 | 3 | 4 | 5;
   volume: number;
   assessmentId?: string;
 }

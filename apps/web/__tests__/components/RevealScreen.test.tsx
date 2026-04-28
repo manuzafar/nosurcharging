@@ -246,4 +246,45 @@ describe('RevealScreen', () => {
     expect(onError).toHaveBeenCalledWith('Server error');
     expect(onComplete).not.toHaveBeenCalled();
   });
+
+  it('Cat 5 (zero_cost) shows the Cat 5 categoryLabel', async () => {
+    const deferred = createDeferred<AssessmentResult>();
+    mockSubmitAssessment.mockReturnValue(deferred.promise);
+
+    const cat5Result: AssessmentResult = {
+      success: true,
+      outputs: {
+        ...MOCK_SUCCESS_RESULT.outputs!,
+        category: 5,
+        netToday: 0,
+        octNet: 8400,
+        plSwing: -8400,
+        plSwingLow: -9600,
+        plSwingHigh: -7200,
+        rangeDriver: 'post_reform_rate',
+        estimatedMSFRate: 0.014,
+      },
+      actions: [],
+    };
+
+    render(
+      <RevealScreen
+        formData={{ ...MOCK_FORM_DATA, planType: 'zero_cost' }}
+        onComplete={onComplete}
+        onError={onError}
+      />,
+    );
+
+    await act(async () => {
+      deferred.resolve(cat5Result);
+      await Promise.resolve();
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(600);
+    });
+
+    expect(screen.getByText(/category 5/i)).toBeInTheDocument();
+    expect(screen.getByText(/zero-cost plan ends/i)).toBeInTheDocument();
+  });
 });

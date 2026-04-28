@@ -18,7 +18,7 @@ interface AssumptionsPanelProps {
   resolutionTrace: ResolutionTrace;
   volume: number;
   pspName: string;
-  planType: 'flat' | 'costplus';
+  planType: 'flat' | 'costplus' | 'zero_cost';
   msfRate: number;
   surcharging: boolean;
   surchargeRate: number;
@@ -75,7 +75,136 @@ export function AssumptionsPanel({
 
   // ── Build formula rows ───────────────────────────────────────
   const isFlatRate = planType === 'flat';
+  const isZeroCost = planType === 'zero_cost' || outputs.category === 5;
   const formulaRows: FormulaRow[] = [];
+
+  if (isZeroCost) {
+    const rate = outputs.estimatedMSFRate ?? 0.014;
+    formulaRows.push({
+      label: 'What you pay today',
+      formula: `${pspName} surcharge mechanism covers the full cost`,
+      value: formatCurrency(0),
+    });
+    formulaRows.push({
+      label: 'Annual cost from October',
+      formula: `${formatVolume(volume)} × ${formatPct(rate)} estimated post-reform rate`,
+      value: formatCurrency(outputs.octNet, '-'),
+      valueColour: 'var(--color-text-danger)',
+    });
+    if (outputs.icSaving > 0) {
+      formulaRows.push({
+        label: `Interchange saving (kept by ${pspName} during transition)`,
+        formula: 'computed for transparency — does not flow to you in any scenario',
+        value: formatCurrency(outputs.icSaving),
+        valueColour: 'var(--color-text-tertiary)',
+      });
+    }
+    if (surcharging && outputs.surchargeRevenue > 0) {
+      formulaRows.push({
+        label: 'Separate Amex surcharge (continues post-October)',
+        formula: `${formatVolume(volume)} × ${formatPct(surchargeRate)} on Amex transactions only`,
+        value: formatCurrency(outputs.surchargeRevenue, '+'),
+        valueColour: 'var(--color-text-tertiary)',
+      });
+    }
+    formulaRows.push({
+      label: 'Net P&L impact (October)',
+      formula: 'Cost from October − $0 today',
+      value: formatCurrency(outputs.plSwing, outputs.plSwing >= 0 ? '+' : '-'),
+      valueColour:
+        outputs.plSwing >= 0
+          ? 'var(--color-text-success)'
+          : 'var(--color-text-danger)',
+    });
+    return (
+      <div>
+        {/* Toggle */}
+        <button
+          type="button"
+          onClick={() => {
+            if (!expanded) {
+              Analytics.assumptionsOpened({ category: outputs.category });
+            }
+            setExpanded(!expanded);
+          }}
+          className="text-caption cursor-pointer"
+          style={{
+            color: 'var(--color-text-secondary)',
+            background: 'none',
+            border: 'none',
+            padding: 0,
+          }}
+        >
+          {expanded ? '↑' : '↓'} Show me exactly how this is calculated
+        </button>
+
+        <div
+          className={`overflow-hidden transition-all duration-200 ease-out ${
+            expanded ? 'mt-3 max-h-[3000px] opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div
+            className="p-4"
+            style={{ border: '0.5px solid var(--color-border-secondary)' }}
+          >
+            <p
+              className="text-caption font-medium"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
+              How the numbers are built
+            </p>
+            <div className="mt-2 space-y-3">
+              {formulaRows.map((row, i) => (
+                <div key={i} className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <p
+                      className="text-caption"
+                      style={{ color: 'var(--color-text-primary)' }}
+                    >
+                      {row.label}
+                    </p>
+                    <p
+                      className="font-mono"
+                      style={{
+                        fontSize: '11px',
+                        color: 'var(--color-text-tertiary)',
+                        marginTop: '2px',
+                      }}
+                    >
+                      {row.formula}
+                    </p>
+                  </div>
+                  <span
+                    className="font-mono font-medium shrink-0"
+                    style={{
+                      fontSize: '13px',
+                      color: row.valueColour ?? 'var(--color-text-primary)',
+                    }}
+                  >
+                    {row.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <p
+              className="mt-3"
+              style={{
+                fontSize: '11px',
+                color: 'var(--color-text-tertiary)',
+                fontStyle: 'italic',
+                lineHeight: 1.6,
+              }}
+            >
+              The 1.4% rate is a market-average post-reform estimate. Range scenarios
+              run from 1.2% (best) to 1.6% (worst). Get a written quote from {pspName}
+              before October to lock in your actual rate.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isFlatRate) {
     formulaRows.push({

@@ -14,7 +14,7 @@ import { FeedbackModal } from '@/components/results/FeedbackModal';
 import { Analytics } from '@/lib/analytics';
 
 interface ResultsTopBarProps {
-  category: 1 | 2 | 3 | 4;
+  category: 1 | 2 | 3 | 4 | 5;
   plSwing: number;
   accuracy: number;
   volume: number;

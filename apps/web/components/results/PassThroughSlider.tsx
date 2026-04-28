@@ -22,7 +22,7 @@ import type {
 } from '@nosurcharging/calculations/types';
 
 interface PassThroughSliderProps {
-  category: 1 | 2 | 3 | 4;
+  category: 1 | 2 | 3 | 4 | 5;
   passThrough: number;
   outputs: AssessmentOutputs;
   originalRaw: RawAssessmentData;

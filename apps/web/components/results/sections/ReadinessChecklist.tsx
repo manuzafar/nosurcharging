@@ -3,7 +3,7 @@
 import { forwardRef, useState } from 'react';
 
 interface ReadinessChecklistProps {
-  category: 1 | 2 | 3 | 4;
+  category: 1 | 2 | 3 | 4 | 5;
   pspName: string;
 }
 
@@ -12,7 +12,16 @@ interface ChecklistItem {
   deadline: string;
 }
 
-function getItems(category: 1 | 2 | 3 | 4, pspName: string): ChecklistItem[] {
+function getItems(category: 1 | 2 | 3 | 4 | 5, pspName: string): ChecklistItem[] {
+  if (category === 5) {
+    return [
+      { label: `Get post-October rate from ${pspName} in writing`, deadline: 'This week' },
+      { label: 'Calculate new monthly cost into cash flow', deadline: 'This week' },
+      { label: 'Get quotes from at least 2 alternative providers', deadline: 'By 31 Aug 2026' },
+      { label: 'Review repricing options to absorb new cost', deadline: 'By 30 Sep 2026' },
+      { label: 'Check first post-reform statement', deadline: 'By 30 Nov 2026' },
+    ];
+  }
   if (category === 3 || category === 4) {
     return [
       { label: `Contact ${pspName} about rate changes`, deadline: 'By 30 Jun 2026' },

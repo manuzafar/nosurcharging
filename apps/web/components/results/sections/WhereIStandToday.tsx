@@ -6,7 +6,7 @@ interface WhereIStandTodayProps {
   outputs: AssessmentOutputs;
   pspName: string;
   volume: number;
-  planType: 'flat' | 'costplus' | 'blended';
+  planType: 'flat' | 'costplus' | 'blended' | 'zero_cost';
   surcharging: boolean;
 }
 
@@ -21,7 +21,10 @@ interface CostBar {
 }
 
 export function WhereIStandToday({ outputs, pspName, volume, planType, surcharging }: WhereIStandTodayProps) {
-  const annualTotal = planType === 'costplus' ? outputs.grossCOA : outputs.annualMSF;
+  const isZeroCost = planType === 'zero_cost' || outputs.category === 5;
+  const annualTotal = isZeroCost
+    ? 0
+    : planType === 'costplus' ? outputs.grossCOA : outputs.annualMSF;
 
   const bars: CostBar[] = [
     { label: 'Interchange (IC)', value: outputs.todayInterchange, color: 'var(--color-accent)' },
@@ -33,6 +36,37 @@ export function WhereIStandToday({ outputs, pspName, volume, planType, surchargi
 
   const category = outputs.category;
   const showSurcharge = surcharging && (category === 3 || category === 4);
+
+  if (isZeroCost) {
+    return (
+      <div className="mt-4">
+        <p
+          className="mb-4"
+          style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}
+        >
+          What you pay {pspName} today
+        </p>
+        <div
+          className="rounded-lg p-6 text-center"
+          style={{ background: '#F0FAF6', border: '1px solid #C6E7D9' }}
+        >
+          <p className="font-mono" style={{ fontSize: '32px', color: '#2D7A5E', fontWeight: 500 }}>
+            $0
+          </p>
+          <p className="mt-2" style={{ fontSize: '13px', color: '#2D7A5E' }}>
+            The full card-acceptance cost is recovered from your customers via the
+            terminal surcharge. Your net cost today is zero.
+          </p>
+        </div>
+        <p
+          className="mt-3"
+          style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}
+        >
+          across {formatDollar(volume)} in annual card revenue
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-4">

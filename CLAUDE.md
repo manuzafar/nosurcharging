@@ -11,7 +11,7 @@ If anything in this file conflicts with a referenced document, this file wins.
 
 1.  What this product is
 2.  The vision
-3.  The four merchant categories
+3.  The five merchant categories
 4.  Phase 1 architecture
 5.  Phase 2 and 3 — do not build yet
 6.  Repository structure
@@ -59,9 +59,13 @@ Full detail: docs/product/product-vision.md
 
 ---
 
-## 3. The Four Merchant Categories
+## 3. The Five Merchant Categories
 
-The core framework. Two questions determine every merchant's outcome.
+The core framework. Three questions determine every merchant's outcome.
+
+Q0 — Is the plan a zero-cost EFTPOS arrangement?
+  Yes: Category 5 — surcharge mechanism ends 1 October, PSP moves merchant to flat rate.
+  No:  proceed to Q1 + Q2.
 
 Q1 — Plan type:
   Flat rate:   one blended percentage. IC saving does NOT flow automatically.
@@ -74,8 +78,10 @@ Q2 — Currently surcharging designated networks?
                        NOT surcharging    Surcharging
   Cost-plus plan       Category 1         Category 3
   Flat rate plan       Category 2         Category 4
+  Zero-cost EFTPOS              Category 5 (both columns)
 
 Assignment logic:
+  Cat 5: planType === 'zero_cost'                       (short-circuits Q1/Q2)
   Cat 1: planType === 'costplus' && !surcharging
   Cat 2: planType === 'flat'     && !surcharging
   Cat 3: planType === 'costplus' && surcharging
@@ -86,10 +92,16 @@ Category verdicts:
   Cat 2: "The saving exists — but it won't arrive automatically."
   Cat 3: "Your surcharge revenue disappears on 1 October."
   Cat 4: "You face both challenges simultaneously."
+  Cat 5: "Your zero-cost plan ends on 1 October."
 
 Amex/BNPL carve-out: Visa, Mastercard, eftpos are designated (ban applies).
 Amex, BNPL, PayPal are exempt (still surchargeable). If a merchant surcharges
 ONLY exempt networks, show a note that the reform may not affect them.
+
+For Category 5 (zero-cost), Step 3 is replaced with a simplified Amex-only
+question. PayPal/BNPL options are not shown — they are not relevant to
+terminal-based zero-cost merchants. Visa/Mastercard/eftpos are pre-set
+because the zero-cost surcharge mechanism always covers them.
 
 Full detail: docs/domain/merchant-categories.md
 
@@ -554,10 +566,12 @@ HARD GATE: All Week 2 tests must pass before any UI is written.
 CRITICAL TESTS — all must exist:
 
   categories.test.ts:
-    getCategory('costplus', false) === 1
-    getCategory('flat', false)     === 2
-    getCategory('costplus', true)  === 3
-    getCategory('flat', true)      === 4
+    getCategory('zero_cost', false) === 5
+    getCategory('zero_cost', true)  === 5  (surcharging ignored — Cat 5 short-circuits)
+    getCategory('costplus', false)  === 1
+    getCategory('flat', false)      === 2
+    getCategory('costplus', true)   === 3
+    getCategory('flat', true)       === 4
 
   calculations.test.ts:
     result.todayScheme === result.oct2026Scheme  (scheme fees invariant)
@@ -565,6 +579,10 @@ CRITICAL TESTS — all must exist:
     Cat 2 at passThrough=0: plSwing === 0
     Cat 2 at passThrough=1: plSwing ≈ totalICSaving
     Expert rate below reform cap: debitSaving >= 0
+    Cat 5 (zero_cost): netToday === 0
+    Cat 5 (zero_cost): plSwing === -volume × estimatedMSFRate
+    Cat 5 (zero_cost): rangeDriver === 'post_reform_rate'
+    Cat 5 (zero_cost): icSaving still computed (transparency invariant)
 
   periods.test.ts:
     getCurrentPeriod(new Date('2026-09-30')) === 'pre_reform'

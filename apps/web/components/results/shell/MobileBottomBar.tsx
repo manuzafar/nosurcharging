@@ -4,14 +4,15 @@ import { useCallback, useState } from 'react';
 import { Analytics } from '@/lib/analytics';
 
 interface MobileBottomBarProps {
-  category: 1 | 2 | 3 | 4;
+  category: 1 | 2 | 3 | 4 | 5;
 }
 
-const CTA_PRICE: Record<1 | 2 | 3 | 4, string> = {
+const CTA_PRICE: Record<1 | 2 | 3 | 4 | 5, string> = {
   1: '$2,500',
   2: '$2,500',
   3: '$3,500',
   4: '$3,500',
+  5: '$3,500',
 };
 
 export function MobileBottomBar({ category }: MobileBottomBarProps) {

@@ -12,12 +12,15 @@
 // Cat 2 shows Problem 2 only.
 // Cat 3 shows Problem 1 only.
 // Cat 4 shows both.
+// Cat 5 (zero_cost) shows Problem 3 — full cost exposure starts 1 October.
 
 interface ProblemsBlockProps {
-  category: 1 | 2 | 3 | 4;
+  category: 1 | 2 | 3 | 4 | 5;
   pspName: string;
   surchargeRevenue: number;
   icSaving: number;
+  octNet?: number;             // Cat 5 — annual cost from October
+  estimatedMSFRate?: number;   // Cat 5 — expected post-reform rate
 }
 
 function formatCurrency(amount: number): string {
@@ -132,17 +135,80 @@ function DependsProblem({
   );
 }
 
+function ZeroCostProblem({
+  pspName,
+  octNet,
+  estimatedMSFRate,
+}: {
+  pspName: string;
+  octNet: number;
+  estimatedMSFRate: number;
+}) {
+  return (
+    <div
+      style={{
+        background: '#FDECEA',
+        borderLeft: '3px solid #7F1D1D',
+        padding: '14px 16px',
+        marginBottom: '8px',
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <h3
+          className="font-medium"
+          style={{
+            fontSize: '14px',
+            color: 'var(--color-text-primary)',
+          }}
+        >
+          Your zero-cost plan ends on 1 October
+        </h3>
+        <span
+          className="font-medium uppercase"
+          style={{
+            background: '#7F1D1D',
+            color: '#FFFFFF',
+            fontSize: '10px',
+            letterSpacing: '1px',
+            padding: '2px 7px',
+          }}
+        >
+          Certain
+        </span>
+      </div>
+      <p
+        className="mt-2"
+        style={{
+          fontSize: '12px',
+          lineHeight: '1.65',
+          color: 'var(--color-text-secondary)',
+        }}
+      >
+        From 1 October, the surcharge mechanism that covers your card costs
+        becomes illegal on Visa, Mastercard, and eftpos. {pspName} will move
+        you to a standard flat-rate plan and you&apos;ll pay for card
+        acceptance from your own margin for the first time — approximately{' '}
+        {formatCurrency(octNet)}/year at the {(estimatedMSFRate * 100).toFixed(1)}%
+        market estimate.
+      </p>
+    </div>
+  );
+}
+
 export function ProblemsBlock({
   category,
   pspName,
   surchargeRevenue,
   icSaving,
+  octNet,
+  estimatedMSFRate,
 }: ProblemsBlockProps) {
   // Cat 1 has no problems to flag
   if (category === 1) return null;
 
   const showCertain = category === 3 || category === 4;
   const showDepends = category === 2 || category === 4;
+  const showZeroCost = category === 5;
 
   return (
     <section
@@ -161,6 +227,13 @@ export function ProblemsBlock({
 
       {showCertain && <CertainProblem surchargeRevenue={surchargeRevenue} />}
       {showDepends && <DependsProblem pspName={pspName} icSaving={icSaving} />}
+      {showZeroCost && (
+        <ZeroCostProblem
+          pspName={pspName}
+          octNet={octNet ?? 0}
+          estimatedMSFRate={estimatedMSFRate ?? 0.014}
+        />
+      )}
     </section>
   );
 }

@@ -21,7 +21,7 @@ interface OverviewSectionProps {
   outputs: AssessmentOutputs;
   volume: number;
   pspName: string;
-  planType: 'flat' | 'costplus' | 'blended';
+  planType: 'flat' | 'costplus' | 'blended' | 'zero_cost';
   msfRate: number;
   surcharging: boolean;
   surchargeRate: number;
@@ -30,7 +30,7 @@ interface OverviewSectionProps {
 export const OverviewSection = forwardRef<HTMLElement, OverviewSectionProps>(
   function OverviewSection(props, ref) {
     const { outputs, volume, pspName, planType, msfRate, surcharging, surchargeRate } = props;
-    const verdictPlanType = planType === 'blended' ? 'blended' : planType === 'costplus' ? 'costplus' : 'flat';
+    const verdictPlanType = planType;
     const [activeTab, setActiveTab] = useState('summary');
 
     return (
@@ -51,7 +51,11 @@ export const OverviewSection = forwardRef<HTMLElement, OverviewSectionProps>(
               />
 
               <div className="mt-6">
-                <MetricCards outputs={outputs} planType={planType} />
+                <MetricCards
+                  outputs={outputs}
+                  planType={planType}
+                  volume={volume}
+                />
               </div>
 
               <div className="mt-6">
@@ -60,6 +64,8 @@ export const OverviewSection = forwardRef<HTMLElement, OverviewSectionProps>(
                   pspName={pspName}
                   surchargeRevenue={outputs.surchargeRevenue}
                   icSaving={outputs.icSaving}
+                  octNet={outputs.octNet}
+                  estimatedMSFRate={outputs.estimatedMSFRate}
                 />
               </div>
             </>

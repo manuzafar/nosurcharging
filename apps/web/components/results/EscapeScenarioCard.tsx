@@ -18,7 +18,7 @@ import type {
 } from '@nosurcharging/calculations/types';
 
 interface EscapeScenarioCardProps {
-  category: 1 | 2 | 3 | 4;
+  category: 1 | 2 | 3 | 4 | 5;
   outputs: AssessmentOutputs;
   passThrough: number;
   originalRaw: RawAssessmentData;

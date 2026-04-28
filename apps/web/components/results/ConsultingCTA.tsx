@@ -8,14 +8,14 @@
 import { Analytics } from '@/lib/analytics';
 
 interface ConsultingCTAProps {
-  category: 1 | 2 | 3 | 4;
+  category: 1 | 2 | 3 | 4 | 5;
   pspName: string;
   plSwing?: number;
   volumeTier?: string;
 }
 
 const CTA_CONFIG: Record<
-  1 | 2 | 3 | 4,
+  1 | 2 | 3 | 4 | 5,
   { eyebrow: string; title: string; price: string; priceNum: number }
 > = {
   1: {
@@ -39,6 +39,12 @@ const CTA_CONFIG: Record<
   4: {
     eyebrow: 'Reform Ready',
     title: 'Two problems, one October deadline — let\u2019s fix both',
+    price: '$3,500',
+    priceNum: 3500,
+  },
+  5: {
+    eyebrow: 'Reform Ready',
+    title: 'Your zero-cost plan ends — let\u2019s lock in your post-October rate',
     price: '$3,500',
     priceNum: 3500,
   },
