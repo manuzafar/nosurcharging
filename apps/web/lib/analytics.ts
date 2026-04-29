@@ -168,15 +168,24 @@ export const Analytics = {
     posthog.capture('subtab_viewed', { country: 'AU', ...props });
   },
 
-  emailCaptured(props: {
-    capture_moment: string;
-    category: number;
-    pl_swing: number;
-    volume_tier: string;
-    psp: string;
-  }): void {
+  // ── Email gate (post-Step-4, pre-reveal) ──────────────────────────────
+  // The old `emailCaptured` shape (capture_moment / pl_swing / etc.) was
+  // tied to the deleted EmailCapture results-page form. The email gate
+  // surfaces a single, pre-reveal capture point so the events here use a
+  // smaller schema centred on the gate's two outcomes.
+  emailGateShown(props: { assessment_id?: string; category: number }): void {
+    if (!phInitialised) return;
+    posthog.capture('email_gate_shown', { country: 'AU', ...props });
+  },
+
+  emailCaptured(props: { assessment_id?: string; marketing_consent: boolean }): void {
     if (!phInitialised) return;
     posthog.capture('email_captured', { country: 'AU', ...props });
+  },
+
+  emailGateSkipped(props: { assessment_id?: string }): void {
+    if (!phInitialised) return;
+    posthog.capture('email_gate_skipped', { country: 'AU', ...props });
   },
 
   // pl_swing, volume_tier, psp are best-effort: MobileBottomBar doesn't

@@ -176,6 +176,10 @@ Phase 2 stubs to create in Phase 1 (prevents schema migrations later):
         layout.tsx                Root layout — PostHogProvider wraps children
         page.tsx                  Homepage (SSR)
         assessment/page.tsx       Assessment flow (client component)
+                                  Phases: disclaimer → step1 → step2 →
+                                          step3 → step4 → email_gate → reveal
+                                  Strategic-rate path: step2 → reveal direct
+                                  (skips email gate)
         results/page.tsx          Results page
         privacy/page.tsx          Privacy policy (required before launch)
         insights/                 SEO content articles (SSR)
@@ -186,7 +190,9 @@ Phase 2 stubs to create in Phase 1 (prevents schema migrations later):
         createSession.ts          Server action: session creation
         recordConsent.ts          Server action: consent recording
         submitAssessment.ts       Server action: assessment submit
-        captureEmail.ts           Server action: email signup
+        captureEmail.ts           Server action: post-INSERT Resend send +
+                                  email_report_sent flag (called from
+                                  submitAssessment when email is provided)
       components/
         assessment/               Steps 1-4 components
         results/                  Results page components
@@ -760,7 +766,9 @@ Funnel events (snake_case, current as of April 2026):
   assumptions_opened             { category }
   registry_form_started          { category, psp }
   registry_contributed           { psp, plan_type, volume_tier, industry }
-  email_captured                 { capture_moment, category, pl_swing, volume_tier, psp }
+  email_gate_shown               { assessment_id?, category }
+  email_captured                 { assessment_id?, marketing_consent }
+  email_gate_skipped             { assessment_id? }
   consulting_booked              { source, has_intake_answers, event_time }  (server-side)
 
 Required env vars:

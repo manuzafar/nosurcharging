@@ -16,13 +16,15 @@ import { Step1Volume } from '@/components/assessment/Step1Volume';
 import { Step2PlanType } from '@/components/assessment/Step2PlanType';
 import { Step3Surcharging } from '@/components/assessment/Step3Surcharging';
 import { Step4Industry } from '@/components/assessment/Step4Industry';
+import { EmailGate } from '@/components/assessment/EmailGate';
 import { RevealScreen } from '@/components/assessment/RevealScreen';
+import { getCategory } from '@nosurcharging/calculations/categories';
 import { trackEvent, Analytics, getVolumeTier } from '@/lib/analytics';
 import type { MerchantInputOverrides } from '@nosurcharging/calculations/types';
 import type { AssessmentFormData, AssessmentResult } from '@/actions/submitAssessment';
 import { PSP_PUBLISHED_RATES } from '@nosurcharging/calculations/constants/psp-rates';
 
-type Phase = 'disclaimer' | 'step1' | 'step2' | 'step3' | 'step4' | 'reveal' | 'error';
+type Phase = 'disclaimer' | 'step1' | 'step2' | 'step3' | 'step4' | 'email_gate' | 'reveal' | 'error';
 
 export default function AssessmentPage() {
   const router = useRouter();
@@ -45,6 +47,12 @@ export default function AssessmentPage() {
   const [blendedDebitRate, setBlendedDebitRate] = useState<number | null>(null);
   const [blendedCreditRate, setBlendedCreditRate] = useState<number | null>(null);
   const [planTypeUnknown, setPlanTypeUnknown] = useState(false);
+
+  // Email gate captures email + marketing consent into local state. They
+  // travel as fields in formData on submit (D2-A) — single atomic INSERT
+  // in the assessments row, no separate captureEmail action from the gate.
+  const [gateEmail, setGateEmail] = useState<string | null>(null);
+  const [gateMarketingConsent, setGateMarketingConsent] = useState(false);
 
   // Flat-rate MSF — SPRINT_BRIEF.md Sprint 2 UX-06. Default 1.4% (market
   // average) until the merchant picks a PSP, at which point we pre-fill
@@ -137,6 +145,8 @@ export default function AssessmentPage() {
     blendedDebitRate: planType === 'blended' ? blendedDebitRate ?? undefined : undefined,
     blendedCreditRate: planType === 'blended' ? blendedCreditRate ?? undefined : undefined,
     planTypeUnknown: planTypeUnknown || undefined,
+    email: gateEmail ?? undefined,
+    marketingConsent: gateMarketingConsent || undefined,
   });
 
   const handleRevealComplete = (result: AssessmentResult) => {
@@ -197,6 +207,28 @@ export default function AssessmentPage() {
         </Link>
       </nav>
 
+      {/* Email gate — full-screen overlay between Step 4 and reveal.
+          Pure form: collects email + consent into local parent state
+          and advances to reveal. Single INSERT happens at reveal. */}
+      {phase === 'email_gate' && planType !== null && surcharging !== null && (
+        <EmailGate
+          // Derive category from current form state. Cat 5/strategic don't
+          // reach this gate (Step 2 short-circuits both), so getCategory
+          // safely returns 1-4 here.
+          category={getCategory(planType === 'strategic_rate' ? 'flat' : planType, surcharging)}
+          onContinue={(email, consent) => {
+            setGateEmail(email);
+            setGateMarketingConsent(consent);
+            setPhase('reveal');
+          }}
+          onSkip={() => {
+            setGateEmail(null);
+            setGateMarketingConsent(false);
+            setPhase('reveal');
+          }}
+        />
+      )}
+
       {/* Reveal screen is full-screen overlay */}
       {phase === 'reveal' && (
         <RevealScreen
@@ -238,7 +270,7 @@ export default function AssessmentPage() {
       )}
 
       {/* Assessment steps 1-4 */}
-      {phase !== 'reveal' && phase !== 'error' && phase !== 'disclaimer' && (
+      {phase !== 'reveal' && phase !== 'error' && phase !== 'disclaimer' && phase !== 'email_gate' && (
         <div className="mx-auto max-w-assessment px-5 py-8">
           {/* Progress bar + step counter */}
           <div className="mb-8 flex items-center gap-4">
@@ -370,7 +402,7 @@ export default function AssessmentPage() {
                   setIndustry(ind);
                   // industry is captured in step_completed (step 4).
                 }}
-                onNext={() => setPhase('reveal')}
+                onNext={() => goToStep('email_gate')}
                 onBack={() => goToStep('step3')}
               />
             )}

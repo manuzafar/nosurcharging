@@ -27,6 +27,7 @@ import { calculateMetrics } from '@nosurcharging/calculations/calculations';
 import { buildActions } from '@nosurcharging/calculations/actions';
 import { detectStrategicRate } from '@nosurcharging/calculations/categories';
 import { sanitiseForHTML } from '@/lib/security';
+import { captureEmail } from './captureEmail';
 import type {
   RawAssessmentData,
   ResolutionContext,
@@ -51,6 +52,11 @@ export interface AssessmentFormData {
   blendedDebitRate?: number;
   blendedCreditRate?: number;
   planTypeUnknown?: boolean;
+  // Captured at the email gate (post-Step-4 / pre-reveal). Optional —
+  // a merchant who skips the gate has both undefined and the row stores
+  // email=null, marketing_consent=false.
+  email?: string;
+  marketingConsent?: boolean;
 }
 
 export interface AssessmentResult {
@@ -192,7 +198,15 @@ export async function submitAssessment(
   const categoryValue = outputs.category;
   const variantType = formData.planType === 'zero_cost' ? 'zero_cost' : 'standard';
 
-  // 12. INSERT with idempotency key — use .select() to get generated ID
+  // 12. Email gate fields — sanitised into shape expected by migration 008.
+  // Empty/undefined email → null. Missing consent → false. marketing_consent_at
+  // is server-stamped only when consent is true.
+  const sanitisedEmail = (formData.email ?? '').toLowerCase().trim();
+  const emailForRow: string | null = sanitisedEmail || null;
+  const marketingConsent = formData.marketingConsent === true;
+  const marketingConsentAt = marketingConsent ? new Date().toISOString() : null;
+
+  // 13. INSERT with idempotency key — use .select() to get generated ID
   const { data: inserted, error: insertError } = await supabaseAdmin
     .from('assessments')
     .insert({
@@ -213,6 +227,9 @@ export async function submitAssessment(
         actions,
       },
       ip_hash: ipHash,
+      email: emailForRow,
+      marketing_consent: marketingConsent,
+      marketing_consent_at: marketingConsentAt,
     })
     .select('id')
     .single();
@@ -235,6 +252,16 @@ export async function submitAssessment(
 
     console.error('[assessment] Insert failed:', insertError.message);
     return { success: false, error: 'Failed to save assessment. Please try again.' };
+  }
+
+  // 14. Send the results-report email — best-effort, never fails the action.
+  // Fire-and-forget pattern: returns the AssessmentResult to the client
+  // immediately and lets Resend complete in the background. This keeps
+  // the reveal animation snappy regardless of Resend latency.
+  if (emailForRow) {
+    captureEmail({ assessmentId: inserted.id, email: emailForRow }).catch((err) => {
+      console.error('[assessment] post-insert captureEmail failed:', (err as Error).message);
+    });
   }
 
   return { success: true, assessmentId: inserted.id, outputs, actions };
