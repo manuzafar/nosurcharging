@@ -1,142 +1,182 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// ── Hoisted mocks (accessible inside vi.mock factories) ──────────
+const VALID_ID = '123e4567-e89b-12d3-a456-426614174000';
 
-const { mockConsentInsert, mockEmailRpc, mockCookieGet, mockCheckRateLimit } = vi.hoisted(() => ({
-  mockConsentInsert: vi.fn(),
-  mockEmailRpc: vi.fn(),
-  mockCookieGet: vi.fn(),
-  mockCheckRateLimit: vi.fn(),
+const { mockSelectSingle, mockUpdateEq, mockResendSend } = vi.hoisted(() => ({
+  mockSelectSingle: vi.fn(),
+  mockUpdateEq: vi.fn(),
+  mockResendSend: vi.fn(),
 }));
 
-// ── Call order tracking ──────────────────────────────────────────
-
-let operationOrder: string[] = [];
-
-// ── Mocks ────────────────────────────────────────────────────────
-
+// Supabase admin mock — chainable from(...).select(...).eq(...).single()
+//                       and from(...).update(...).eq(...)
 vi.mock('@/lib/supabase/server', () => ({
   supabaseAdmin: {
-    from: vi.fn(() => ({ insert: mockConsentInsert })),
-    rpc: mockEmailRpc,
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          single: mockSelectSingle,
+        })),
+      })),
+      update: vi.fn(() => ({
+        eq: mockUpdateEq,
+      })),
+    })),
   },
 }));
 
-vi.mock('next/headers', () => ({
-  cookies: vi.fn(() => ({
-    get: mockCookieGet,
-    set: vi.fn(),
-  })),
-  headers: vi.fn(() => new Headers({ 'cf-connecting-ip': '192.168.1.1' })),
-}));
-
 vi.mock('@/lib/security', () => ({
-  hashIP: vi.fn((ip: string) => `hmac_${ip}`),
-  getClientIP: vi.fn(() => '192.168.1.1'),
+  sanitiseForHTML: (s: string) => s,
 }));
 
-vi.mock('@/lib/rateLimit', () => ({
-  checkRateLimit: mockCheckRateLimit,
+vi.mock('resend', () => ({
+  Resend: vi.fn().mockImplementation(() => ({
+    emails: { send: mockResendSend },
+  })),
 }));
 
-// ── Import after mocks ───────────────────────────────────────────
+// Stable outputs row used by the select() mock
+const OUTPUTS_ROW = {
+  outputs: {
+    category: 4,
+    icSaving: 1000,
+    debitSaving: 200,
+    creditSaving: 800,
+    todayInterchange: 5000,
+    todayMargin: 2000,
+    grossCOA: 10000,
+    annualMSF: 28000,
+    surchargeRevenue: 7500,
+    netToday: 20500,
+    octNet: 28000,
+    plSwing: -7500,
+    plSwingLow: -7500,
+    plSwingHigh: -7500,
+    rangeDriver: 'card_mix',
+    rangeNote: '',
+    todayScheme: 2100,
+    oct2026Scheme: 2100,
+    confidence: 'low',
+    period: 'pre_reform',
+    actions: [
+      {
+        priority: 'urgent',
+        timeAnchor: 'BEFORE 1 OCTOBER',
+        text: 'Plan the $7,500 in surcharge revenue',
+        script: '',
+        why: '',
+      },
+    ],
+  },
+};
 
+// Import AFTER mocks
 import { captureEmail } from '@/actions/captureEmail';
-
-// ── Tests ────────────────────────────────────────────────────────
 
 describe('captureEmail', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    operationOrder = [];
-    mockCookieGet.mockReturnValue({ value: 'session-xyz' });
-    process.env.EMAIL_ENCRYPTION_KEY = 'test-encryption-key-32chars!!!!!';
+    mockSelectSingle.mockResolvedValue({ data: OUTPUTS_ROW, error: null });
+    mockUpdateEq.mockResolvedValue({ data: null, error: null });
+    mockResendSend.mockResolvedValue({ id: 'resend-id' });
+    vi.stubEnv('RESEND_API_KEY', 'test-key');
+    vi.stubEnv('RESEND_FROM', 'results@nosurcharging.com.au');
+  });
 
-    mockConsentInsert.mockImplementation(() => {
-      operationOrder.push('consent_insert');
-      return Promise.resolve({ error: null });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  describe('validation', () => {
+    it('rejects malformed assessmentId', async () => {
+      const result = await captureEmail({ assessmentId: 'not-a-uuid', email: 'm@s.com' });
+      expect(result).toEqual({ success: false, error: 'invalid_assessment_id' });
     });
-    mockEmailRpc.mockImplementation(() => {
-      operationOrder.push('email_rpc');
-      return Promise.resolve({ error: null });
+
+    it('returns success without sending when email is empty', async () => {
+      const result = await captureEmail({ assessmentId: VALID_ID, email: '' });
+      expect(result).toEqual({ success: true });
+      expect(mockResendSend).not.toHaveBeenCalled();
     });
-    mockCheckRateLimit.mockResolvedValue({ allowed: true, count: 1, limit: 10 });
+
+    it('lowercases email before sending', async () => {
+      await captureEmail({ assessmentId: VALID_ID, email: 'Merchant@Shop.COM' });
+      expect(mockResendSend).toHaveBeenCalledWith(
+        expect.objectContaining({ to: 'merchant@shop.com' }),
+      );
+    });
+
+    it('trims email before sending', async () => {
+      await captureEmail({ assessmentId: VALID_ID, email: '  m@s.com  ' });
+      expect(mockResendSend).toHaveBeenCalledWith(
+        expect.objectContaining({ to: 'm@s.com' }),
+      );
+    });
   });
 
-  it('email is encrypted via pgp_sym_encrypt RPC (not raw INSERT)', async () => {
-    const result = await captureEmail('merchant@shop.com.au');
+  describe('Resend behaviour', () => {
+    it('skips send when RESEND_API_KEY is not set, still returns success', async () => {
+      vi.stubEnv('RESEND_API_KEY', '');
+      const result = await captureEmail({ assessmentId: VALID_ID, email: 'm@s.com' });
+      expect(result).toEqual({ success: true });
+      expect(mockResendSend).not.toHaveBeenCalled();
+    });
 
-    expect(result.success).toBe(true);
-    expect(mockEmailRpc).toHaveBeenCalledTimes(1);
-    const [rpcName, rpcParams] = mockEmailRpc.mock.calls[0]!;
-    expect(rpcName).toBe('insert_email_signup');
-    expect(rpcParams.p_email).toBe('merchant@shop.com.au');
-    expect(rpcParams.p_encryption_key).toBe('test-encryption-key-32chars!!!!!');
-  });
+    it('uses RESEND_FROM env, falls back to results@nosurcharging.com.au', async () => {
+      vi.stubEnv('RESEND_FROM', '');
+      await captureEmail({ assessmentId: VALID_ID, email: 'm@s.com' });
+      expect(mockResendSend).toHaveBeenCalledWith(
+        expect.objectContaining({ from: 'results@nosurcharging.com.au' }),
+      );
+    });
 
-  it('raw email never appears in a direct INSERT payload', async () => {
-    await captureEmail('secret@email.com');
+    it('subject line matches spec', async () => {
+      await captureEmail({ assessmentId: VALID_ID, email: 'm@s.com' });
+      expect(mockResendSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subject: 'Your payments reform assessment — nosurcharging.com.au',
+        }),
+      );
+    });
 
-    // Consent insert should NOT contain the email
-    if (mockConsentInsert.mock.calls.length > 0) {
-      const consentPayload = JSON.stringify(mockConsentInsert.mock.calls[0]![0]);
-      expect(consentPayload).not.toContain('secret@email.com');
-    }
+    it('body contains category, verdict, plSwing, reportUrl, firstAction', async () => {
+      await captureEmail({ assessmentId: VALID_ID, email: 'm@s.com' });
+      const text = (mockResendSend.mock.calls[0]![0] as { text: string }).text;
+      expect(text).toContain('Situation 4');
+      expect(text).toContain('You face both challenges simultaneously');
+      expect(text).toContain('−$7,500');
+      expect(text).toContain(`https://nosurcharging.com.au/results?id=${VALID_ID}`);
+      expect(text).toContain('Plan the $7,500 in surcharge revenue');
+    });
 
-    // Email goes through RPC (DB-side encryption), not direct insert
-    expect(mockEmailRpc).toHaveBeenCalled();
-  });
+    it('falls back to default firstAction when actions[] empty', async () => {
+      mockSelectSingle.mockResolvedValueOnce({
+        data: { outputs: { ...OUTPUTS_ROW.outputs, actions: [] } },
+        error: null,
+      });
+      await captureEmail({ assessmentId: VALID_ID, email: 'm@s.com' });
+      const text = (mockResendSend.mock.calls[0]![0] as { text: string }).text;
+      expect(text).toContain('Open your full report and review the action plan.');
+    });
 
-  it('rate limit: second call from same session is rejected', async () => {
-    // First call succeeds
-    await captureEmail('first@shop.com');
+    it('returns success even when outputs fetch fails', async () => {
+      mockSelectSingle.mockResolvedValueOnce({ data: null, error: { message: 'fetch failed' } });
+      const result = await captureEmail({ assessmentId: VALID_ID, email: 'm@s.com' });
+      expect(result).toEqual({ success: true });
+      expect(mockResendSend).not.toHaveBeenCalled();
+    });
 
-    // Second call: session rate limit rejects
-    mockCheckRateLimit.mockResolvedValueOnce({ allowed: false, count: 2, limit: 1 });
+    it('Resend failure does not fail the action', async () => {
+      mockResendSend.mockRejectedValueOnce(new Error('rate limit'));
+      const result = await captureEmail({ assessmentId: VALID_ID, email: 'm@s.com' });
+      expect(result).toEqual({ success: true });
+      // email_report_sent UPDATE should not have run on Resend failure
+      expect(mockUpdateEq).not.toHaveBeenCalled();
+    });
 
-    const result2 = await captureEmail('second@shop.com');
-    expect(result2.success).toBe(false);
-    expect(result2.error).toContain('already signed up');
-  });
-
-  it('consent record created BEFORE email signup record', async () => {
-    await captureEmail('order@test.com');
-
-    expect(operationOrder.indexOf('consent_insert')).toBeLessThan(
-      operationOrder.indexOf('email_rpc'),
-    );
-    expect(operationOrder).toEqual(['consent_insert', 'email_rpc']);
-  });
-
-  it('checks both session and IP rate limits', async () => {
-    await captureEmail('test@shop.com');
-
-    // checkRateLimit called twice: once for session, once for IP
-    expect(mockCheckRateLimit).toHaveBeenCalledTimes(2);
-    const calls = mockCheckRateLimit.mock.calls;
-
-    // First call: session limit (1 per session)
-    expect(calls[0]![0]).toContain('session');
-    expect(calls[0]![1]).toBe(1);
-
-    // Second call: IP limit (10 per hour)
-    expect(calls[1]![0]).toContain('email');
-    expect(calls[1]![1]).toBe(10);
-  });
-
-  it('rejects invalid email format', async () => {
-    const result = await captureEmail('not-an-email');
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('valid email');
-    expect(mockEmailRpc).not.toHaveBeenCalled();
-  });
-
-  it('fails if EMAIL_ENCRYPTION_KEY is not set', async () => {
-    delete process.env.EMAIL_ENCRYPTION_KEY;
-
-    const result = await captureEmail('test@shop.com');
-    expect(result.success).toBe(false);
-    expect(result.error).toBe('Configuration error');
-    expect(mockEmailRpc).not.toHaveBeenCalled();
+    it('stamps email_report_sent + email_report_sent_at after successful send', async () => {
+      await captureEmail({ assessmentId: VALID_ID, email: 'm@s.com' });
+      expect(mockUpdateEq).toHaveBeenCalledTimes(1);
+    });
   });
 });

@@ -2,7 +2,6 @@
 
 import { forwardRef } from 'react';
 import { ConsultingCTA } from '@/components/results/ConsultingCTA';
-import { EmailCapture } from '@/components/results/EmailCapture';
 import { ResultsDisclaimer } from '@/components/results/ResultsDisclaimer';
 
 interface HelpSectionProps {
@@ -15,7 +14,9 @@ interface HelpSectionProps {
 
 export const HelpSection = forwardRef<HTMLElement, HelpSectionProps>(
   function HelpSection(props, ref) {
-    const { category, pspName, assessmentId, plSwing, volumeTier } = props;
+    // assessmentId is retained on the props interface for back-compat with
+    // upstream callers; not used after EmailCapture removal.
+    const { category, pspName, plSwing, volumeTier } = props;
 
     return (
       <section id="help" data-section="help" ref={ref} className="pt-8">
@@ -38,16 +39,23 @@ export const HelpSection = forwardRef<HTMLElement, HelpSectionProps>(
           volumeTier={volumeTier}
         />
 
-        <div className="mt-6">
-          <EmailCapture
-            assessmentId={assessmentId}
-            captureMoment="help_section"
-            category={category}
-            plSwing={plSwing}
-            volumeTier={volumeTier}
-            psp={pspName}
-          />
-        </div>
+        {/* Email contact fallback — replaces the old benchmark-mailing
+            EmailCapture form. The merchant already provided their email at
+            the pre-reveal gate, so we only surface a direct contact route
+            here for ad-hoc questions. */}
+        <p
+          className="mt-4 text-caption"
+          style={{ color: 'var(--color-text-secondary)' }}
+        >
+          Or email us:{' '}
+          <a
+            href="mailto:hello@nosurcharging.com.au"
+            className="underline"
+            style={{ color: 'var(--color-text-primary)' }}
+          >
+            hello@nosurcharging.com.au
+          </a>
+        </p>
 
         <div className="mt-8 mb-4">
           <ResultsDisclaimer />
