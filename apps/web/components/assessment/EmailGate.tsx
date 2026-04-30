@@ -15,7 +15,12 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Analytics } from '@/lib/analytics';
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Stricter than the canonical [^\s@]+@[^\s@]+\.[^\s@]+ pattern: each segment
+// must contain at least one non-dot, non-whitespace, non-@ character. Catches
+// pathological inputs like `manu@......` that pass the looser pattern via
+// regex backtracking.
+const EMAIL_REGEX =
+  /^[^\s@.]+(\.[^\s@.]+)*@[^\s@.]+(\.[^\s@.]+)+$/;
 
 interface EmailGateProps {
   // Category derived at the parent from getCategory(planType, surcharging).
