@@ -14,6 +14,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Analytics } from '@/lib/analytics';
+import { EmailGateSkeleton } from './EmailGateSkeleton';
 
 // Stricter than the canonical [^\s@]+@[^\s@]+\.[^\s@]+ pattern: each segment
 // must contain at least one non-dot, non-whitespace, non-@ character. Catches
@@ -77,18 +78,34 @@ export function EmailGate({ category, onContinue, onSkip }: EmailGateProps) {
     <div
       role="status"
       aria-live="polite"
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
       style={{ background: '#1A1409' }}
     >
+      {/* Blurred results-shaped backdrop — gives the merchant the
+          visual cue that their report is right behind the gate. */}
+      <EmailGateSkeleton />
+
+      {/* Translucent ink overlay — soft tint so the skeleton's real
+          colours read through, with enough darkening that the foreground
+          card and its dark text stay legible. */}
       <div
-        className="w-full"
+        aria-hidden
+        className="absolute inset-0"
+        style={{ background: 'rgba(26, 20, 9, 0.25)' }}
+      />
+
+      <div
+        className="relative w-full"
         style={{
           maxWidth: '440px',
           margin: '0 20px',
           padding: '40px',
-          background: 'rgba(255,255,255,0.03)',
-          border: '0.5px solid rgba(255,255,255,0.08)',
+          background: 'rgba(20, 16, 8, 0.85)',
+          border: '0.5px solid rgba(255,255,255,0.10)',
           borderRadius: '16px',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
         }}
       >
         {/* Progress row */}
