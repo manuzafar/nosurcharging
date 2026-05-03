@@ -33,6 +33,9 @@ test.describe('Wizard journey → Category 1', () => {
     await page.getByText('Hospitality group').click();
     await page.getByRole('button', { name: /see my results/i }).click();
 
+    // Skip the email gate
+    await page.getByRole('button', { name: /skip and view now/i }).click();
+
     await page.waitForURL(/\/results\?id=/, { timeout: 15000 });
 
     // Category 1 — costs fall automatically (scoped to avoid TopBar duplicate)
