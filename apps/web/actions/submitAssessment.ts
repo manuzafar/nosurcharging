@@ -201,9 +201,22 @@ export async function submitAssessment(
   // 12. Email gate fields — sanitised into shape expected by migration 008.
   // Empty/undefined email → null. Missing consent → false. marketing_consent_at
   // is server-stamped only when consent is true.
+  //
+  // Defense in depth: re-validate the email server-side even though EmailGate
+  // already validates client-side. A bypass (devtools, scripted client, future
+  // surface) must not let a malformed string land in the email column. Mirrors
+  // the EmailGate regex: each segment requires a non-dot, non-whitespace,
+  // non-@ character.
+  const SERVER_EMAIL_REGEX = /^[^\s@.]+(\.[^\s@.]+)*@[^\s@.]+(\.[^\s@.]+)+$/;
   const sanitisedEmail = (formData.email ?? '').toLowerCase().trim();
-  const emailForRow: string | null = sanitisedEmail || null;
-  const marketingConsent = formData.marketingConsent === true;
+  const emailForRow: string | null =
+    sanitisedEmail && SERVER_EMAIL_REGEX.test(sanitisedEmail)
+      ? sanitisedEmail
+      : null;
+  // Marketing consent is only valid alongside a stored email — if the email
+  // failed validation, drop the consent too (consent without contactable
+  // address is meaningless and confuses the audit trail).
+  const marketingConsent = emailForRow !== null && formData.marketingConsent === true;
   const marketingConsentAt = marketingConsent ? new Date().toISOString() : null;
 
   // 13. INSERT with idempotency key — use .select() to get generated ID

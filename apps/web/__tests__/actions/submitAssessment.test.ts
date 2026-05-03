@@ -105,6 +105,13 @@ vi.mock('@nosurcharging/calculations/actions', () => ({
   ]),
 }));
 
+const { mockCaptureEmail } = vi.hoisted(() => ({
+  mockCaptureEmail: vi.fn().mockResolvedValue({ success: true }),
+}));
+vi.mock('@/actions/captureEmail', () => ({
+  captureEmail: mockCaptureEmail,
+}));
+
 // ── Import after mocks ───────────────────────────────────────────
 
 import { submitAssessment } from '@/actions/submitAssessment';
@@ -265,5 +272,110 @@ describe('submitAssessment', () => {
     expect(result.success).toBe(false);
     expect(result.error).toContain('PSP is required');
     expect(mockInsert).not.toHaveBeenCalled();
+  });
+
+  // ── Email gate fields ──────────────────────────────────────────────
+  // Server-side validation mirrors the EmailGate client regex. A bypass
+  // (devtools, scripted client, future surface) must not let a malformed
+  // string land in the email column.
+
+  describe('email gate fields', () => {
+    it('stores valid email and marketing_consent on the row', async () => {
+      const form = {
+        ...CAT4_FORM,
+        email: 'merchant@shop.com.au',
+        marketingConsent: true,
+      };
+      const result = await submitAssessment(form, TEST_IDEMPOTENCY_KEY);
+
+      expect(result.success).toBe(true);
+      const insertedRow = mockInsert.mock.calls[0]![0] as Record<string, unknown>;
+      expect(insertedRow.email).toBe('merchant@shop.com.au');
+      expect(insertedRow.marketing_consent).toBe(true);
+      expect(insertedRow.marketing_consent_at).toBeTruthy();
+    });
+
+    it('lowercases and trims email before storing', async () => {
+      const form = {
+        ...CAT4_FORM,
+        email: '  Merchant@Shop.COM  ',
+        marketingConsent: false,
+      };
+      await submitAssessment(form, TEST_IDEMPOTENCY_KEY);
+      const insertedRow = mockInsert.mock.calls[0]![0] as Record<string, unknown>;
+      expect(insertedRow.email).toBe('merchant@shop.com');
+    });
+
+    it('stores email=null and marketing_consent=false when email is missing', async () => {
+      const result = await submitAssessment(CAT4_FORM, TEST_IDEMPOTENCY_KEY);
+      expect(result.success).toBe(true);
+      const insertedRow = mockInsert.mock.calls[0]![0] as Record<string, unknown>;
+      expect(insertedRow.email).toBeNull();
+      expect(insertedRow.marketing_consent).toBe(false);
+      expect(insertedRow.marketing_consent_at).toBeNull();
+    });
+
+    it.each([
+      ['abc@.....'],
+      ['manu@......'],
+      ['notanemail'],
+      ['no@domain'],
+      ['@example.com'],
+      ['manu@.com'],
+      ['manu@example.'],
+      ['manu space@example.com'],
+    ])('rejects pathological email %s — stores email=null even if marketingConsent=true', async (bad) => {
+      const form = {
+        ...CAT4_FORM,
+        email: bad,
+        marketingConsent: true,
+      };
+      const result = await submitAssessment(form, TEST_IDEMPOTENCY_KEY);
+
+      // The row still INSERTs (assessment data is valid) — we just drop
+      // the bad email + the orphaned consent.
+      expect(result.success).toBe(true);
+      const insertedRow = mockInsert.mock.calls[0]![0] as Record<string, unknown>;
+      expect(insertedRow.email).toBeNull();
+      expect(insertedRow.marketing_consent).toBe(false);
+      expect(insertedRow.marketing_consent_at).toBeNull();
+    });
+
+    it('marketing_consent=false is preserved when valid email is provided', async () => {
+      const form = {
+        ...CAT4_FORM,
+        email: 'merchant@shop.com',
+        marketingConsent: false,
+      };
+      await submitAssessment(form, TEST_IDEMPOTENCY_KEY);
+      const insertedRow = mockInsert.mock.calls[0]![0] as Record<string, unknown>;
+      expect(insertedRow.email).toBe('merchant@shop.com');
+      expect(insertedRow.marketing_consent).toBe(false);
+      expect(insertedRow.marketing_consent_at).toBeNull();
+    });
+
+    it('invokes post-INSERT captureEmail when valid email provided', async () => {
+      const form = { ...CAT4_FORM, email: 'merchant@shop.com', marketingConsent: false };
+      await submitAssessment(form, TEST_IDEMPOTENCY_KEY);
+      // captureEmail is fire-and-forget — wait a tick for the .catch chain
+      await new Promise((r) => setImmediate(r));
+      expect(mockCaptureEmail).toHaveBeenCalledWith({
+        assessmentId: INSERTED_ID,
+        email: 'merchant@shop.com',
+      });
+    });
+
+    it('does not invoke captureEmail when email is missing', async () => {
+      await submitAssessment(CAT4_FORM, TEST_IDEMPOTENCY_KEY);
+      await new Promise((r) => setImmediate(r));
+      expect(mockCaptureEmail).not.toHaveBeenCalled();
+    });
+
+    it('does not invoke captureEmail when email fails validation', async () => {
+      const form = { ...CAT4_FORM, email: 'abc@.....', marketingConsent: true };
+      await submitAssessment(form, TEST_IDEMPOTENCY_KEY);
+      await new Promise((r) => setImmediate(r));
+      expect(mockCaptureEmail).not.toHaveBeenCalled();
+    });
   });
 });

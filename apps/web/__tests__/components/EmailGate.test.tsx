@@ -72,6 +72,38 @@ describe('EmailGate', () => {
       expect(onContinue).not.toHaveBeenCalled();
     });
 
+    it.each([
+      ['manu@......', 'dot-only domain'],
+      ['manu@.com', 'domain starts with dot'],
+      ['manu@example.', 'domain ends with dot'],
+      ['manu@@example.com', 'double @'],
+      ['@example.com', 'missing local part'],
+      ['manu@', 'missing domain'],
+      ['manu', 'no @ at all'],
+      ['manu@example', 'no TLD'],
+      ['manu space@example.com', 'space in local part'],
+    ])('rejects pathological input: %s (%s)', async (bad) => {
+      render(<EmailGate category={2} onContinue={onContinue} onSkip={onSkip} />);
+      const input = screen.getByLabelText(/email address/i);
+      await user.type(input, bad);
+      await user.click(screen.getByRole('button', { name: /see my results/i }));
+      expect(screen.getByText(/please enter a valid email/i)).toBeInTheDocument();
+      expect(onContinue).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['merchant@shop.com.au'],
+      ['first.last@shop.com'],
+      ['user+tag@shop.io'],
+    ])('accepts realistic email: %s', async (good) => {
+      render(<EmailGate category={2} onContinue={onContinue} onSkip={onSkip} />);
+      const input = screen.getByLabelText(/email address/i);
+      await user.type(input, good);
+      await user.click(screen.getByRole('button', { name: /see my results/i }));
+      expect(screen.queryByText(/please enter a valid email/i)).not.toBeInTheDocument();
+      expect(onContinue).toHaveBeenCalledWith(good.toLowerCase(), false);
+    });
+
     it('does NOT show error when email is empty (skip path)', async () => {
       render(<EmailGate category={2} onContinue={onContinue} onSkip={onSkip} />);
       await user.click(screen.getByRole('button', { name: /see my results/i }));
