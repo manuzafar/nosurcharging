@@ -60,7 +60,7 @@ function buildCat1Actions(psp: string): ActionItem[] {
       priority: 'plan',
       timeAnchor: 'BEFORE 1 AUGUST 2026',
       text: `Confirm with ${psp} that your cost-plus rate will reflect the new interchange caps`,
-      script: `${psp} is reducing wholesale interchange costs from 1 October. Can you confirm in writing that my cost-plus pricing will pass the new interchange caps through to me automatically — no rate review required?`,
+      script: `From 1 October, the RBA's new interchange caps take effect — wholesale interchange that ${psp} pays falls. Can you confirm in writing that my cost-plus pricing will pass those new caps through to me automatically, with no rate review required?`,
       why: `On a cost-plus plan the saving is structural — but written confirmation is the cheapest insurance you'll ever buy.`,
     },
     {
@@ -89,14 +89,14 @@ function buildCat2Actions(psp: string, isBlended: boolean = false): ActionItem[]
       priority: 'urgent',
       timeAnchor: 'BEFORE 1 OCTOBER',
       text: `Ask ${psp} whether your rate will change after October`,
-      script: `${psp} is reducing wholesale interchange costs from 1 October. I'd like to understand whether my ${psp} flat rate will be adjusted to reflect that change — and by how much. Can you confirm in writing?`,
+      script: `From 1 October, the RBA's new interchange caps take effect — wholesale interchange that ${psp} pays falls. I'd like to understand whether my ${psp} flat rate will be adjusted to reflect that change — and by how much. Can you confirm in writing?`,
       why: `Flat rate adjustments aren't automatic. Written confirmation now means you'll know what to expect — and have time to act if needed.`,
     },
     {
       priority: 'plan',
       timeAnchor: 'BEFORE 1 AUGUST 2026',
       text: `Ask ${psp} for a quote on their itemised pricing plan`,
-      script: `Request a quote on ${psp}'s interchange-plus pricing. I'd like to compare it against my current flat rate, with the October interchange cuts factored in.`,
+      script: `Request a quote on ${psp}'s interchange-plus pricing. I'd like to compare it against my current flat rate, with the RBA's October interchange cuts factored in.`,
       why: `On itemised pricing, future cost reductions flow through automatically — no rate review required. August gives you enough lead time to switch cleanly before October.`,
     },
     {
@@ -173,7 +173,7 @@ function buildCat4Actions(psp: string, ctx: ActionContext, isBlended: boolean = 
       priority: 'urgent',
       timeAnchor: 'BEFORE 1 OCTOBER',
       text: `Ask ${psp} whether your rate will change after October`,
-      script: `${psp} is reducing wholesale interchange costs from 1 October. I'd like to understand whether my ${psp} flat rate will be adjusted to reflect that change — and by how much. Can you confirm in writing?`,
+      script: `From 1 October, the RBA's new interchange caps take effect — wholesale interchange that ${psp} pays falls. I'd like to understand whether my ${psp} flat rate will be adjusted to reflect that change — and by how much. Can you confirm in writing?`,
       why: `Flat rate adjustments aren't automatic. Written confirmation now means you'll know what to expect — and have time to act if needed.`,
     },
     {

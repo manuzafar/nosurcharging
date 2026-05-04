@@ -57,7 +57,7 @@ const FIXTURE_ACTIONS: ActionItem[] = [
     priority: 'urgent',
     timeAnchor: 'BEFORE 1 OCTOBER',
     text: 'Ask Stripe whether your rate will change on 1 October 2026.',
-    script: 'Stripe is reducing wholesale interchange costs from 1 October.',
+    script: "From 1 October, the RBA's new interchange caps take effect — wholesale interchange that Stripe pays falls.",
     why: "Flat rate adjustments aren't automatic — you must ask.",
   },
   {
