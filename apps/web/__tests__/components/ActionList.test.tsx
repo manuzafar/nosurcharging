@@ -83,8 +83,10 @@ describe('ActionList', () => {
 
   it('renders the script block for actions that have one (italic)', () => {
     render(<ActionList actions={cat4Actions} />);
-    // Cat 4 ACTION 1 script begins with the PSP name and "is reducing wholesale interchange"
-    const scriptText = screen.getByText(/is reducing wholesale interchange costs/i);
+    // Cat 4 ACTION 1 script attributes the interchange cap to the RBA
+    // (not the PSP) and asks the merchant's PSP whether the saving will
+    // pass through.
+    const scriptText = screen.getByText(/RBA's new interchange caps take effect/i);
     const style = scriptText.getAttribute('style') ?? '';
     expect(style).toContain('italic');
   });
