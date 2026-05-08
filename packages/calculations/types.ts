@@ -175,6 +175,32 @@ export interface ActionItem {
   script?: string;
   // Why — short explanation rendered below the script in ink-faint.
   why?: string;
+  // Optional structured framework — used by Cat 3/4 "decide how to respond"
+  // step to render the RAO (Recover / Absorb / Optimise) options as a card,
+  // not as embedded script text. Source of truth for the lever copy.
+  framework?: RaoFramework;
+}
+
+// Recover / Absorb / Optimise — option-presenting framework attached to the
+// "decide how to respond to the shortfall" action for Cat 3 + Cat 4. Renders
+// as a structured card below the action instruction. The break-even pill on
+// RECOVER is the only auto-calculated value; the rest is fixed copy.
+export interface RaoLever {
+  letter: 'R' | 'A' | 'O';
+  // Display name — e.g. "RECOVER through pricing"
+  name: string;
+  // Single-sentence guidance on when this lever is right / wrong.
+  condition: string;
+  // Optional pill — currently only RECOVER carries the break-even pill.
+  pill?: { label: string; value: string };
+}
+
+export interface RaoFramework {
+  // Card title — e.g. "Recover · Absorb · Optimise — choose your mix"
+  title: string;
+  // Lead paragraph above the lever list.
+  intro: string;
+  levers: RaoLever[];
 }
 
 // Runtime context the action builder needs to interpolate spec placeholders

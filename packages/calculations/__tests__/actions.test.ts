@@ -74,11 +74,22 @@ describe('buildActions', () => {
   describe('Category 3 (cost-plus, surcharging)', () => {
     const actions = buildActions(3, 'Tyro', 'cafe', CTX);
 
-    it('every action has non-empty text + script + why', () => {
+    it('every action has non-empty text + why', () => {
       for (const action of actions) {
         expect(action.text).toBeTruthy();
-        expect(action.script).toBeTruthy();
         expect(action.why).toBeTruthy();
+      }
+    });
+
+    it('the RAO action carries a framework instead of a script', () => {
+      expect(actions[0]!.framework).toBeTruthy();
+      expect(actions[0]!.script).toBeFalsy();
+    });
+
+    it('non-RAO actions carry a script', () => {
+      for (const action of actions.slice(1)) {
+        expect(action.script).toBeTruthy();
+        expect(action.framework).toBeFalsy();
       }
     });
 
@@ -92,24 +103,36 @@ describe('buildActions', () => {
       expect(actions[0]!.text).toContain('$3,300');
     });
 
-    it('first action script uses break-even pct, not surcharge rate', () => {
+    it('framework RECOVER pill uses break-even pct, not surcharge rate', () => {
+      const recover = actions[0]!.framework!.levers.find((l) => l.letter === 'R')!;
       // 0.66% break-even, NOT 1.5% surcharge rate
-      expect(actions[0]!.script).toContain('0.66%');
-      expect(actions[0]!.script).not.toContain('1.5%');
+      expect(recover.pill?.value).toContain('0.66%');
+      expect(recover.pill?.value).not.toContain('1.5%');
     });
 
-    it('first action script does not prescribe pricing as the answer', () => {
-      expect(actions[0]!.script).not.toContain('Raise prices');
+    it('framework does not prescribe pricing as the answer', () => {
+      const fw = actions[0]!.framework!;
+      const flat = `${fw.title} ${fw.intro} ${fw.levers.map((l) => `${l.name} ${l.condition} ${l.pill?.value ?? ''}`).join(' ')}`;
+      expect(flat).not.toContain('Raise prices');
     });
 
-    it('first action script contains the three RAO lever labels', () => {
-      expect(actions[0]!.script).toContain('RECOVER');
-      expect(actions[0]!.script).toContain('ABSORB');
-      expect(actions[0]!.script).toContain('OPTIMISE');
+    it('framework contains the three RAO lever names', () => {
+      const names = actions[0]!.framework!.levers.map((l) => l.name).join(' ');
+      expect(names).toContain('RECOVER');
+      expect(names).toContain('ABSORB');
+      expect(names).toContain('OPTIMISE');
     });
 
     it('PSP name is interpolated', () => {
-      const flat = actions.flatMap((a) => [a.text, a.script ?? '', a.why ?? '']).join(' ');
+      const flat = actions
+        .flatMap((a) => [
+          a.text,
+          a.script ?? '',
+          a.why ?? '',
+          a.framework?.intro ?? '',
+          ...(a.framework?.levers.map((l) => `${l.name} ${l.condition} ${l.pill?.value ?? ''}`) ?? []),
+        ])
+        .join(' ');
       expect(flat).toContain('Tyro');
     });
   });
@@ -121,12 +144,20 @@ describe('buildActions', () => {
       expect(actions).toHaveLength(4);
     });
 
-    it('every action has non-empty text + script + why', () => {
+    it('every action has non-empty text + why', () => {
       for (const action of actions) {
         expect(action.text).toBeTruthy();
-        expect(action.script).toBeTruthy();
         expect(action.why).toBeTruthy();
       }
+    });
+
+    it('action 2 carries a framework instead of a script; others have scripts', () => {
+      expect(actions[1]!.framework).toBeTruthy();
+      expect(actions[1]!.script).toBeFalsy();
+      // Actions 0, 2, 3 should still have scripts
+      expect(actions[0]!.script).toBeTruthy();
+      expect(actions[2]!.script).toBeTruthy();
+      expect(actions[3]!.script).toBeTruthy();
     });
 
     it('first two actions are URGENT, third is PLAN, fourth is MONITOR', () => {
@@ -142,19 +173,23 @@ describe('buildActions', () => {
       expect(actions[1]!.text).not.toContain('replace');
     });
 
-    it('action 2 script uses break-even pct, not surcharge rate', () => {
-      expect(actions[1]!.script).toContain('0.66%');
-      expect(actions[1]!.script).not.toContain('1.5%');
+    it('action 2 framework RECOVER pill uses break-even pct, not surcharge rate', () => {
+      const recover = actions[1]!.framework!.levers.find((l) => l.letter === 'R')!;
+      expect(recover.pill?.value).toContain('0.66%');
+      expect(recover.pill?.value).not.toContain('1.5%');
     });
 
-    it('action 2 script does not prescribe pricing as the answer', () => {
-      expect(actions[1]!.script).not.toContain('Raise prices');
+    it('action 2 framework does not prescribe pricing as the answer', () => {
+      const fw = actions[1]!.framework!;
+      const flat = `${fw.title} ${fw.intro} ${fw.levers.map((l) => `${l.name} ${l.condition} ${l.pill?.value ?? ''}`).join(' ')}`;
+      expect(flat).not.toContain('Raise prices');
     });
 
-    it('action 2 script contains the three RAO lever labels', () => {
-      expect(actions[1]!.script).toContain('RECOVER');
-      expect(actions[1]!.script).toContain('ABSORB');
-      expect(actions[1]!.script).toContain('OPTIMISE');
+    it('action 2 framework contains the three RAO lever names', () => {
+      const names = actions[1]!.framework!.levers.map((l) => l.name).join(' ');
+      expect(names).toContain('RECOVER');
+      expect(names).toContain('ABSORB');
+      expect(names).toContain('OPTIMISE');
     });
 
     it('action 3 interpolates the formatted volume', () => {
@@ -163,7 +198,11 @@ describe('buildActions', () => {
 
     it('PSP name is interpolated into every action', () => {
       for (const action of actions) {
-        const flat = `${action.text} ${action.script ?? ''} ${action.why ?? ''}`;
+        const fw = action.framework;
+        const fwFlat = fw
+          ? `${fw.intro} ${fw.levers.map((l) => `${l.condition} ${l.pill?.value ?? ''}`).join(' ')}`
+          : '';
+        const flat = `${action.text} ${action.script ?? ''} ${action.why ?? ''} ${fwFlat}`;
         expect(flat).toContain('Stripe');
       }
     });

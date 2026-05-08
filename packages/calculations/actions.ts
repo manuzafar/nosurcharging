@@ -8,7 +8,7 @@
 // Three urgency tiers: urgent (red), plan (amber), monitor (grey).
 // Cat 4 copy is verbatim from docs/design/revamp-ux-spec.md §3.4.
 
-import type { ActionContext, ActionItem } from './types';
+import type { ActionContext, ActionItem, RaoFramework } from './types';
 
 // ── Formatting helpers ───────────────────────────────────────────
 // Calc layer is i18n-naive — AU formatting only in Phase 1.
@@ -38,31 +38,47 @@ function formatBreakEvenPct(plSwing: number, volume: number): string {
 }
 
 // RAO framework — Recover / Absorb / Optimise. Cat 3 + Cat 4 share this
-// script verbatim because the lever choice is the same; only the upstream
-// shortfall differs. The script is intentionally option-presenting, not
-// directive: it surfaces conditions on each path so the merchant can match
-// their gross margin / competitive position to the right response.
+// framework verbatim because the lever choice is the same; only the upstream
+// shortfall differs. The framework is intentionally option-presenting, not
+// directive: each lever surfaces conditions so the merchant can match their
+// gross margin / competitive position to the right response.
 //
-// Multi-section script; relies on the ActionList blockquote rendering
-// `whiteSpace: pre-wrap` so the section breaks survive.
-function buildRaoFrameworkScript(args: {
+// Returns structured data, not a multi-section script — VerticalActionSteps
+// renders this as a card with coloured letter dots, lever names, conditions,
+// and a single break-even pill on RECOVER.
+function buildRaoFramework(args: {
   breakEvenPct: string;
   shortfall: string;
   psp: string;
-}): string {
+}): RaoFramework {
   const { breakEvenPct, shortfall, psp } = args;
-  return `You have three ways to respond to this cost. The right approach depends on your gross margin and business type.
-
-RECOVER through pricing
-A ${breakEvenPct} increase across your card-paying revenue fully recovers ${shortfall}. Right if your gross margin is below 20% or your competitors face the same October change. Wrong if your customers are highly price-sensitive or you sell in a commoditised market.
-
-ABSORB from margin
-Viable if your gross margin is above 25% and this cost is less than 3-4% of your net profit. No customer communication needed. Confirm this is sustainable before choosing this path.
-
-OPTIMISE the underlying cost
-Complete the first action above before committing to anything else. Your actual October cost may be lower than this estimate once ${psp} confirms their post-October rate. Also check whether Least Cost Routing is active on your terminals — activating it costs nothing and may reduce this exposure.
-
-Most businesses use a combination. Start with Action 1 above — ${psp}'s response determines how much of this shortfall actually needs to be recovered.`;
+  return {
+    title: 'Recover · Absorb · Optimise — choose your mix',
+    intro: `You have three ways to respond. The right approach depends on your gross margin and business type — two things we don't know from this assessment. ${psp}'s response to the first action may narrow your actual shortfall before you choose.`,
+    levers: [
+      {
+        letter: 'R',
+        name: 'RECOVER through pricing',
+        condition:
+          "Right if your gross margin is below 20% or your competitors face the same October change. Wrong if customers are highly price-sensitive or you're in a commoditised market.",
+        pill: {
+          label: 'Break-even',
+          value: `${breakEvenPct} increase recovers ${shortfall}`,
+        },
+      },
+      {
+        letter: 'A',
+        name: 'ABSORB from margin',
+        condition:
+          'Viable if your gross margin is above 25% and this cost is less than 3–4% of net profit. Not viable if you operate near breakeven.',
+      },
+      {
+        letter: 'O',
+        name: 'OPTIMISE the cost itself',
+        condition: `Check Least Cost Routing is active on your terminals — activating it costs nothing and may reduce this exposure. ${psp}'s itemised plan may also reduce the base cost before you commit to RECOVER or ABSORB.`,
+      },
+    ],
+  };
 }
 
 // ── Public entry point ───────────────────────────────────────────
@@ -186,7 +202,7 @@ function buildCat3Actions(psp: string, ctx: ActionContext): ActionItem[] {
       priority: 'urgent',
       timeAnchor: 'BEFORE 1 OCTOBER',
       text: `Decide how you will respond to the ${shortfall} shortfall`,
-      script: buildRaoFrameworkScript({
+      framework: buildRaoFramework({
         breakEvenPct,
         shortfall,
         psp,
@@ -234,7 +250,7 @@ function buildCat4Actions(psp: string, ctx: ActionContext, isBlended: boolean = 
       priority: 'urgent',
       timeAnchor: 'BEFORE 1 OCTOBER',
       text: `Decide how you will respond to the ${shortfall} shortfall`,
-      script: buildRaoFrameworkScript({
+      framework: buildRaoFramework({
         breakEvenPct,
         shortfall,
         psp,
