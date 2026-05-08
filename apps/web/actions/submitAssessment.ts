@@ -188,6 +188,7 @@ export async function submitAssessment(
       surchargeRate: formData.surchargeRate,
       surchargeRevenue: outputs.surchargeRevenue,
       icSaving: outputs.icSaving,
+      plSwing: outputs.plSwing,
     },
     formData.planType === 'strategic_rate'
       ? undefined

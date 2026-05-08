@@ -23,6 +23,48 @@ function formatPct(rate: number): string {
   return `${(rate * 100).toFixed(1)}%`;
 }
 
+// Break-even price increase: the percentage uplift on card-paying revenue
+// that fully offsets the merchant's October P&L shortfall. NOT the surcharge
+// rate — surcharge rate over-recovers because it's set to cover
+// interchange + scheme + margin, while the break-even only needs to
+// recover the post-reform shortfall (after IC saving / pass-through).
+//   breakEvenPct = abs(plSwing) / volume × 100
+// Returned with two decimals (e.g. "1.13%") because rounding to one decimal
+// systematically biases towards over-recovery.
+function formatBreakEvenPct(plSwing: number, volume: number): string {
+  if (volume <= 0) return '0.00%';
+  const pct = (Math.abs(plSwing) / volume) * 100;
+  return `${pct.toFixed(2)}%`;
+}
+
+// RAO framework — Recover / Absorb / Optimise. Cat 3 + Cat 4 share this
+// script verbatim because the lever choice is the same; only the upstream
+// shortfall differs. The script is intentionally option-presenting, not
+// directive: it surfaces conditions on each path so the merchant can match
+// their gross margin / competitive position to the right response.
+//
+// Multi-section script; relies on the ActionList blockquote rendering
+// `whiteSpace: pre-wrap` so the section breaks survive.
+function buildRaoFrameworkScript(args: {
+  breakEvenPct: string;
+  shortfall: string;
+  psp: string;
+}): string {
+  const { breakEvenPct, shortfall, psp } = args;
+  return `You have three ways to respond to this cost. The right approach depends on your gross margin and business type.
+
+RECOVER through pricing
+A ${breakEvenPct} increase across your card-paying revenue fully recovers ${shortfall}. Right if your gross margin is below 20% or your competitors face the same October change. Wrong if your customers are highly price-sensitive or you sell in a commoditised market.
+
+ABSORB from margin
+Viable if your gross margin is above 25% and this cost is less than 3-4% of your net profit. No customer communication needed. Confirm this is sustainable before choosing this path.
+
+OPTIMISE the underlying cost
+Complete the first action above before committing to anything else. Your actual October cost may be lower than this estimate once ${psp} confirms their post-October rate. Also check whether Least Cost Routing is active on your terminals — activating it costs nothing and may reduce this exposure.
+
+Most businesses use a combination. Start with Action 1 above — ${psp}'s response determines how much of this shortfall actually needs to be recovered.`;
+}
+
 // ── Public entry point ───────────────────────────────────────────
 
 export function buildActions(
@@ -132,15 +174,23 @@ function buildCat2Actions(psp: string, isBlended: boolean = false): ActionItem[]
 // Surcharge revenue disappears 1 October. IC saving flows automatically.
 
 function buildCat3Actions(psp: string, ctx: ActionContext): ActionItem[] {
-  const surchargeRev = formatCurrency(ctx.surchargeRevenue);
-  const ratePct = formatPct(ctx.surchargeRate);
+  const shortfall = formatCurrency(Math.abs(ctx.plSwing));
+  const breakEvenPct = formatBreakEvenPct(ctx.plSwing, ctx.volume);
+  // Surcharge rate is suppressed in this script — using it as the
+  // recommended price increase systematically over-recovers.
+  void formatPct;
+  void ctx.surchargeRate;
 
   return [
     {
       priority: 'urgent',
       timeAnchor: 'BEFORE 1 OCTOBER',
-      text: `Plan how you'll replace the ${surchargeRev} in surcharge revenue`,
-      script: `Raise prices by approximately ${ratePct} across all card transactions before 1 October — or identify ${surchargeRev} in cost savings elsewhere. Both require planning time.`,
+      text: `Decide how you will respond to the ${shortfall} shortfall`,
+      script: buildRaoFrameworkScript({
+        breakEvenPct,
+        shortfall,
+        psp,
+      }),
       why: `The surcharge ban applies from 1 October regardless of your ${psp} plan. This part of your situation is certain.`,
     },
     {
@@ -164,9 +214,13 @@ function buildCat3Actions(psp: string, ctx: ActionContext): ActionItem[] {
 // Worst case — both problems. Copy is verbatim from ux-spec §3.4.
 
 function buildCat4Actions(psp: string, ctx: ActionContext, isBlended: boolean = false): ActionItem[] {
-  const surchargeRev = formatCurrency(ctx.surchargeRevenue);
-  const ratePct = formatPct(ctx.surchargeRate);
+  const shortfall = formatCurrency(Math.abs(ctx.plSwing));
+  const breakEvenPct = formatBreakEvenPct(ctx.plSwing, ctx.volume);
   const volume = formatCurrency(ctx.volume);
+  // Surcharge rate is suppressed in this script — see Cat 3 note.
+  void formatPct;
+  void ctx.surchargeRate;
+  void ctx.surchargeRevenue;
 
   const actions: ActionItem[] = [
     {
@@ -179,8 +233,12 @@ function buildCat4Actions(psp: string, ctx: ActionContext, isBlended: boolean = 
     {
       priority: 'urgent',
       timeAnchor: 'BEFORE 1 OCTOBER',
-      text: `Plan how you'll replace the ${surchargeRev} in surcharge revenue`,
-      script: `Raise prices by approximately ${ratePct} across all card transactions before 1 October — or identify ${surchargeRev} in cost savings elsewhere. Both require planning time.`,
+      text: `Decide how you will respond to the ${shortfall} shortfall`,
+      script: buildRaoFrameworkScript({
+        breakEvenPct,
+        shortfall,
+        psp,
+      }),
       why: `The surcharge ban applies from 1 October regardless of your ${psp} plan. This part of your situation is certain.`,
     },
     {

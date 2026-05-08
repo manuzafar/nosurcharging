@@ -191,6 +191,10 @@ export function ActionList({ actions }: ActionListProps) {
                         fontStyle: 'italic',
                         lineHeight: 1.7,
                         margin: 0,
+                        // Preserve newlines so multi-section scripts (e.g. the
+                        // Cat 3/4 RAO framework with RECOVER / ABSORB / OPTIMISE
+                        // headings) render with proper paragraph breaks.
+                        whiteSpace: 'pre-wrap',
                       }}
                     >
                       {action.script}

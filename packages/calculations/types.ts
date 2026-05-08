@@ -180,11 +180,16 @@ export interface ActionItem {
 // Runtime context the action builder needs to interpolate spec placeholders
 // ([PSP], [volume], [rate], $X) into the script + what copy.
 // Sourced from formData + AssessmentOutputs at the call site.
+//
+// plSwing is required for the Cat 3 / Cat 4 break-even calculation
+// (abs(plSwing) / volume × 100). Surcharge rate ≠ break-even — using
+// surcharge rate as the price-increase recommendation over-recovers.
 export interface ActionContext {
   volume: number;
   surchargeRate: number;
   surchargeRevenue: number;
   icSaving: number;
+  plSwing: number;
 }
 
 // ── Reform dates ─────────────────────────────────────────────────

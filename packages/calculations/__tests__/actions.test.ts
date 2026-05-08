@@ -9,11 +9,16 @@ import { describe, expect, it } from 'vitest';
 import { buildActions } from '../actions';
 import type { ActionContext } from '../types';
 
+// Test fixture. plSwing chosen so that the break-even percentage is a
+// clean number (-$3,300 / $500,000 × 100 = 0.66%) — distinct from the
+// surcharge rate (1.5%) so the assertions can prove the script uses
+// break-even, not surcharge rate.
 const CTX: ActionContext = {
   volume: 500_000,
   surchargeRate: 0.015, // 1.5%
   surchargeRevenue: 7_500,
   icSaving: 4_200,
+  plSwing: -3_300, // abs / volume = 0.66% break-even
 };
 
 describe('buildActions', () => {
@@ -77,12 +82,30 @@ describe('buildActions', () => {
       }
     });
 
-    it('first action references the formatted surcharge revenue', () => {
-      expect(actions[0]!.text).toContain('$7,500');
+    it('first action title says "respond to" not "replace"', () => {
+      expect(actions[0]!.text).toContain('respond to');
+      expect(actions[0]!.text).not.toContain('replace');
     });
 
-    it('first action script references the formatted rate %', () => {
-      expect(actions[0]!.script).toContain('1.5%');
+    it('first action title interpolates the formatted shortfall (abs plSwing)', () => {
+      // abs(-3300) → $3,300
+      expect(actions[0]!.text).toContain('$3,300');
+    });
+
+    it('first action script uses break-even pct, not surcharge rate', () => {
+      // 0.66% break-even, NOT 1.5% surcharge rate
+      expect(actions[0]!.script).toContain('0.66%');
+      expect(actions[0]!.script).not.toContain('1.5%');
+    });
+
+    it('first action script does not prescribe pricing as the answer', () => {
+      expect(actions[0]!.script).not.toContain('Raise prices');
+    });
+
+    it('first action script contains the three RAO lever labels', () => {
+      expect(actions[0]!.script).toContain('RECOVER');
+      expect(actions[0]!.script).toContain('ABSORB');
+      expect(actions[0]!.script).toContain('OPTIMISE');
     });
 
     it('PSP name is interpolated', () => {
@@ -113,10 +136,25 @@ describe('buildActions', () => {
       expect(actions[3]!.priority).toBe('monitor');
     });
 
-    it('action 2 interpolates $7,500 surcharge revenue and 1.5% rate', () => {
-      expect(actions[1]!.text).toContain('$7,500');
-      expect(actions[1]!.script).toContain('1.5%');
-      expect(actions[1]!.script).toContain('$7,500');
+    it('action 2 title says "respond to" with the shortfall amount', () => {
+      expect(actions[1]!.text).toContain('respond to');
+      expect(actions[1]!.text).toContain('$3,300');
+      expect(actions[1]!.text).not.toContain('replace');
+    });
+
+    it('action 2 script uses break-even pct, not surcharge rate', () => {
+      expect(actions[1]!.script).toContain('0.66%');
+      expect(actions[1]!.script).not.toContain('1.5%');
+    });
+
+    it('action 2 script does not prescribe pricing as the answer', () => {
+      expect(actions[1]!.script).not.toContain('Raise prices');
+    });
+
+    it('action 2 script contains the three RAO lever labels', () => {
+      expect(actions[1]!.script).toContain('RECOVER');
+      expect(actions[1]!.script).toContain('ABSORB');
+      expect(actions[1]!.script).toContain('OPTIMISE');
     });
 
     it('action 3 interpolates the formatted volume', () => {
