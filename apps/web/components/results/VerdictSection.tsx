@@ -291,61 +291,65 @@ export function VerdictSection({
               </p>
             )}
 
-            {/* Daily-cost pill — single text node so spans concat with a
-                literal space (textContent matters for tests). */}
-            {showDailyPill && (
-              <div
-                className="inline-flex items-baseline"
-                style={{
-                  marginTop: '10px',
-                  background: dailyBg,
-                  borderRadius: '6px',
-                  padding: '7px 12px',
-                  color: dailyText,
-                }}
-              >
-                <span className="font-mono font-bold" style={{ fontSize: '18px' }}>
-                  ${dailyAnchor.toLocaleString('en-AU')}
-                </span>
-                <span style={{ fontSize: '10px', opacity: 0.75, marginLeft: '6px' }}>
-                  {' '}more per day {dailyTail}
-                </span>
-              </div>
-            )}
+            {/* Pills column — stacked vertically, right-aligned on desktop.
+                Without this flex wrapper the two inline-flex pills would sit
+                on the same horizontal line because text-align:right puts
+                multiple inline elements end-to-end (not stacked). */}
+            {(showDailyPill || (!isLegacy && plSwingLow !== plSwingHigh)) && (
+              <div className="flex flex-col gap-2 md:items-end" style={{ marginTop: '10px' }}>
+                {/* Daily-cost pill */}
+                {showDailyPill && (
+                  <span
+                    className="inline-flex items-baseline"
+                    style={{
+                      background: dailyBg,
+                      borderRadius: '6px',
+                      padding: '7px 12px',
+                      color: dailyText,
+                    }}
+                  >
+                    <span className="font-mono font-bold" style={{ fontSize: '18px' }}>
+                      ${dailyAnchor.toLocaleString('en-AU')}
+                    </span>
+                    <span style={{ fontSize: '10px', opacity: 0.75, marginLeft: '6px' }}>
+                      {' '}more per day {dailyTail}
+                    </span>
+                  </span>
+                )}
 
-            {/* Range pill — compact, sits below the daily pill. Suppressed
-                for legacy rows that don't have plSwingLow / plSwingHigh. */}
-            {!isLegacy && plSwingLow !== plSwingHigh && (
-              <div
-                className="inline-flex items-center gap-2"
-                style={{
-                  marginTop: '8px',
-                  border: '0.5px solid var(--color-border-secondary)',
-                  borderRadius: '8px',
-                  padding: '5px 10px',
-                  background: 'var(--color-background-primary)',
-                }}
-              >
-                <span
-                  className="uppercase"
-                  style={{
-                    fontSize: '9px',
-                    fontWeight: 600,
-                    letterSpacing: '0.5px',
-                    color: 'var(--color-text-tertiary)',
-                  }}
-                >
-                  Range
-                </span>
-                <span
-                  className="font-mono"
-                  style={{
-                    fontSize: '11px',
-                    color: 'var(--color-text-secondary)',
-                  }}
-                >
-                  {formatSignedDollar(plSwingLow)} to {formatSignedDollar(plSwingHigh)}
-                </span>
+                {/* Range pill — suppressed when low === high to avoid noise */}
+                {!isLegacy && plSwingLow !== plSwingHigh && (
+                  <span
+                    className="inline-flex items-center gap-2"
+                    style={{
+                      border: '0.5px solid var(--color-border-secondary)',
+                      borderRadius: '8px',
+                      padding: '5px 10px',
+                      background: 'var(--color-background-primary)',
+                    }}
+                  >
+                    <span
+                      className="uppercase"
+                      style={{
+                        fontSize: '9px',
+                        fontWeight: 600,
+                        letterSpacing: '0.5px',
+                        color: 'var(--color-text-tertiary)',
+                      }}
+                    >
+                      Range
+                    </span>
+                    <span
+                      className="font-mono"
+                      style={{
+                        fontSize: '11px',
+                        color: 'var(--color-text-secondary)',
+                      }}
+                    >
+                      {formatSignedDollar(plSwingLow)} to {formatSignedDollar(plSwingHigh)}
+                    </span>
+                  </span>
+                )}
               </div>
             )}
 
