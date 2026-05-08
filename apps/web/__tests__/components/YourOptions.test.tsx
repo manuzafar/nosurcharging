@@ -56,9 +56,43 @@ describe('YourOptions', () => {
     expect(screen.getByText('Reprice 1.5%')).toBeInTheDocument();
   });
 
-  it('renders scenario cards for Cat 4', () => {
+  it('does NOT render a "Recommended" badge on any reference card', () => {
+    // 1.5% repricing was previously labelled "Recommended" — that was a
+    // prescription without knowing the merchant's gross margin or
+    // competitive position, AND 1.5% is not the break-even.
     render(<YourOptions {...defaultProps} />);
-    expect(screen.getByText('Recommended')).toBeInTheDocument();
+    expect(screen.queryByText('Recommended')).not.toBeInTheDocument();
+  });
+
+  it('renders the section heading reframed as a conditional', () => {
+    render(<YourOptions {...defaultProps} />);
+    expect(
+      screen.getByText(/If you choose to reprice/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Repricing is one of three ways to respond/i),
+    ).toBeInTheDocument();
+  });
+
+  it('renders a Break-even card with the correct percentage', () => {
+    // plSwing -7500, volume 500_000 → break-even 1.50%
+    render(<YourOptions {...defaultProps} />);
+    expect(screen.getByText(/Break-even \(1\.50%\)/)).toBeInTheDocument();
+    expect(screen.getByText('Break-even')).toBeInTheDocument();
+  });
+
+  it('renders the break-even marker on the slider tick row', () => {
+    render(<YourOptions {...defaultProps} />);
+    const marker = screen.getByTestId('break-even-marker');
+    expect(marker).toBeInTheDocument();
+    expect(marker.textContent).toContain('1.50%');
+  });
+
+  it('renders the absorption-from-margin note below the slider', () => {
+    render(<YourOptions {...defaultProps} />);
+    expect(
+      screen.getByText(/If your gross margin is above 25%/i),
+    ).toBeInTheDocument();
   });
 
   it('renders custom slider', () => {
@@ -70,7 +104,8 @@ describe('YourOptions', () => {
     render(<YourOptions {...defaultProps} />);
     const slider = screen.getByLabelText('Custom repricing percentage');
     fireEvent.change(slider, { target: { value: '2.0' } });
-    expect(screen.getByText('2.0%')).toBeInTheDocument();
+    // Display now uses 2dp (1dp biases towards over-recovery)
+    expect(screen.getByText('2.00%')).toBeInTheDocument();
   });
 
   it('uses font-mono for financial numbers', () => {

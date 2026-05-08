@@ -27,17 +27,31 @@ interface ScenarioConfig {
   pct: number;
   borderColor: string;
   bgColor: string;
-  recommended?: boolean;
+  isBreakEven?: boolean;
 }
 
+// Reference scenarios for repricing comparison. The "Do nothing" card shows
+// the cost of inaction; the 1.0% / 1.5% cards are reference points the
+// merchant can model against. The "Recommended" badge that previously sat
+// on 1.5% has been removed — 1.5% is not the break-even for most merchants
+// (using surcharge rate as the recommended price increase systematically
+// over-recovers). The actual break-even is computed at render time and
+// rendered as a fourth, emerald-styled card and a slider tick marker.
 const SCENARIOS: ScenarioConfig[] = [
   { label: 'Do nothing', pct: 0, borderColor: 'var(--color-text-danger, #C53030)', bgColor: '#FEF2F2' },
   { label: 'Reprice 1.0%', pct: 1.0, borderColor: 'var(--color-accent)', bgColor: '#FFF8F0' },
-  { label: 'Reprice 1.5%', pct: 1.5, borderColor: '#4B9E7E', bgColor: '#F0FAF6', recommended: true },
+  { label: 'Reprice 1.5%', pct: 1.5, borderColor: '#4B9E7E', bgColor: '#F0FAF6' },
 ];
 
 export function YourOptions({ category, outputs, passThrough, volume, surcharging, pspName }: YourOptionsProps) {
-  const [sliderPct, setSliderPct] = useState(1.5);
+  // Compute break-even: the price increase that exactly offsets the
+  // post-reform shortfall. abs(plSwing) / volume × 100. Rendered to 2dp
+  // because 1dp rounding biases towards over-recovery.
+  const breakEvenPct =
+    volume > 0 ? (Math.abs(outputs.plSwing) / volume) * 100 : 0;
+  const breakEvenLabel = breakEvenPct.toFixed(2);
+
+  const [sliderPct, setSliderPct] = useState(breakEvenPct);
 
   // Cat 1/2: not applicable
   if (category === 1 || category === 2) return null;
@@ -47,15 +61,31 @@ export function YourOptions({ category, outputs, passThrough, volume, surchargin
     return newRev - outputs.surchargeRevenue + (outputs.icSaving * passThrough);
   };
 
+  // Append break-even card at the end so the merchant sees the reference
+  // points (1%, 1.5%) and then the factual break-even alongside.
+  const scenariosWithBreakEven: ScenarioConfig[] = [
+    ...SCENARIOS,
+    {
+      label: `Break-even (${breakEvenLabel}%)`,
+      pct: breakEvenPct,
+      borderColor: '#1A6B5A',
+      bgColor: '#EBF6F3',
+      isBreakEven: true,
+    },
+  ];
+
   return (
     <div className="mt-4">
-      <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginBottom: '16px' }}>
-        Compare repricing scenarios to offset the surcharge ban impact.
+      <p style={{ fontSize: '14px', color: 'var(--color-text-primary)', fontWeight: 500, marginBottom: '4px' }}>
+        If you choose to reprice — how much to change.
+      </p>
+      <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginBottom: '16px', lineHeight: 1.55 }}>
+        Repricing is one of three ways to respond to this shortfall. See your action plan for the full set of options.
       </p>
 
       {/* Scenario cards */}
       <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
-        {SCENARIOS.map((s) => {
+        {scenariosWithBreakEven.map((s) => {
           const net = calcNet(s.pct);
           const daily = Math.round(net / 365);
           return (
@@ -71,17 +101,17 @@ export function YourOptions({ category, outputs, passThrough, volume, surchargin
                 <p style={{ fontSize: '13px', color: 'var(--color-text-primary)', fontWeight: 500 }}>
                   {s.label}
                 </p>
-                {s.recommended && (
+                {s.isBreakEven && (
                   <span
                     className="rounded-pill"
                     style={{
                       fontSize: '10px',
                       padding: '2px 6px',
-                      background: '#4B9E7E',
+                      background: '#1A6B5A',
                       color: '#FFFFFF',
                     }}
                   >
-                    Recommended
+                    Break-even
                   </span>
                 )}
               </div>
@@ -112,27 +142,56 @@ export function YourOptions({ category, outputs, passThrough, volume, surchargin
             Custom repricing
           </p>
           <span className="font-mono" style={{ fontSize: '14px', color: 'var(--color-text-primary)', fontWeight: 500 }}>
-            {sliderPct.toFixed(1)}%
+            {sliderPct.toFixed(2)}%
           </span>
         </div>
         <input
           type="range"
           min={0}
           max={3}
-          step={0.1}
+          step={0.01}
           value={sliderPct}
           onChange={(e) => setSliderPct(parseFloat(e.target.value))}
           className="w-full accent-amber-600"
           aria-label="Custom repricing percentage"
         />
-        <div className="flex items-center justify-between mt-2">
-          <span className="font-mono" style={{ fontSize: '11px', color: 'var(--color-text-tertiary)' }}>0%</span>
-          <span className="font-mono" style={{ fontSize: '11px', color: 'var(--color-text-tertiary)' }}>3%</span>
+        {/* Tick row — 0%, break-even marker (emerald), 3%. Marker positioned
+            proportionally to its percentage on the 0-3% range. Pure visual
+            cue; the slider remains free-form. */}
+        <div className="relative mt-2" style={{ height: '14px' }}>
+          <span
+            className="font-mono absolute left-0"
+            style={{ fontSize: '11px', color: 'var(--color-text-tertiary)' }}
+          >
+            0%
+          </span>
+          {breakEvenPct > 0 && breakEvenPct <= 3 && (
+            <span
+              className="font-mono absolute"
+              style={{
+                fontSize: '11px',
+                color: '#1A6B5A',
+                fontWeight: 500,
+                left: `${(breakEvenPct / 3) * 100}%`,
+                transform: 'translateX(-50%)',
+                whiteSpace: 'nowrap',
+              }}
+              data-testid="break-even-marker"
+            >
+              ▲ Break-even {breakEvenLabel}%
+            </span>
+          )}
+          <span
+            className="font-mono absolute right-0"
+            style={{ fontSize: '11px', color: 'var(--color-text-tertiary)' }}
+          >
+            3%
+          </span>
         </div>
         <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--color-border-secondary)' }}>
           <div className="flex items-center justify-between">
             <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-              Net position at {sliderPct.toFixed(1)}%
+              Net position at {sliderPct.toFixed(2)}%
             </span>
             <span
               className="font-mono"
@@ -147,6 +206,21 @@ export function YourOptions({ category, outputs, passThrough, volume, surchargin
           </div>
         </div>
       </div>
+
+      {/* Absorption note — acknowledges that pricing is one of several
+          paths. Sits below the slider so it reads as context, not as a
+          competing CTA. */}
+      <p
+        className="mt-3"
+        style={{
+          fontSize: '12px',
+          color: 'var(--color-text-tertiary)',
+          fontStyle: 'italic',
+          lineHeight: 1.55,
+        }}
+      >
+        If your gross margin is above 25%, absorbing this cost from margin may be viable without any price change.
+      </p>
     </div>
   );
 }

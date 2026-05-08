@@ -43,6 +43,32 @@ describe('Step3Surcharging', () => {
     expect(screen.getByText(/which networks/i)).toBeInTheDocument();
   });
 
+  it('clicking Yes from null prefills all networks and 2% rate', async () => {
+    // First click on Yes from initial state should pre-select all four
+    // designated/exempt networks and set the rate to the AU-typical 2%.
+    render(<Step3Surcharging {...defaultProps} />);
+    await user.click(screen.getByText('Yes'));
+    expect(onNetworksChange).toHaveBeenCalledWith(['visa', 'eftpos', 'amex', 'bnpl']);
+    expect(onSurchargeRateChange).toHaveBeenCalledWith(0.02);
+    expect(onSurchargingChange).toHaveBeenCalledWith(true);
+  });
+
+  it('does not overwrite existing networks/rate when re-clicking Yes', async () => {
+    // If the merchant goes back-and-forth and Yes is already selected with
+    // their custom values, re-clicking Yes must NOT clobber them.
+    render(
+      <Step3Surcharging
+        {...defaultProps}
+        surcharging={true}
+        surchargeNetworks={['visa']}
+        surchargeRate={0.015}
+      />,
+    );
+    await user.click(screen.getByText('Yes'));
+    expect(onNetworksChange).not.toHaveBeenCalled();
+    expect(onSurchargeRateChange).not.toHaveBeenCalled();
+  });
+
   it('clicking No hides network checkboxes and resets state', async () => {
     const { rerender } = render(
       <Step3Surcharging {...defaultProps} surcharging={true} />,

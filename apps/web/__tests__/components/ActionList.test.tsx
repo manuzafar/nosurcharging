@@ -9,6 +9,7 @@ const CTX: ActionContext = {
   surchargeRate: 0.015,
   surchargeRevenue: 7_500,
   icSaving: 4_200,
+  plSwing: -3_300, // 0.66% break-even at this volume
 };
 
 describe('ActionList', () => {
