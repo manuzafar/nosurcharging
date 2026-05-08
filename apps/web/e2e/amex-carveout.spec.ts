@@ -17,10 +17,17 @@ test.describe('Amex carve-out', () => {
     await page.getByRole('radio', { name: 'Stripe' }).click();
     await page.getByRole('button', { name: /next/i }).click();
 
-    // Step 3 — Yes surcharging
+    // Step 3 — Yes surcharging.
+    // The Yes button now pre-selects all four networks (visa, eftpos,
+    // amex, bnpl) — UX win for the common case where merchants surcharge
+    // everything. To exercise the Amex-only carve-out we have to uncheck
+    // the non-exempt networks first so only the exempt ones remain.
     await page.getByRole('button', { name: /Yes.*surcharge/i }).click();
+    await page.getByRole('checkbox', { name: /visa/i }).uncheck();
+    await page.getByRole('checkbox', { name: /eftpos/i }).uncheck();
+    await page.getByRole('checkbox', { name: /bnpl/i }).uncheck();
 
-    // Check only Amex
+    // Amex remains checked from the prefill — confirm by re-asserting.
     await page.getByRole('checkbox', { name: /amex/i }).check();
 
     // Carve-out note should appear
