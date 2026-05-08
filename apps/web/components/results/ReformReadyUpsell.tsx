@@ -69,49 +69,49 @@ export function ReformReadyUpsell({
         }}
       />
 
-      {/* Price block — top right */}
+      {/* Top row — badge left, price right. Stacks on mobile so the
+          headline below is never squeezed under the floated price. */}
       <div
-        className="float-right text-right"
-        style={{ marginBottom: '4px', position: 'relative' }}
+        className="relative flex flex-col-reverse md:flex-row md:items-start md:justify-between gap-3 md:gap-4"
+        style={{ marginBottom: '14px' }}
       >
-        <p
+        <span
+          className="self-start uppercase font-bold"
           style={{
-            fontSize: '10px',
-            color: 'rgba(255, 255, 255, 0.35)',
-            marginBottom: '2px',
+            background: 'rgba(114, 196, 176, 0.15)',
+            border: '0.5px solid var(--color-accent-border)',
+            color: 'var(--color-accent-border)',
+            fontSize: '8.5px',
+            fontWeight: 700,
+            letterSpacing: '1.5px',
+            padding: '3px 10px',
+            borderRadius: '100px',
           }}
         >
-          Reform Ready Report
-        </p>
-        <p
-          className="font-mono font-bold"
-          style={{
-            fontSize: '28px',
-            color: '#FFFFFF',
-            lineHeight: 1,
-          }}
-        >
-          $149
-        </p>
+          Your actual number — not a market estimate
+        </span>
+        <div className="text-left md:text-right shrink-0">
+          <p
+            style={{
+              fontSize: '10px',
+              color: 'rgba(255, 255, 255, 0.35)',
+              marginBottom: '2px',
+            }}
+          >
+            Reform Ready Report
+          </p>
+          <p
+            className="font-mono font-bold"
+            style={{
+              fontSize: '28px',
+              color: '#FFFFFF',
+              lineHeight: 1,
+            }}
+          >
+            $149
+          </p>
+        </div>
       </div>
-
-      {/* Badge */}
-      <span
-        className="inline-block uppercase font-bold relative"
-        style={{
-          background: 'rgba(114, 196, 176, 0.15)',
-          border: '0.5px solid var(--color-accent-border)',
-          color: 'var(--color-accent-border)',
-          fontSize: '8.5px',
-          fontWeight: 700,
-          letterSpacing: '1.5px',
-          padding: '3px 10px',
-          borderRadius: '100px',
-          marginBottom: '14px',
-        }}
-      >
-        Your actual number — not a market estimate
-      </span>
 
       {/* Headline */}
       <h3
