@@ -15,6 +15,7 @@
 // material tension to surface — Cat 1 saving is structural, Cat 2
 // has its own pass-through framing in the verdict body.
 
+import { TrendingDown, TrendingUp, TriangleAlert } from 'lucide-react';
 import type { AssessmentOutputs } from '@nosurcharging/calculations/types';
 
 interface TensionSectionProps {
@@ -117,11 +118,9 @@ export function TensionSection({
             background: 'var(--color-background-warning)',
             border: '0.5px solid var(--color-text-warning)',
             color: 'var(--color-text-warning)',
-            fontSize: '11px',
-            fontWeight: 700,
           }}
         >
-          !
+          <TriangleAlert size={13} aria-hidden />
         </span>
         <h3
           className="font-bold"
@@ -174,12 +173,14 @@ export function TensionSection({
                     color: isGood
                       ? 'var(--color-text-success)'
                       : 'var(--color-text-danger)',
-                    fontSize: '10px',
-                    fontWeight: 700,
                     marginTop: '2px',
                   }}
                 >
-                  {isGood ? '↘' : '↗'}
+                  {isGood ? (
+                    <TrendingDown size={10} aria-hidden />
+                  ) : (
+                    <TrendingUp size={10} aria-hidden />
+                  )}
                 </span>
                 <p
                   style={{

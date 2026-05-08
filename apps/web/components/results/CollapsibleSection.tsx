@@ -16,8 +16,9 @@
 // both id="X" and data-section="X" exactly like the legacy sections.
 
 import { forwardRef, useEffect, useId, useState, type ReactNode } from 'react';
+import { ChevronDown } from 'lucide-react';
 
-type IconTint = 'orange' | 'green' | 'blue' | 'purple';
+type IconTint = 'orange' | 'green' | 'blue' | 'purple' | 'fuchsia';
 
 interface CollapsibleSectionProps {
   id: string;
@@ -36,6 +37,18 @@ const ICON_TINT_BG: Record<IconTint, string> = {
   green: 'var(--color-background-success)',
   blue: '#EFF6FF',
   purple: '#F5F3FF',
+  fuchsia: '#FDF4FF',
+};
+
+// Icon foreground colours pair with the tint bg above. Each section's
+// callsite sets <iconMark> to a Lucide component — the colour is picked
+// up via currentColor on the wrapper span.
+const ICON_TINT_COLOR: Record<IconTint, string> = {
+  orange: 'var(--color-text-warning)',
+  green: 'var(--color-text-success)',
+  blue: '#1E40AF',
+  purple: '#5B21B6',
+  fuchsia: '#86198F',
 };
 
 function readPersisted(key: string, fallback: boolean): boolean {
@@ -124,7 +137,7 @@ export const CollapsibleSection = forwardRef<HTMLElement, CollapsibleSectionProp
                 height: '28px',
                 borderRadius: '7px',
                 background: ICON_TINT_BG[iconTint],
-                fontSize: '13px',
+                color: ICON_TINT_COLOR[iconTint],
               }}
             >
               {iconMark}
@@ -172,19 +185,17 @@ export const CollapsibleSection = forwardRef<HTMLElement, CollapsibleSectionProp
             )}
             <span
               aria-hidden
-              className="flex items-center justify-center"
+              className="flex items-center justify-center transition-transform duration-200"
               style={{
                 width: '20px',
                 height: '20px',
                 borderRadius: '50%',
                 background: 'var(--color-background-secondary)',
-                fontSize: '10px',
                 color: 'var(--color-text-tertiary)',
-                transition: 'transform 0.2s',
                 transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
               }}
             >
-              ▼
+              <ChevronDown size={14} aria-hidden />
             </span>
           </div>
         </button>

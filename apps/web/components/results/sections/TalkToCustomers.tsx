@@ -1,6 +1,7 @@
 'use client';
 
 import { forwardRef, useState } from 'react';
+import { MessagesSquare } from 'lucide-react';
 import { SubTabStrip } from '@/components/results/SubTabStrip';
 import { CollapsibleSection } from '@/components/results/CollapsibleSection';
 
@@ -99,7 +100,7 @@ export const TalkToCustomers = forwardRef<HTMLElement, TalkToCustomersProps>(
         id="customers"
         ref={ref}
         storageKey="results.collapsible.customers"
-        iconMark="💬"
+        iconMark={<MessagesSquare size={14} aria-hidden />}
         iconTint="orange"
         title="Talk to customers"
         subtitle="Email, counter sign, social, staff briefing"

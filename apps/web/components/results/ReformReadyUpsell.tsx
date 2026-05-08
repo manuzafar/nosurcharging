@@ -13,6 +13,7 @@
 // they may resurface in Phase 2 work — but they are not wired in
 // from this redesign PR.
 
+import { Check } from 'lucide-react';
 import { Analytics } from '@/lib/analytics';
 
 interface ReformReadyUpsellProps {
@@ -207,11 +208,10 @@ function Feature({ children }: { children: React.ReactNode }) {
           background: 'rgba(26, 107, 90, 0.3)',
           border: '0.5px solid var(--color-accent)',
           color: 'var(--color-accent-border)',
-          fontSize: '7px',
           marginTop: '2px',
         }}
       >
-        ✓
+        <Check size={8} aria-hidden />
       </span>
       <span
         style={{

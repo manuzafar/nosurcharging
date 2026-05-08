@@ -1,6 +1,7 @@
 'use client';
 
 import { forwardRef } from 'react';
+import { BarChart2 } from 'lucide-react';
 import type { AssessmentOutputs, ResolutionTrace } from '@nosurcharging/calculations/types';
 import { CostCompositionChart } from '@/components/results/CostCompositionChart';
 import { LCRInsightPanel } from '@/components/results/LCRInsightPanel';
@@ -32,7 +33,7 @@ export const ValuesSection = forwardRef<HTMLElement, ValuesSectionProps>(
         id="values"
         ref={ref}
         storageKey="results.collapsible.values"
-        iconMark="📊"
+        iconMark={<BarChart2 size={14} aria-hidden />}
         iconTint="blue"
         title="Values & rates"
         subtitle="Full cost breakdown and waterfall chart"

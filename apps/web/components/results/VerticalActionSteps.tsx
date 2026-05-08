@@ -14,6 +14,17 @@
 // A trailing DEADLINE marker (1 OCTOBER 2026) is appended below the steps to
 // anchor the timeline visually.
 
+import {
+  CalendarDays,
+  CircleAlert,
+  Clock,
+  Eye,
+  RefreshCcw,
+  Settings2,
+  ShieldCheck,
+  Target,
+} from 'lucide-react';
+import type { ReactNode } from 'react';
 import type {
   ActionItem,
   ActionPriority,
@@ -78,13 +89,21 @@ const PRIORITY_LABEL: Record<ActionPriority, string> = {
   monitor: 'MONITOR',
 };
 
+const PRIORITY_ICON: Record<ActionPriority | 'deadline', ReactNode> = {
+  urgent: <CircleAlert size={10} aria-hidden />,
+  plan: <Clock size={10} aria-hidden />,
+  monitor: <Eye size={10} aria-hidden />,
+  deadline: <CalendarDays size={10} aria-hidden />,
+};
+
 function PriorityBadge({ priority }: { priority: ActionPriority | 'deadline' }) {
   const styles = dotStyles(priority);
   const label = priority === 'deadline' ? 'DEADLINE' : PRIORITY_LABEL[priority];
   return (
     <span
-      className="font-bold uppercase"
+      className="inline-flex items-center font-bold uppercase"
       style={{
+        gap: '4px',
         fontSize: '8px',
         letterSpacing: '0.3px',
         padding: '2px 8px',
@@ -94,6 +113,7 @@ function PriorityBadge({ priority }: { priority: ActionPriority | 'deadline' }) 
         border: styles.border ? `0.5px solid ${styles.border}` : 'none',
       }}
     >
+      {PRIORITY_ICON[priority]}
       {label}
     </span>
   );
@@ -156,6 +176,12 @@ function RaoLeverDotStyles(letter: 'R' | 'A' | 'O'): {
   }
 }
 
+const RAO_LEVER_ICON: Record<'R' | 'A' | 'O', ReactNode> = {
+  R: <RefreshCcw size={12} aria-hidden />,
+  A: <ShieldCheck size={12} aria-hidden />,
+  O: <Settings2 size={12} aria-hidden />,
+};
+
 function RaoCard({ framework }: { framework: RaoFramework }) {
   return (
     <div
@@ -204,13 +230,17 @@ function RaoCard({ framework }: { framework: RaoFramework }) {
               </span>
               <div className="flex-1">
                 <p
-                  className="font-bold"
+                  className="inline-flex items-center font-bold"
                   style={{
+                    gap: '6px',
                     fontSize: '11px',
                     color: 'var(--color-text-primary)',
                     marginBottom: '2px',
                   }}
                 >
+                  <span style={{ color: styles.color }}>
+                    {RAO_LEVER_ICON[lever.letter]}
+                  </span>
                   {lever.name}
                 </p>
                 <p
@@ -237,6 +267,7 @@ function RaoCard({ framework }: { framework: RaoFramework }) {
                       marginTop: '8px',
                     }}
                   >
+                    <Target size={11} aria-hidden />
                     {lever.pill.label}: {lever.pill.value}
                   </span>
                 )}

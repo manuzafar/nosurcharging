@@ -1,6 +1,7 @@
 'use client';
 
 import { forwardRef } from 'react';
+import { Scale } from 'lucide-react';
 import type { AssessmentOutputs } from '@nosurcharging/calculations/types';
 import { CollapsibleSection } from '@/components/results/CollapsibleSection';
 
@@ -116,7 +117,7 @@ export const NegotiationBrief = forwardRef<HTMLElement, NegotiationBriefProps>(
         id="negotiate"
         ref={ref}
         storageKey="results.collapsible.negotiate"
-        iconMark="⚖️"
+        iconMark={<Scale size={14} aria-hidden />}
         iconTint="purple"
         title="Negotiation brief"
         subtitle={`${pspName} call script and prep guide`}

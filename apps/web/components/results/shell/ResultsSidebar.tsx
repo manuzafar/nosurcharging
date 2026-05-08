@@ -1,5 +1,6 @@
 'use client';
 
+import { AlertCircle } from 'lucide-react';
 import type { SectionId, SectionMeta } from './types';
 import { SECTIONS } from './types';
 
@@ -117,14 +118,16 @@ export function ResultsSidebar({
                 </span>
                 {section.id === 'actions' && urgentCount > 0 && (
                   <span
-                    className="font-medium rounded-pill"
+                    className="inline-flex items-center font-medium rounded-pill"
                     style={{
+                      gap: '3px',
                       background: 'var(--color-background-danger)',
                       color: 'var(--color-text-danger)',
                       fontSize: '11px',
                       padding: '2px 7px',
                     }}
                   >
+                    <AlertCircle size={10} aria-hidden />
                     {urgentCount}
                   </span>
                 )}

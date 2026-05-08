@@ -1,6 +1,7 @@
 'use client';
 
 import { forwardRef, useState } from 'react';
+import { CheckCircle2, Circle, ClipboardList } from 'lucide-react';
 import { CollapsibleSection } from '@/components/results/CollapsibleSection';
 
 interface ReadinessChecklistProps {
@@ -61,7 +62,7 @@ export const ReadinessChecklist = forwardRef<HTMLElement, ReadinessChecklistProp
         id="checklist"
         ref={ref}
         storageKey="results.collapsible.checklist"
-        iconMark="📋"
+        iconMark={<ClipboardList size={14} aria-hidden />}
         iconTint="green"
         title="Readiness checklist"
         subtitle="Track your preparation progress"
@@ -110,13 +111,22 @@ export const ReadinessChecklist = forwardRef<HTMLElement, ReadinessChecklistProp
                 transition: 'background 150ms ease, border 150ms ease',
               }}
             >
+              {/* Hidden native input drives accessibility (role=checkbox)
+                  and keyboard semantics. Lucide icon below renders the
+                  visible state — selected on the input swaps the icon. */}
               <input
                 type="checkbox"
                 checked={checked[i]}
                 onChange={() => handleToggle(i)}
-                className="mt-0.5 accent-amber-600"
-                style={{ width: '16px', height: '16px' }}
+                className="sr-only"
               />
+              <span aria-hidden className="shrink-0" style={{ marginTop: '1px' }}>
+                {checked[i] ? (
+                  <CheckCircle2 size={17} color="var(--color-text-success)" />
+                ) : (
+                  <Circle size={17} color="var(--color-border-secondary)" />
+                )}
+              </span>
               <div className="flex-1">
                 <span
                   style={{

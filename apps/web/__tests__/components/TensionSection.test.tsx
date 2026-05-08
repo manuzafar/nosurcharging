@@ -84,12 +84,12 @@ describe('TensionSection', () => {
     expect(screen.queryByText(/passes through less than 45%/i)).not.toBeInTheDocument();
   });
 
-  it('renders the amber warning icon', () => {
+  it('renders the amber warning icon (Lucide TriangleAlert SVG)', () => {
     const { container } = render(
       <TensionSection category={4} pspName="Stripe" outputs={makeOutputs({ category: 4 })} />,
     );
-    // The amber circle is rendered as a styled span containing "!"
-    const exclamation = container.querySelector('[aria-hidden="true"]');
-    expect(exclamation?.textContent).toBe('!');
+    // The amber warning circle now wraps a Lucide TriangleAlert <svg>.
+    const svg = container.querySelector('svg.lucide-triangle-alert');
+    expect(svg).not.toBeNull();
   });
 });

@@ -14,6 +14,9 @@
 //
 // Cat 1 (cost-plus, not surcharging): null — nothing to flag.
 
+import { Ban, Zap } from 'lucide-react';
+import type { ReactNode } from 'react';
+
 interface ProblemsBlockProps {
   category: 1 | 2 | 3 | 4 | 5;
   pspName: string;
@@ -29,7 +32,7 @@ function formatCurrency(amount: number): string {
 
 interface ProblemCardProps {
   variant: 'certain' | 'depends';
-  iconMark: string;             // emoji or symbol
+  iconMark: ReactNode;          // Lucide icon component
   name: string;                 // 12px bold
   tag: string;                  // "CERTAIN" / "DEPENDS ON PLAN"
   body: React.ReactNode;
@@ -43,6 +46,7 @@ function ProblemCard({ variant, iconMark, name, tag, body }: ProblemCardProps) {
           bg: 'var(--color-background-danger)',
           border: 'rgba(121, 31, 31, 0.15)',
           iconBg: 'rgba(121, 31, 31, 0.12)',
+          iconColor: 'var(--color-text-danger)',
           tagBg: 'var(--color-text-danger)',
           tagColor: '#FFFFFF',
         }
@@ -50,6 +54,7 @@ function ProblemCard({ variant, iconMark, name, tag, body }: ProblemCardProps) {
           bg: 'var(--color-background-warning)',
           border: 'rgba(186, 117, 23, 0.15)',
           iconBg: 'rgba(186, 117, 23, 0.12)',
+          iconColor: 'var(--color-text-warning)',
           tagBg: 'var(--color-text-warning)',
           tagColor: '#FFFFFF',
         };
@@ -73,7 +78,7 @@ function ProblemCard({ variant, iconMark, name, tag, body }: ProblemCardProps) {
           height: '32px',
           borderRadius: '8px',
           background: styles.iconBg,
-          fontSize: '14px',
+          color: styles.iconColor,
         }}
       >
         {iconMark}
@@ -157,7 +162,7 @@ export function ProblemsBlock({
         {showCertain && (
           <ProblemCard
             variant="certain"
-            iconMark="🚫"
+            iconMark={<Ban size={16} aria-hidden />}
             name="Surcharge ban applies"
             tag="CERTAIN"
             body={
@@ -172,7 +177,7 @@ export function ProblemsBlock({
         {showDepends && (
           <ProblemCard
             variant="depends"
-            iconMark="⚡"
+            iconMark={<Zap size={16} aria-hidden />}
             name="Interchange saving uncertain"
             tag="DEPENDS ON PLAN"
             body={
@@ -188,7 +193,7 @@ export function ProblemsBlock({
         {showZeroCost && (
           <ProblemCard
             variant="certain"
-            iconMark="🚫"
+            iconMark={<Ban size={16} aria-hidden />}
             name="Your zero-cost plan ends"
             tag="CERTAIN"
             body={

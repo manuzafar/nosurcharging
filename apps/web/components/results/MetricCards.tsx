@@ -23,7 +23,13 @@
 // still computed in outputs and rendered in AssumptionsPanel for
 // transparency.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import {
+  ArrowLeftRight,
+  Banknote,
+  TrendingDown,
+  TrendingUp,
+} from 'lucide-react';
 import type { AssessmentOutputs } from '@nosurcharging/calculations/types';
 
 interface MetricCardsProps {
@@ -71,9 +77,10 @@ interface PropCardProps {
   fillColor: 'red' | 'em' | 'amber';
   // Label rendered below the bar (e.g. "100% of exposure", "5.6% offset").
   propLabel: string;
-  // Top-right icon mark (single character or symbol).
-  iconMark: string;
+  // Top-right icon node (Lucide component).
+  iconMark: ReactNode;
   iconBg: string; // CSS bg colour
+  iconColor: string; // CSS colour applied to the inner icon (Lucide currentColor)
   valueColour: string;
   // Highlight variant — used by the "Net gap to close" card to draw
   // attention via tinted bg + softer border.
@@ -89,6 +96,7 @@ function PropCard({
   propLabel,
   iconMark,
   iconBg,
+  iconColor,
   valueColour,
   highlight = false,
 }: PropCardProps) {
@@ -140,7 +148,7 @@ function PropCard({
             height: '26px',
             borderRadius: '6px',
             background: iconBg,
-            fontSize: '12px',
+            color: iconColor,
           }}
         >
           {iconMark}
@@ -278,8 +286,9 @@ export function MetricCards({
             pctFill={100}
             fillColor="red"
             propLabel="100% of exposure"
-            iconMark="↓"
+            iconMark={<TrendingDown size={14} aria-hidden />}
             iconBg="var(--color-background-danger)"
+            iconColor="var(--color-text-danger)"
             valueColour="var(--color-text-danger)"
           />
           <PropCard
@@ -289,8 +298,9 @@ export function MetricCards({
             pctFill={icPct}
             fillColor="em"
             propLabel={`${icPctRaw.toFixed(1)}% offset`}
-            iconMark="↑"
+            iconMark={<TrendingUp size={14} aria-hidden />}
             iconBg="var(--color-background-success)"
+            iconColor="var(--color-text-success)"
             valueColour="var(--color-text-success)"
           />
           <PropCard
@@ -300,8 +310,9 @@ export function MetricCards({
             pctFill={gapPct}
             fillColor="amber"
             propLabel={`${gapRaw.toFixed(1)}% of surcharge lost`}
-            iconMark="↔"
+            iconMark={<ArrowLeftRight size={14} aria-hidden />}
             iconBg="var(--color-background-secondary)"
+            iconColor="var(--color-text-secondary)"
             valueColour="var(--color-text-danger)"
             highlight
           />
@@ -318,24 +329,39 @@ export function MetricCards({
             padding: '12px 16px',
           }}
         >
-          <div>
-            <p
-              className="uppercase"
+          <div className="flex items-center" style={{ gap: '12px' }}>
+            <span
+              className="flex items-center justify-center shrink-0"
+              aria-hidden
               style={{
-                fontSize: '8.5px',
-                fontWeight: 700,
-                letterSpacing: '0.5px',
-                color: 'var(--color-text-tertiary)',
-                marginBottom: '4px',
+                width: '26px',
+                height: '26px',
+                borderRadius: '6px',
+                background: 'var(--color-background-secondary)',
+                color: 'var(--color-text-secondary)',
               }}
             >
-              Your current annual cost
-            </p>
-            <p
-              style={{ fontSize: '10px', color: 'var(--color-text-tertiary)' }}
-            >
-              {costLabel}
-            </p>
+              <Banknote size={14} aria-hidden />
+            </span>
+            <div>
+              <p
+                className="uppercase"
+                style={{
+                  fontSize: '8.5px',
+                  fontWeight: 700,
+                  letterSpacing: '0.5px',
+                  color: 'var(--color-text-tertiary)',
+                  marginBottom: '4px',
+                }}
+              >
+                Your current annual cost
+              </p>
+              <p
+                style={{ fontSize: '10px', color: 'var(--color-text-tertiary)' }}
+              >
+                {costLabel}
+              </p>
+            </div>
           </div>
           <p
             className="font-mono font-bold"
