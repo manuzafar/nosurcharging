@@ -1,15 +1,19 @@
 'use client';
 
-// Results verdict — the first thing the merchant sees.
-// Per ux-spec §3.2:
-//   - Pill label is "SITUATION N" — 20px pill radius
-//   - Range display: plSwingLow to plSwingHigh at clamp(24px, 7vw, 32px)
-//   - Expected line: plSwing at text-financial-standard (22px)
-//   - Old records without plSwingLow: single 44px number + "Complete a new assessment" note
-//   - Daily anchor sentence: "That's $X more per day..."
+// Results summary strip — the first thing the merchant sees.
 //
-// Banned phrasing: never "your PSP" or "your provider" — always the
-// actual PSP name interpolated inline.
+// Layout (per Results_V2 redesign):
+//   Desktop md+: 2-column grid. Left = situation pill + estimated label,
+//                verdict heading, body copy. Right = "Net annual impact"
+//                label, P&L centre estimate (44px mono), "per year" sub,
+//                daily-cost pill, optional range pill.
+//   Mobile <md:  Single column. P&L 38px. Daily pill below P&L. Range pill
+//                below daily.
+//
+// Body copy is the conditional, non-prescriptive text shipped in PR #36
+// (no "reprice to absorb" / "act on both fronts" language).
+//
+// Banned phrasing: never "your PSP" or "your provider" — always inline psp.
 
 import { CATEGORY_VERDICTS } from '@nosurcharging/calculations/categories';
 import type { AssessmentOutputs } from '@nosurcharging/calculations/types';
@@ -24,7 +28,9 @@ interface VerdictSectionProps {
   surchargeRate: number;
 }
 
-// Situation pill variants — 20px pill radius under the Modern Fintech Hierarchy
+// Situation pill variants — 4px corner radius (compact tag, not pill).
+// Colour pair scheme: light bg + saturated text for legibility against
+// the white strip.
 export const SITUATION_PILLS: Record<
   1 | 2 | 3 | 4 | 5,
   { background: string; color: string }
@@ -60,7 +66,6 @@ function formatSignedDollar(value: number): string {
   return (value > 0 ? '+' : '−') + '$' + Math.abs(Math.round(value)).toLocaleString('en-AU');
 }
 
-// Format volume in human-readable form: $500K, $1.2M, $5M
 function formatVolumeShort(volume: number): string {
   if (volume >= 1_000_000) {
     const m = volume / 1_000_000;
@@ -88,7 +93,6 @@ function buildContextLine(
   const parts: string[] = [`${formatVolumeShort(volume)} annual card revenue`];
 
   if (planType === 'zero_cost') {
-    // Zero-cost has no current rate — just identify the plan structure.
     parts.push(`${pspName} zero-cost EFTPOS`);
     return parts.join(' · ');
   }
@@ -128,8 +132,7 @@ export function VerdictSection({
   surcharging,
   surchargeRate,
 }: VerdictSectionProps) {
-  const { category, plSwing, plSwingLow, plSwingHigh, rangeDriver, rangeNote } = outputs;
-  const isNegative = plSwing < 0;
+  const { category, plSwing, plSwingLow, plSwingHigh, rangeDriver } = outputs;
   const isPositiveOrZero = plSwing >= 0;
   const pillStyle = SITUATION_PILLS[category];
 
@@ -142,168 +145,236 @@ export function VerdictSection({
     surchargeRate,
   );
 
-  // Daily anchor: spec §3.2 — Math.round(Math.abs(plSwing) / 365)
+  // Daily anchor — Math.round(Math.abs(plSwing) / 365). Suppressed for
+  // exactly-zero plSwing (Cat 2 at 0% pass-through) — "$0 more per day"
+  // reads as nonsensical context.
   const dailyAnchor = Math.round(Math.abs(plSwing) / 365);
-  const dailyAnchorStrong = `$${dailyAnchor.toLocaleString('en-AU')} more per day`;
-  const dailyAnchorTail = isPositiveOrZero
-    ? ' in your pocket.'
-    : ' in net payments cost.';
+  const showDailyPill = dailyAnchor > 0;
+  const dailyTail = isPositiveOrZero ? 'in your pocket' : 'in net payments cost';
 
-  // Range colour — uses the sign of plSwingLow to determine colour
-  const rangeColour = (plSwingLow ?? plSwing) >= 0
-    ? 'var(--color-text-success)'
-    : 'var(--color-text-danger)';
+  // P&L hero number colour: red for net negative, em (green) for net positive.
+  // This is the centre estimate (plSwing), not the range bound.
+  const pnlColor = plSwing < 0
+    ? 'var(--color-text-danger)'
+    : plSwing > 0
+      ? 'var(--color-text-success)'
+      : 'var(--color-text-secondary)';
+
+  // Daily pill colours follow the same sign convention.
+  const dailyBg = plSwing < 0
+    ? 'var(--color-background-danger)'
+    : plSwing > 0
+      ? 'var(--color-background-success)'
+      : 'var(--color-background-secondary)';
+  const dailyText = plSwing < 0
+    ? 'var(--color-text-danger)'
+    : plSwing > 0
+      ? 'var(--color-text-success)'
+      : 'var(--color-text-secondary)';
+
+  // Legacy fallback: pre-range DB rows lack plSwingLow. Render a single hero
+  // number on the right with no daily pill and a "Complete a new assessment"
+  // note below.
+  const isLegacy = plSwingLow === undefined;
 
   return (
-    <div
-      className="pt-8 pb-6"
-      style={{ borderBottom: '1px solid var(--color-border-secondary)' }}
+    <section
+      className="bg-white"
+      style={{ borderBottom: '0.5px solid var(--color-border-secondary)' }}
     >
-      {/* Row 1: Situation pill + confidence note */}
-      <div className="flex items-center">
-        <span
-          className="font-medium uppercase"
+      <div className="px-4 py-4 md:px-7 md:py-5">
+        <div className="md:grid md:grid-cols-[1fr_auto] md:gap-6 md:items-start">
+          {/* ── LEFT COLUMN ─────────────────────────────────────── */}
+          <div className="md:max-w-[500px]">
+            {/* Eyebrow row */}
+            <div className="flex items-center gap-2" style={{ marginBottom: '10px' }}>
+              <span
+                className="font-bold uppercase"
+                style={{
+                  ...pillStyle,
+                  fontSize: '8.5px',
+                  letterSpacing: '0.5px',
+                  padding: '3px 9px',
+                  borderRadius: '4px',
+                }}
+              >
+                Situation {category}
+              </span>
+              <span
+                style={{
+                  fontSize: '10px',
+                  color: 'var(--color-text-tertiary)',
+                }}
+              >
+                Estimated · market averages
+              </span>
+            </div>
+
+            {/* Verdict heading */}
+            <h2
+              className="font-serif font-bold"
+              style={{
+                fontSize: '17px',
+                lineHeight: 1.35,
+                color: 'var(--color-text-primary)',
+                marginBottom: '8px',
+              }}
+            >
+              {CATEGORY_VERDICTS[category]}
+            </h2>
+
+            {/* Body copy */}
+            <p
+              style={{
+                fontSize: '13px',
+                color: 'var(--color-text-secondary)',
+                lineHeight: 1.7,
+              }}
+            >
+              {getCategoryBody(category, pspName)}
+            </p>
+          </div>
+
+          {/* ── RIGHT COLUMN ────────────────────────────────────── */}
+          <div className="mt-5 md:mt-0 md:text-right md:min-w-[240px]">
+            <p
+              className="uppercase"
+              style={{
+                fontSize: '9px',
+                fontWeight: 600,
+                letterSpacing: '0.5px',
+                color: 'var(--color-text-tertiary)',
+                marginBottom: '4px',
+              }}
+            >
+              Net annual impact
+            </p>
+
+            <p
+              className="font-mono font-bold leading-none"
+              style={{
+                fontSize: 'clamp(38px, 7vw, 44px)',
+                color: pnlColor,
+                letterSpacing: '-1.5px',
+              }}
+            >
+              {formatSignedDollar(plSwing)}
+            </p>
+
+            <p
+              style={{
+                fontSize: '11px',
+                color: 'var(--color-text-tertiary)',
+                marginTop: '3px',
+              }}
+            >
+              per year from 1 October 2026
+            </p>
+
+            {/* Range descriptor — compressed from the previous "Expected"
+                line. Tells the merchant which assumption produced the
+                centre estimate (pass-through %, market rate, or card mix
+                accuracy). */}
+            {!isLegacy && (
+              <p
+                style={{
+                  fontSize: '10px',
+                  color: 'var(--color-text-tertiary)',
+                  marginTop: '4px',
+                }}
+              >
+                {rangeDriver === 'pass_through'
+                  ? '— at 45% PSP pass-through (centre)'
+                  : rangeDriver === 'post_reform_rate'
+                    ? '— at 1.4% market estimate (centre)'
+                    : '— at estimated card mix (centre)'}
+              </p>
+            )}
+
+            {/* Daily-cost pill — single text node so spans concat with a
+                literal space (textContent matters for tests). */}
+            {showDailyPill && (
+              <div
+                className="inline-flex items-baseline"
+                style={{
+                  marginTop: '10px',
+                  background: dailyBg,
+                  borderRadius: '6px',
+                  padding: '7px 12px',
+                  color: dailyText,
+                }}
+              >
+                <span className="font-mono font-bold" style={{ fontSize: '18px' }}>
+                  ${dailyAnchor.toLocaleString('en-AU')}
+                </span>
+                <span style={{ fontSize: '10px', opacity: 0.75, marginLeft: '6px' }}>
+                  {' '}more per day {dailyTail}
+                </span>
+              </div>
+            )}
+
+            {/* Range pill — compact, sits below the daily pill. Suppressed
+                for legacy rows that don't have plSwingLow / plSwingHigh. */}
+            {!isLegacy && plSwingLow !== plSwingHigh && (
+              <div
+                className="inline-flex items-center gap-2"
+                style={{
+                  marginTop: '8px',
+                  border: '0.5px solid var(--color-border-secondary)',
+                  borderRadius: '8px',
+                  padding: '5px 10px',
+                  background: 'var(--color-background-primary)',
+                }}
+              >
+                <span
+                  className="uppercase"
+                  style={{
+                    fontSize: '9px',
+                    fontWeight: 600,
+                    letterSpacing: '0.5px',
+                    color: 'var(--color-text-tertiary)',
+                  }}
+                >
+                  Range
+                </span>
+                <span
+                  className="font-mono"
+                  style={{
+                    fontSize: '11px',
+                    color: 'var(--color-text-secondary)',
+                  }}
+                >
+                  {formatSignedDollar(plSwingLow)} to {formatSignedDollar(plSwingHigh)}
+                </span>
+              </div>
+            )}
+
+            {/* Legacy fallback note — only when plSwingLow is undefined */}
+            {isLegacy && (
+              <p
+                style={{
+                  fontSize: '11px',
+                  color: 'var(--color-text-tertiary)',
+                  marginTop: '8px',
+                }}
+              >
+                Complete a new assessment to see the full range.
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Context line — full-width below the grid */}
+        <p
           style={{
-            ...pillStyle,
-            fontSize: '10px',
-            letterSpacing: '1.5px',
-            padding: '4px 10px',
-            borderRadius: '20px',
-          }}
-        >
-          Situation {category}
-        </span>
-        <span
-          style={{
+            marginTop: '14px',
             fontSize: '11px',
-            marginLeft: '8px',
             color: 'var(--color-text-tertiary)',
           }}
         >
-          Estimated · market averages
-        </span>
+          {contextLine}
+        </p>
       </div>
-
-      {/* Row 2: Category headline */}
-      <h2
-        className="mt-4 font-serif font-medium"
-        style={{
-          fontSize: '18px',
-          lineHeight: '1.3',
-          color: 'var(--color-text-primary)',
-        }}
-      >
-        {CATEGORY_VERDICTS[category]}
-      </h2>
-
-      {/* Row 3: Range display or fallback single number */}
-      {plSwingLow === undefined ? (
-        // Old records without range — single 44px hero number
-        <div>
-          <p
-            className="mt-3 font-mono text-financial-hero"
-            style={{
-              color: isNegative
-                ? 'var(--color-text-danger)'
-                : 'var(--color-text-success)',
-              marginBottom: '6px',
-              fontSize: 'clamp(26px, 7vw, 44px)',
-            }}
-          >
-            {plSwing > 0 && '+'}
-            {plSwing < 0 && '−'}
-            {formatDollar(plSwing)}
-          </p>
-          <p
-            style={{
-              fontSize: '13px',
-              color: 'var(--color-text-tertiary)',
-              marginBottom: '8px',
-            }}
-          >
-            per year, from 1 October 2026
-          </p>
-          <p className="mt-1 text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
-            Complete a new assessment to see the full range.
-          </p>
-        </div>
-      ) : (
-        // Range display — overrides CLAUDE.md Rule 2 (44px) for the pair
-        <div>
-          <div className="mt-3">
-            <p className="font-mono text-financial-hero" style={{ color: rangeColour, fontSize: 'clamp(26px, 7vw, 44px)' }}>
-              {formatSignedDollar(plSwingLow)}
-              <span className="font-sans mx-2" style={{ fontSize: '14px', color: 'var(--color-text-tertiary)' }}>
-                to
-              </span>
-              {formatSignedDollar(plSwingHigh)}
-            </p>
-            <p className="mt-1 text-caption" style={{ color: 'var(--color-text-secondary)' }}>
-              per year from 1 October 2026
-            </p>
-          </div>
-
-          <div className="mt-2 flex flex-wrap items-center gap-x-2">
-            <span className="text-caption" style={{ color: 'var(--color-text-secondary)' }}>Expected:</span>
-            <span
-              className="font-mono text-body-sm font-medium"
-              style={{ color: plSwing >= 0 ? 'var(--color-text-success)' : 'var(--color-text-danger)' }}
-            >
-              {formatSignedDollar(plSwing)}
-            </span>
-            <span className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
-              {rangeDriver === 'pass_through'
-                ? '— at 45% PSP pass-through (central scenario assumption)'
-                : rangeDriver === 'post_reform_rate'
-                  ? '— at 1.4% market estimate (centre)'
-                  : '— at estimated card mix'}
-            </span>
-          </div>
-
-          <p className="mt-2 text-caption" style={{ color: 'var(--color-text-tertiary)', lineHeight: '1.55' }}>
-            {rangeNote}
-          </p>
-        </div>
-      )}
-
-      {/* Daily anchor — §3.2 */}
-      <p
-        style={{
-          fontSize: '15px',
-          color: 'var(--color-text-secondary)',
-          lineHeight: '1.6',
-          marginTop: '8px',
-          marginBottom: '8px',
-        }}
-      >
-        That&apos;s{' '}
-        <strong style={{ color: '#1A6B5A', fontWeight: 500 }}>
-          {dailyAnchorStrong}
-        </strong>
-        {dailyAnchorTail}
-      </p>
-
-      {/* Context line — what inputs drove the number */}
-      <p
-        style={{
-          fontSize: '11px',
-          color: 'var(--color-text-tertiary)',
-        }}
-      >
-        {contextLine}
-      </p>
-
-      {/* Body paragraph — category-specific narrative */}
-      <p
-        className="mt-4 text-body"
-        style={{
-          color: 'var(--color-text-secondary)',
-          lineHeight: '1.65',
-        }}
-      >
-        {getCategoryBody(category, pspName)}
-      </p>
-
-    </div>
+    </section>
   );
 }

@@ -37,65 +37,67 @@ export const OverviewSection = forwardRef<HTMLElement, OverviewSectionProps>(
       <section id="overview" data-section="overview" ref={ref} className="pt-8">
         <SubTabStrip tabs={OVERVIEW_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
 
-        <div className="bg-white border border-rule rounded-xl p-6 mt-4">
-          {activeTab === 'summary' && (
-            <>
-              <VerdictSection
-                outputs={outputs}
-                volume={volume}
-                pspName={pspName}
-                planType={verdictPlanType}
-                msfRate={msfRate}
-                surcharging={surcharging}
-                surchargeRate={surchargeRate}
-              />
-
-              <div className="mt-6">
-                <MetricCards
-                  outputs={outputs}
-                  planType={planType}
-                  volume={volume}
-                />
-              </div>
-
-              <div className="mt-6">
-                <ProblemsBlock
-                  category={outputs.category}
-                  pspName={pspName}
-                  surchargeRevenue={outputs.surchargeRevenue}
-                  icSaving={outputs.icSaving}
-                  octNet={outputs.octNet}
-                  estimatedMSFRate={outputs.estimatedMSFRate}
-                />
-              </div>
-            </>
-          )}
-
-          {activeTab === 'where-i-stand' && (
-            <WhereIStandToday
+        {activeTab === 'summary' && (
+          <div className="bg-white border border-rule rounded-xl mt-4 overflow-hidden">
+            <VerdictSection
               outputs={outputs}
-              pspName={pspName}
               volume={volume}
-              planType={planType}
+              pspName={pspName}
+              planType={verdictPlanType}
+              msfRate={msfRate}
               surcharging={surcharging}
+              surchargeRate={surchargeRate}
             />
-          )}
 
-          {activeTab === 'whats-changing' && (
-            <WhatsChanging
-              category={outputs.category}
-              outputs={outputs}
-              pspName={pspName}
-            />
-          )}
+            <div className="px-4 pt-5 md:px-7">
+              <MetricCards
+                outputs={outputs}
+                planType={planType}
+                volume={volume}
+              />
+            </div>
 
-          {activeTab === 'timeline' && (
-            <ReformTimeline
-              category={outputs.category}
-              pspName={pspName}
-            />
-          )}
-        </div>
+            <div className="px-4 pt-5 pb-5 md:px-7">
+              <ProblemsBlock
+                category={outputs.category}
+                pspName={pspName}
+                surchargeRevenue={outputs.surchargeRevenue}
+                icSaving={outputs.icSaving}
+                octNet={outputs.octNet}
+                estimatedMSFRate={outputs.estimatedMSFRate}
+              />
+            </div>
+          </div>
+        )}
+
+        {activeTab !== 'summary' && (
+          <div className="bg-white border border-rule rounded-xl p-6 mt-4">
+            {activeTab === 'where-i-stand' && (
+              <WhereIStandToday
+                outputs={outputs}
+                pspName={pspName}
+                volume={volume}
+                planType={planType}
+                surcharging={surcharging}
+              />
+            )}
+
+            {activeTab === 'whats-changing' && (
+              <WhatsChanging
+                category={outputs.category}
+                outputs={outputs}
+                pspName={pspName}
+              />
+            )}
+
+            {activeTab === 'timeline' && (
+              <ReformTimeline
+                category={outputs.category}
+                pspName={pspName}
+              />
+            )}
+          </div>
+        )}
       </section>
     );
   },
