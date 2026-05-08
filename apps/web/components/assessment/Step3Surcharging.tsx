@@ -76,6 +76,30 @@ export function Step3Surcharging({
     onNetworksChange(updated);
   };
 
+  // Default surcharge rate prefilled when the merchant first ticks Yes —
+  // 2% is the most common AU merchant surcharge level (RBA observed range
+  // is ~1.5%-2.5%). Merchant overrides freely. Only prefilled on the
+  // initial Yes click; if they go No → Yes again or come back from a
+  // later step, we don't blow away their previously-typed value.
+  const DEFAULT_SURCHARGE_RATE = 0.02;
+  const ALL_NETWORKS = ['visa', 'eftpos', 'amex', 'bnpl'];
+
+  const handleYes = () => {
+    // Prefill only when transitioning from null/false → true. If already
+    // Yes (re-clicking the same button or coming back to the step), keep
+    // existing values intact.
+    if (surcharging !== true) {
+      if (surchargeNetworks.length === 0) {
+        onNetworksChange(ALL_NETWORKS);
+      }
+      if (surchargeRate === 0) {
+        onSurchargeRateChange(DEFAULT_SURCHARGE_RATE);
+        setRateInput(String(DEFAULT_SURCHARGE_RATE * 100));
+      }
+    }
+    onSurchargingChange(true);
+  };
+
   const handleNo = () => {
     onSurchargingChange(false);
     onSurchargeRateChange(0);
@@ -100,7 +124,7 @@ export function Step3Surcharging({
       <div className="mt-6 grid grid-cols-2 gap-3">
         <button
           type="button"
-          onClick={() => onSurchargingChange(true)}
+          onClick={handleYes}
           className="rounded-lg p-5 text-left transition-all duration-150"
           style={
             surcharging === true
