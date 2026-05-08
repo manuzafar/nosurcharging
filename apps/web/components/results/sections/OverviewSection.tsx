@@ -9,6 +9,7 @@ import { SubTabStrip } from '@/components/results/SubTabStrip';
 import { WhereIStandToday } from '@/components/results/sections/WhereIStandToday';
 import { WhatsChanging } from '@/components/results/sections/WhatsChanging';
 import { ReformTimeline } from '@/components/results/sections/ReformTimeline';
+import { TensionSection } from '@/components/results/sections/TensionSection';
 
 const OVERVIEW_TABS = [
   { key: 'summary', label: 'Summary' },
@@ -38,36 +39,47 @@ export const OverviewSection = forwardRef<HTMLElement, OverviewSectionProps>(
         <SubTabStrip tabs={OVERVIEW_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
 
         {activeTab === 'summary' && (
-          <div className="bg-white border border-rule rounded-xl mt-4 overflow-hidden">
-            <VerdictSection
-              outputs={outputs}
-              volume={volume}
-              pspName={pspName}
-              planType={verdictPlanType}
-              msfRate={msfRate}
-              surcharging={surcharging}
-              surchargeRate={surchargeRate}
-            />
-
-            <div className="px-4 pt-5 md:px-7">
-              <MetricCards
+          <>
+            <div className="bg-white border border-rule rounded-xl mt-4 overflow-hidden">
+              <VerdictSection
                 outputs={outputs}
-                planType={planType}
                 volume={volume}
+                pspName={pspName}
+                planType={verdictPlanType}
+                msfRate={msfRate}
+                surcharging={surcharging}
+                surchargeRate={surchargeRate}
               />
+
+              <div className="px-4 pt-5 md:px-7">
+                <MetricCards
+                  outputs={outputs}
+                  planType={planType}
+                  volume={volume}
+                />
+              </div>
+
+              <div className="px-4 pt-5 pb-5 md:px-7">
+                <ProblemsBlock
+                  category={outputs.category}
+                  pspName={pspName}
+                  surchargeRevenue={outputs.surchargeRevenue}
+                  icSaving={outputs.icSaving}
+                  octNet={outputs.octNet}
+                  estimatedMSFRate={outputs.estimatedMSFRate}
+                />
+              </div>
             </div>
 
-            <div className="px-4 pt-5 pb-5 md:px-7">
-              <ProblemsBlock
-                category={outputs.category}
-                pspName={pspName}
-                surchargeRevenue={outputs.surchargeRevenue}
-                icSaving={outputs.icSaving}
-                octNet={outputs.octNet}
-                estimatedMSFRate={outputs.estimatedMSFRate}
-              />
-            </div>
-          </div>
+            {/* Tension section — outside the white card so it can render
+                edge-to-edge with its own paper-dark band + top/bottom rules.
+                Only shown for Cat 3/4/5; returns null for Cat 1/2. */}
+            <TensionSection
+              category={outputs.category}
+              pspName={pspName}
+              outputs={outputs}
+            />
+          </>
         )}
 
         {activeTab !== 'summary' && (
