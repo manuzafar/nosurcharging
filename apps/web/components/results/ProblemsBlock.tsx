@@ -1,18 +1,18 @@
 'use client';
 
 // ProblemsBlock — explains WHY the verdict number looks the way it does.
-// Per ux-spec §3.3 there are two problem variants:
+// Per the Results_V2 redesign:
+//   - Side-by-side 2-col layout on md+ (single col mobile)
+//   - Icon-led card style (32x32 icon box + content)
+//   - Tinted bg + soft same-tone border (no left-border rule)
+//   - Compact: 12px name, 8px tag, 11.5px body
 //
-//   Problem 1 — CERTAIN  (red)    "Your surcharge revenue disappears"
-//                                 → shown only when the merchant is surcharging
-//   Problem 2 — DEPENDS  (amber)  "A processing cost reduction may not flow through"
-//                                 → shown only on flat rate plans
+// Variants (unchanged from before):
+//   CERTAIN  → red    "Surcharge ban applies" (Cat 3, 4)
+//   DEPENDS  → amber  "Interchange saving uncertain" (Cat 2, 4)
+//   CERTAIN  → red    "Your zero-cost plan ends" (Cat 5)
 //
-// Cat 1 (cost-plus, not surcharging) has no problems — component returns null.
-// Cat 2 shows Problem 2 only.
-// Cat 3 shows Problem 1 only.
-// Cat 4 shows both.
-// Cat 5 (zero_cost) shows Problem 3 — full cost exposure starts 1 October.
+// Cat 1 (cost-plus, not surcharging): null — nothing to flag.
 
 interface ProblemsBlockProps {
   category: 1 | 2 | 3 | 4 | 5;
@@ -27,170 +27,99 @@ function formatCurrency(amount: number): string {
   return `$${Math.round(amount).toLocaleString('en-AU')}`;
 }
 
-function CertainProblem({ surchargeRevenue }: { surchargeRevenue: number }) {
-  return (
-    <div
-      style={{
-        background: '#FDECEA',
-        borderLeft: '3px solid #7F1D1D',
-        padding: '14px 16px',
-        marginBottom: '8px',
-      }}
-    >
-      <div className="flex items-center justify-between">
-        <h3
-          className="font-medium"
-          style={{
-            fontSize: '14px',
-            color: 'var(--color-text-primary)',
-          }}
-        >
-          Your surcharge revenue disappears
-        </h3>
-        <span
-          className="font-medium uppercase"
-          style={{
-            background: '#7F1D1D',
-            color: '#FFFFFF',
-            fontSize: '10px',
-            letterSpacing: '1px',
-            padding: '2px 7px',
-          }}
-        >
-          Certain
-        </span>
-      </div>
-      <p
-        className="mt-2"
-        style={{
-          fontSize: '12px',
-          lineHeight: '1.65',
-          color: 'var(--color-text-secondary)',
-        }}
-      >
-        From 1 October, surcharges on Visa, Mastercard, and eftpos become
-        illegal. The {formatCurrency(surchargeRevenue)}/year you currently
-        recover disappears — regardless of your plan or provider.
-      </p>
-    </div>
-  );
+interface ProblemCardProps {
+  variant: 'certain' | 'depends';
+  iconMark: string;             // emoji or symbol
+  name: string;                 // 12px bold
+  tag: string;                  // "CERTAIN" / "DEPENDS ON PLAN"
+  body: React.ReactNode;
 }
 
-function DependsProblem({
-  pspName,
-  icSaving,
-}: {
-  pspName: string;
-  icSaving: number;
-}) {
-  return (
-    <div
-      style={{
-        background: '#FEF3E0',
-        borderLeft: '3px solid #BA7517',
-        padding: '14px 16px',
-      }}
-    >
-      <div className="flex items-center justify-between">
-        <h3
-          className="font-medium"
-          style={{
-            fontSize: '14px',
-            color: 'var(--color-text-primary)',
-          }}
-        >
-          A processing cost reduction may or may not flow through
-        </h3>
-        <span
-          className="font-medium uppercase"
-          style={{
-            background: '#BA7517',
-            color: '#FFFFFF',
-            fontSize: '10px',
-            letterSpacing: '1px',
-            padding: '2px 7px',
-            whiteSpace: 'nowrap',
-            marginLeft: '8px',
-          }}
-        >
-          Depends on your plan
-        </span>
-      </div>
-      <p
-        className="mt-2"
-        style={{
-          fontSize: '12px',
-          lineHeight: '1.65',
-          color: 'var(--color-text-secondary)',
-        }}
-      >
-        The RBA is cutting wholesale card costs — worth up to{' '}
-        {formatCurrency(icSaving)}/year on your volume. On a flat rate plan
-        like {pspName}&apos;s default, this saving is bundled inside your
-        overall rate. Whether it&apos;s reflected in your rate after October
-        depends on whether {pspName} reviews your pricing as part of the
-        reform. On an itemised plan, it flows through automatically.
-      </p>
-    </div>
-  );
-}
+function ProblemCard({ variant, iconMark, name, tag, body }: ProblemCardProps) {
+  // Variant tokens — light bg, soft same-tone border, solid tag pill.
+  const styles =
+    variant === 'certain'
+      ? {
+          bg: 'var(--color-background-danger)',
+          border: 'rgba(121, 31, 31, 0.15)',
+          iconBg: 'rgba(121, 31, 31, 0.12)',
+          tagBg: 'var(--color-text-danger)',
+          tagColor: '#FFFFFF',
+        }
+      : {
+          bg: 'var(--color-background-warning)',
+          border: 'rgba(186, 117, 23, 0.15)',
+          iconBg: 'rgba(186, 117, 23, 0.12)',
+          tagBg: 'var(--color-text-warning)',
+          tagColor: '#FFFFFF',
+        };
 
-function ZeroCostProblem({
-  pspName,
-  octNet,
-  estimatedMSFRate,
-}: {
-  pspName: string;
-  octNet: number;
-  estimatedMSFRate: number;
-}) {
   return (
     <div
+      className="flex gap-3 items-start"
       style={{
-        background: '#FDECEA',
-        borderLeft: '3px solid #7F1D1D',
+        background: styles.bg,
+        border: `0.5px solid ${styles.border}`,
+        borderRadius: '10px',
         padding: '14px 16px',
-        marginBottom: '8px',
       }}
     >
-      <div className="flex items-center justify-between">
-        <h3
-          className="font-medium"
-          style={{
-            fontSize: '14px',
-            color: 'var(--color-text-primary)',
-          }}
-        >
-          Your zero-cost plan ends on 1 October
-        </h3>
-        <span
-          className="font-medium uppercase"
-          style={{
-            background: '#7F1D1D',
-            color: '#FFFFFF',
-            fontSize: '10px',
-            letterSpacing: '1px',
-            padding: '2px 7px',
-          }}
-        >
-          Certain
-        </span>
-      </div>
-      <p
-        className="mt-2"
+      {/* Icon mark */}
+      <span
+        className="flex items-center justify-center shrink-0"
+        aria-hidden
         style={{
-          fontSize: '12px',
-          lineHeight: '1.65',
-          color: 'var(--color-text-secondary)',
+          width: '32px',
+          height: '32px',
+          borderRadius: '8px',
+          background: styles.iconBg,
+          fontSize: '14px',
         }}
       >
-        From 1 October, the surcharge mechanism that covers your card costs
-        becomes illegal on Visa, Mastercard, and eftpos. {pspName} will move
-        you to a standard flat-rate plan and you&apos;ll pay for card
-        acceptance from your own margin for the first time — approximately{' '}
-        {formatCurrency(octNet)}/year at the {(estimatedMSFRate * 100).toFixed(1)}%
-        market estimate.
-      </p>
+        {iconMark}
+      </span>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <div
+          className="flex items-center gap-1.5 flex-wrap"
+          style={{ marginBottom: '4px' }}
+        >
+          <h3
+            className="font-bold"
+            style={{
+              fontSize: '12px',
+              color: 'var(--color-text-primary)',
+              lineHeight: 1.4,
+            }}
+          >
+            {name}
+          </h3>
+          <span
+            className="uppercase font-bold"
+            style={{
+              fontSize: '8px',
+              letterSpacing: '0.3px',
+              padding: '1px 6px',
+              borderRadius: '3px',
+              background: styles.tagBg,
+              color: styles.tagColor,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {tag}
+          </span>
+        </div>
+        <p
+          style={{
+            fontSize: '11.5px',
+            color: 'var(--color-text-secondary)',
+            lineHeight: 1.6,
+          }}
+        >
+          {body}
+        </p>
+      </div>
     </div>
   );
 }
@@ -211,29 +140,71 @@ export function ProblemsBlock({
   const showZeroCost = category === 5;
 
   return (
-    <section
-      className="py-6"
-      style={{ borderBottom: '1px solid var(--color-border-secondary)' }}
-    >
+    <section>
       <p
-        className="text-label uppercase"
+        className="uppercase font-bold"
         style={{
+          fontSize: '9px',
+          letterSpacing: '0.8px',
           color: 'var(--color-text-tertiary)',
-          marginBottom: '16px',
+          marginBottom: '10px',
         }}
       >
         Why this is happening
       </p>
 
-      {showCertain && <CertainProblem surchargeRevenue={surchargeRevenue} />}
-      {showDepends && <DependsProblem pspName={pspName} icSaving={icSaving} />}
-      {showZeroCost && (
-        <ZeroCostProblem
-          pspName={pspName}
-          octNet={octNet ?? 0}
-          estimatedMSFRate={estimatedMSFRate ?? 0.014}
-        />
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+        {showCertain && (
+          <ProblemCard
+            variant="certain"
+            iconMark="🚫"
+            name="Surcharge ban applies"
+            tag="CERTAIN"
+            body={
+              <>
+                From 1 October, surcharges on Visa, Mastercard and eftpos
+                become illegal. The {formatCurrency(surchargeRevenue)}/year you
+                currently recover disappears regardless of plan or provider.
+              </>
+            }
+          />
+        )}
+        {showDepends && (
+          <ProblemCard
+            variant="depends"
+            iconMark="⚡"
+            name="Interchange saving uncertain"
+            tag="DEPENDS ON PLAN"
+            body={
+              <>
+                The RBA is cutting wholesale costs by{' '}
+                {formatCurrency(icSaving)}/year. On {pspName}&apos;s flat
+                rate, whether this reaches you depends on whether {pspName}{' '}
+                reviews your pricing as part of the reform.
+              </>
+            }
+          />
+        )}
+        {showZeroCost && (
+          <ProblemCard
+            variant="certain"
+            iconMark="🚫"
+            name="Your zero-cost plan ends"
+            tag="CERTAIN"
+            body={
+              <>
+                From 1 October, the surcharge mechanism that covers your card
+                costs becomes illegal on Visa, Mastercard, and eftpos.{' '}
+                {pspName} will move you to a standard flat-rate plan and
+                you&apos;ll pay for card acceptance from your own margin for
+                the first time — approximately {formatCurrency(octNet ?? 0)}
+                /year at the {((estimatedMSFRate ?? 0.014) * 100).toFixed(1)}%
+                market estimate.
+              </>
+            }
+          />
+        )}
+      </div>
     </section>
   );
 }

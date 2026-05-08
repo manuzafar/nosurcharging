@@ -18,7 +18,7 @@ describe('ProblemsBlock', () => {
   describe('Cat 2 (flat, not surcharging)', () => {
     it('shows DEPENDS variant only', () => {
       render(<ProblemsBlock category={2} {...COMMON} />);
-      expect(screen.getByText(/depends on your plan/i)).toBeInTheDocument();
+      expect(screen.getByText(/depends on plan/i)).toBeInTheDocument();
       expect(screen.queryByText(/^Certain$/i)).not.toBeInTheDocument();
     });
 
@@ -29,12 +29,10 @@ describe('ProblemsBlock', () => {
       expect(text).toContain('$4,200/year');
     });
 
-    it('DEPENDS title is the spec wording', () => {
+    it('DEPENDS card name is the redesign wording', () => {
       render(<ProblemsBlock category={2} {...COMMON} />);
       expect(
-        screen.getByText(
-          /A processing cost reduction may or may not flow through/i,
-        ),
+        screen.getByText(/Interchange saving uncertain/i),
       ).toBeInTheDocument();
     });
   });
@@ -43,7 +41,7 @@ describe('ProblemsBlock', () => {
     it('shows CERTAIN variant only', () => {
       render(<ProblemsBlock category={3} {...COMMON} />);
       expect(screen.getByText(/^Certain$/i)).toBeInTheDocument();
-      expect(screen.queryByText(/depends on your plan/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/depends on plan/i)).not.toBeInTheDocument();
     });
 
     it('CERTAIN body interpolates surcharge revenue', () => {
@@ -52,10 +50,10 @@ describe('ProblemsBlock', () => {
       expect(text).toContain('$7,500/year');
     });
 
-    it('CERTAIN title is the spec wording', () => {
+    it('CERTAIN card name is the redesign wording', () => {
       render(<ProblemsBlock category={3} {...COMMON} />);
       expect(
-        screen.getByText(/Your surcharge revenue disappears/i),
+        screen.getByText(/Surcharge ban applies/i),
       ).toBeInTheDocument();
     });
   });
@@ -64,15 +62,13 @@ describe('ProblemsBlock', () => {
     it('shows BOTH CERTAIN and DEPENDS variants', () => {
       render(<ProblemsBlock category={4} {...COMMON} />);
       expect(screen.getByText(/^Certain$/i)).toBeInTheDocument();
-      expect(screen.getByText(/depends on your plan/i)).toBeInTheDocument();
+      expect(screen.getByText(/depends on plan/i)).toBeInTheDocument();
     });
 
     it('CERTAIN comes before DEPENDS in the DOM', () => {
       render(<ProblemsBlock category={4} {...COMMON} />);
-      const certain = screen.getByText(/Your surcharge revenue disappears/i);
-      const depends = screen.getByText(
-        /A processing cost reduction may or may not flow through/i,
-      );
+      const certain = screen.getByText(/Surcharge ban applies/i);
+      const depends = screen.getByText(/Interchange saving uncertain/i);
       // certain.compareDocumentPosition(depends) returns DOCUMENT_POSITION_FOLLOWING
       // (= 4) when depends comes after certain.
       // eslint-disable-next-line no-bitwise
