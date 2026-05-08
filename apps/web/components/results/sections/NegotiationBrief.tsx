@@ -2,6 +2,7 @@
 
 import { forwardRef } from 'react';
 import type { AssessmentOutputs } from '@nosurcharging/calculations/types';
+import { CollapsibleSection } from '@/components/results/CollapsibleSection';
 
 interface NegotiationBriefProps {
   pspName: string;
@@ -111,20 +112,16 @@ export const NegotiationBrief = forwardRef<HTMLElement, NegotiationBriefProps>(
       : `"I process ${formatVolume(volume)} annually on a ${planLabel} plan with ${pspName}. With the RBA's interchange cuts taking effect on 1 October, I'd like to understand how my rates will change. Can you confirm whether the IC reduction will be passed through to me, and what my new effective rate will be?"`;
 
     return (
-      <section id="negotiate" data-section="negotiate" ref={ref} className="pt-8">
-        <p
-          className="text-micro uppercase tracking-widest pb-3 mb-6"
-          style={{
-            color: 'var(--color-text-tertiary)',
-            letterSpacing: '1.5px',
-            fontSize: '11px',
-            borderBottom: '1px solid var(--color-border-secondary)',
-          }}
-        >
-          Negotiation brief
-        </p>
-
-        <div className="bg-white border border-rule rounded-xl p-6">
+      <CollapsibleSection
+        id="negotiate"
+        ref={ref}
+        storageKey="results.collapsible.negotiate"
+        iconMark="⚖️"
+        iconTint="purple"
+        title="Negotiation brief"
+        subtitle={`${pspName} call script and prep guide`}
+      >
+        <div>
           {/* PSP contact card */}
           <div
             className="rounded-lg p-4 mb-5"
@@ -232,7 +229,7 @@ export const NegotiationBrief = forwardRef<HTMLElement, NegotiationBriefProps>(
             </div>
           </div>
         </div>
-      </section>
+      </CollapsibleSection>
     );
   },
 );
