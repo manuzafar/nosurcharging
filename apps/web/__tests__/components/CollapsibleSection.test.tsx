@@ -1,18 +1,13 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 
 import { CollapsibleSection } from '@/components/results/CollapsibleSection';
 
-beforeEach(() => {
-  window.localStorage.clear();
-});
-
-function renderBasic(overrides?: { defaultOpen?: boolean; storageKey?: string }) {
+function renderBasic(overrides?: { defaultOpen?: boolean }) {
   return render(
     <CollapsibleSection
       id="test-section"
-      storageKey={overrides?.storageKey ?? 'test.section.key'}
-      iconMark="📋"
+      iconMark={<span aria-hidden>I</span>}
       iconTint="green"
       title="Test section"
       subtitle="A test subtitle"
@@ -58,19 +53,6 @@ describe('CollapsibleSection', () => {
     expect(screen.queryByText('BODY_CONTENT')).not.toBeInTheDocument();
   });
 
-  it('persists open state to localStorage under storageKey', () => {
-    renderBasic({ storageKey: 'persist.me' });
-    fireEvent.click(screen.getByRole('button', { name: /test section/i }));
-    expect(window.localStorage.getItem('persist.me')).toBe('1');
-  });
-
-  it('hydrates from localStorage on mount', () => {
-    window.localStorage.setItem('hydrate.key', '1');
-    renderBasic({ storageKey: 'hydrate.key' });
-    // Body should be visible without any click
-    expect(screen.getByText('BODY_CONTENT')).toBeInTheDocument();
-  });
-
   it('aria-expanded reflects open state', () => {
     renderBasic();
     const btn = screen.getByRole('button', { name: /test section/i });
@@ -79,8 +61,8 @@ describe('CollapsibleSection', () => {
     expect(btn.getAttribute('aria-expanded')).toBe('true');
   });
 
-  it('respects defaultOpen=true on first paint when no localStorage entry', () => {
-    renderBasic({ defaultOpen: true, storageKey: 'fresh.key' });
+  it('respects defaultOpen=true on first paint', () => {
+    renderBasic({ defaultOpen: true });
     expect(screen.getByText('BODY_CONTENT')).toBeInTheDocument();
   });
 });

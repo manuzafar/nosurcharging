@@ -1,16 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TalkToCustomers } from '@/components/results/sections/TalkToCustomers';
 
 // Mock clipboard API
 Object.assign(navigator, {
   clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
-});
-
-// CollapsibleSection persists open/closed state in localStorage. Clear it
-// between tests so each `renderOpen` flip produces a deterministic toggle.
-beforeEach(() => {
-  window.localStorage.clear();
 });
 
 // Section is wrapped in CollapsibleSection (collapsed by default).

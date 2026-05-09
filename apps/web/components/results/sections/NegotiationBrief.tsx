@@ -116,11 +116,11 @@ export const NegotiationBrief = forwardRef<HTMLElement, NegotiationBriefProps>(
       <CollapsibleSection
         id="negotiate"
         ref={ref}
-        storageKey="results.collapsible.negotiate"
         iconMark={<Scale size={14} aria-hidden />}
         iconTint="purple"
         title="Negotiation brief"
         subtitle={`${pspName} call script and prep guide`}
+        defaultOpen={false}
       >
         <div>
           {/* PSP contact card */}

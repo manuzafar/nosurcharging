@@ -99,12 +99,12 @@ export const TalkToCustomers = forwardRef<HTMLElement, TalkToCustomersProps>(
       <CollapsibleSection
         id="customers"
         ref={ref}
-        storageKey="results.collapsible.customers"
         iconMark={<MessagesSquare size={14} aria-hidden />}
         iconTint="orange"
         title="Talk to customers"
         subtitle="Email, counter sign, social, staff briefing"
         badge="4 templates"
+        defaultOpen={false}
       >
         <p
           style={{

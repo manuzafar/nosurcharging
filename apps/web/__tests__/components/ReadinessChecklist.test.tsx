@@ -1,12 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ReadinessChecklist } from '@/components/results/sections/ReadinessChecklist';
-
-// CollapsibleSection persists open/closed state in localStorage. Clear it
-// between tests so each `renderOpen` flip produces a deterministic toggle.
-beforeEach(() => {
-  window.localStorage.clear();
-});
 
 // ReadinessChecklist is wrapped in CollapsibleSection (collapsed by default).
 function renderOpen(props: { category: 1 | 2 | 3 | 4 | 5; pspName: string }) {

@@ -1,13 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { NegotiationBrief } from '@/components/results/sections/NegotiationBrief';
 import type { AssessmentOutputs } from '@nosurcharging/calculations/types';
-
-// CollapsibleSection persists open/closed state in localStorage. Clear it
-// between tests so each `renderOpen` flip produces a deterministic toggle.
-beforeEach(() => {
-  window.localStorage.clear();
-});
 
 // NegotiationBrief is wrapped in CollapsibleSection (collapsed by default).
 interface BriefProps {

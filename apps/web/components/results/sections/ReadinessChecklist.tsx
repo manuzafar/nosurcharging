@@ -61,12 +61,12 @@ export const ReadinessChecklist = forwardRef<HTMLElement, ReadinessChecklistProp
       <CollapsibleSection
         id="checklist"
         ref={ref}
-        storageKey="results.collapsible.checklist"
         iconMark={<ClipboardList size={14} aria-hidden />}
         iconTint="green"
         title="Readiness checklist"
         subtitle="Track your preparation progress"
         badge={`${completedCount} of ${items.length} done`}
+        defaultOpen={false}
       >
         {/* Progress bar */}
         <div className="mb-5">

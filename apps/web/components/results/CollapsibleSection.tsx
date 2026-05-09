@@ -7,22 +7,23 @@
 // rotates 180deg when expanded. Body padding matches the prototype
 // (px-7 desktop / px-4 mobile).
 //
-// State: persisted to localStorage by storageKey so the user's
-// collapsed/expanded preference survives reload. Falls back to
-// defaultOpen on first visit / SSR.
+// State: per-page-load only. Sections always start in `defaultOpen`
+// (false unless caller overrides) and toggle on click. We deliberately
+// do NOT persist to localStorage — the design spec calls for "collapsed
+// by default" so secondary content stays out of the merchant's way on
+// every visit.
 //
 // Scroll-spy: caller passes `id` (e.g. "checklist") so the existing
 // useScrollSpy hook finds the section. The outer <section> carries
 // both id="X" and data-section="X" exactly like the legacy sections.
 
-import { forwardRef, useEffect, useId, useState, type ReactNode } from 'react';
+import { forwardRef, useId, useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 type IconTint = 'orange' | 'green' | 'blue' | 'purple' | 'fuchsia';
 
 interface CollapsibleSectionProps {
   id: string;
-  storageKey: string;
   iconMark: ReactNode;
   iconTint: IconTint;
   title: string;
@@ -51,22 +52,10 @@ const ICON_TINT_COLOR: Record<IconTint, string> = {
   fuchsia: '#86198F',
 };
 
-function readPersisted(key: string, fallback: boolean): boolean {
-  if (typeof window === 'undefined') return fallback;
-  try {
-    const raw = window.localStorage.getItem(key);
-    if (raw === null) return fallback;
-    return raw === '1';
-  } catch {
-    return fallback;
-  }
-}
-
 export const CollapsibleSection = forwardRef<HTMLElement, CollapsibleSectionProps>(
   function CollapsibleSection(
     {
       id,
-      storageKey,
       iconMark,
       iconTint,
       title,
@@ -81,22 +70,8 @@ export const CollapsibleSection = forwardRef<HTMLElement, CollapsibleSectionProp
     const headerId = useId();
     const bodyId = useId();
 
-    // Hydrate from localStorage after mount — server/client must initially
-    // agree on `defaultOpen` to avoid a hydration mismatch.
-    useEffect(() => {
-      setOpen(readPersisted(storageKey, defaultOpen));
-    }, [storageKey, defaultOpen]);
-
     const handleToggle = () => {
-      setOpen((prev) => {
-        const next = !prev;
-        try {
-          window.localStorage.setItem(storageKey, next ? '1' : '0');
-        } catch {
-          // Quota / disabled storage — ignore, behaviour is non-blocking.
-        }
-        return next;
-      });
+      setOpen((prev) => !prev);
     };
 
     return (

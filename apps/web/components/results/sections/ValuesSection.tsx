@@ -32,11 +32,11 @@ export const ValuesSection = forwardRef<HTMLElement, ValuesSectionProps>(
       <CollapsibleSection
         id="values"
         ref={ref}
-        storageKey="results.collapsible.values"
         iconMark={<BarChart2 size={14} aria-hidden />}
         iconTint="blue"
         title="Values & rates"
         subtitle="Full cost breakdown and waterfall chart"
+        defaultOpen={false}
       >
         {/* LCR Insight Panel — flat and blended plans only */}
         {(planType === 'flat' || planType === 'blended') && (
