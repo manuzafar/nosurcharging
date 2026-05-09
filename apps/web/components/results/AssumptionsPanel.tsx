@@ -9,6 +9,7 @@
 // Followed by the existing card-mix breakdown read from resolutionTrace.
 
 import { useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Analytics } from '@/lib/analytics';
 import type { AssessmentOutputs, ResolutionTrace } from '@nosurcharging/calculations/types';
 
@@ -135,7 +136,10 @@ export function AssumptionsPanel({
             padding: 0,
           }}
         >
-          {expanded ? '↑' : '↓'} Show me exactly how this is calculated
+          <span className="inline-flex items-center" style={{ gap: '6px' }}>
+            {expanded ? <ChevronUp size={12} aria-hidden /> : <ChevronDown size={12} aria-hidden />}
+            Show me exactly how this is calculated
+          </span>
         </button>
 
         <div
@@ -292,7 +296,10 @@ export function AssumptionsPanel({
           padding: 0,
         }}
       >
-        {expanded ? '↑' : '↓'} Show me exactly how this is calculated
+        <span className="inline-flex items-center" style={{ gap: '6px' }}>
+          {expanded ? <ChevronUp size={12} aria-hidden /> : <ChevronDown size={12} aria-hidden />}
+          Show me exactly how this is calculated
+        </span>
       </button>
 
       {/* Expanded content */}

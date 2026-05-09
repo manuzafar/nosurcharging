@@ -2,7 +2,7 @@
 
 import { forwardRef, useState } from 'react';
 import type { ActionItem, AssessmentOutputs } from '@nosurcharging/calculations/types';
-import { ActionList } from '@/components/results/ActionList';
+import { VerticalActionSteps } from '@/components/results/VerticalActionSteps';
 import { SubTabStrip } from '@/components/results/SubTabStrip';
 import { YourOptions } from '@/components/results/sections/YourOptions';
 import { IfYouDoNothing } from '@/components/results/sections/IfYouDoNothing';
@@ -45,7 +45,7 @@ export const ActionsSection = forwardRef<HTMLElement, ActionsSectionProps>(
 
         <div className="bg-white border border-rule rounded-xl p-6 mt-4">
           {activeTab === 'action-list' && (
-            <ActionList actions={actions} />
+            <VerticalActionSteps actions={actions} />
           )}
 
           {activeTab === 'your-options' && (

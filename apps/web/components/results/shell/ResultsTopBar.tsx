@@ -9,6 +9,7 @@
 
 import { useCallback, useState } from 'react';
 import Link from 'next/link';
+import { Info } from 'lucide-react';
 import { SITUATION_PILLS } from '@/components/results/VerdictSection';
 import { FeedbackModal } from '@/components/results/FeedbackModal';
 import { Analytics } from '@/lib/analytics';
@@ -121,12 +122,15 @@ export function ResultsTopBar({
 
           {/* Accuracy indicator — hidden on mobile */}
           <span
-            className="hidden md:inline shrink-0"
+            className="hidden md:inline-flex items-center shrink-0"
             style={{
+              gap: '4px',
               fontSize: '10px',
               color: 'rgba(255,255,255,0.35)',
+              cursor: 'pointer',
             }}
           >
+            <Info size={11} aria-hidden />
             Accuracy ▪ {Math.round(accuracy)}%
           </span>
 

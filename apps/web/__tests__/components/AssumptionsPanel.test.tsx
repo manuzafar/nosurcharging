@@ -80,10 +80,10 @@ describe('AssumptionsPanel', () => {
     ).toBeInTheDocument();
   });
 
-  it('is collapsed by default — toggle shows ↓', () => {
+  it('is collapsed by default — toggle label is visible', () => {
     render(<AssumptionsPanel {...FLAT_PROPS} />);
     expect(
-      screen.getByText(/↓ Show me exactly how this is calculated/),
+      screen.getByText(/Show me exactly how this is calculated/),
     ).toBeInTheDocument();
   });
 

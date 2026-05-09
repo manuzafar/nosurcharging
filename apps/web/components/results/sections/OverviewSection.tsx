@@ -9,6 +9,7 @@ import { SubTabStrip } from '@/components/results/SubTabStrip';
 import { WhereIStandToday } from '@/components/results/sections/WhereIStandToday';
 import { WhatsChanging } from '@/components/results/sections/WhatsChanging';
 import { ReformTimeline } from '@/components/results/sections/ReformTimeline';
+import { TensionSection } from '@/components/results/sections/TensionSection';
 
 const OVERVIEW_TABS = [
   { key: 'summary', label: 'Summary' },
@@ -37,9 +38,9 @@ export const OverviewSection = forwardRef<HTMLElement, OverviewSectionProps>(
       <section id="overview" data-section="overview" ref={ref} className="pt-8">
         <SubTabStrip tabs={OVERVIEW_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
 
-        <div className="bg-white border border-rule rounded-xl p-6 mt-4">
-          {activeTab === 'summary' && (
-            <>
+        {activeTab === 'summary' && (
+          <>
+            <div className="bg-white border border-rule rounded-xl mt-4 overflow-hidden">
               <VerdictSection
                 outputs={outputs}
                 volume={volume}
@@ -50,7 +51,7 @@ export const OverviewSection = forwardRef<HTMLElement, OverviewSectionProps>(
                 surchargeRate={surchargeRate}
               />
 
-              <div className="mt-6">
+              <div className="px-4 pt-5 md:px-7">
                 <MetricCards
                   outputs={outputs}
                   planType={planType}
@@ -58,7 +59,7 @@ export const OverviewSection = forwardRef<HTMLElement, OverviewSectionProps>(
                 />
               </div>
 
-              <div className="mt-6">
+              <div className="px-4 pt-5 pb-5 md:px-7">
                 <ProblemsBlock
                   category={outputs.category}
                   pspName={pspName}
@@ -68,34 +69,47 @@ export const OverviewSection = forwardRef<HTMLElement, OverviewSectionProps>(
                   estimatedMSFRate={outputs.estimatedMSFRate}
                 />
               </div>
-            </>
-          )}
+            </div>
 
-          {activeTab === 'where-i-stand' && (
-            <WhereIStandToday
-              outputs={outputs}
-              pspName={pspName}
-              volume={volume}
-              planType={planType}
-              surcharging={surcharging}
-            />
-          )}
-
-          {activeTab === 'whats-changing' && (
-            <WhatsChanging
-              category={outputs.category}
-              outputs={outputs}
-              pspName={pspName}
-            />
-          )}
-
-          {activeTab === 'timeline' && (
-            <ReformTimeline
+            {/* Tension section — outside the white card so it can render
+                edge-to-edge with its own paper-dark band + top/bottom rules.
+                Only shown for Cat 3/4/5; returns null for Cat 1/2. */}
+            <TensionSection
               category={outputs.category}
               pspName={pspName}
+              outputs={outputs}
             />
-          )}
-        </div>
+          </>
+        )}
+
+        {activeTab !== 'summary' && (
+          <div className="bg-white border border-rule rounded-xl p-6 mt-4">
+            {activeTab === 'where-i-stand' && (
+              <WhereIStandToday
+                outputs={outputs}
+                pspName={pspName}
+                volume={volume}
+                planType={planType}
+                surcharging={surcharging}
+              />
+            )}
+
+            {activeTab === 'whats-changing' && (
+              <WhatsChanging
+                category={outputs.category}
+                outputs={outputs}
+                pspName={pspName}
+              />
+            )}
+
+            {activeTab === 'timeline' && (
+              <ReformTimeline
+                category={outputs.category}
+                pspName={pspName}
+              />
+            )}
+          </div>
+        )}
       </section>
     );
   },

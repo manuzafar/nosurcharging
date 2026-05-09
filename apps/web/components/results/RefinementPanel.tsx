@@ -10,6 +10,7 @@
 // Debounced (150ms) so P&L doesn't thrash on every keystroke.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { calculateMetrics } from '@nosurcharging/calculations/calculations';
 import type {
   AssessmentOutputs,
@@ -429,8 +430,9 @@ export function RefinementPanel({
           className="flex w-full items-center justify-between cursor-pointer"
           style={{ background: 'none', border: 'none', padding: 0 }}
         >
-          <span className="text-caption font-medium" style={{ color: 'var(--color-text-primary)' }}>
-            {commercialExpanded ? '↑' : '↓'} Corporate / business card share{isB2B ? ' (likely relevant)' : ' (optional)'}
+          <span className="inline-flex items-center text-caption font-medium" style={{ gap: '6px', color: 'var(--color-text-primary)' }}>
+            {commercialExpanded ? <ChevronUp size={12} aria-hidden /> : <ChevronDown size={12} aria-hidden />}
+            Corporate / business card share{isB2B ? ' (likely relevant)' : ' (optional)'}
           </span>
           <Badge {...commercialBadge} />
         </button>

@@ -1,7 +1,7 @@
 'use client';
 
 import { forwardRef } from 'react';
-import { ConsultingCTA } from '@/components/results/ConsultingCTA';
+import { ReformReadyUpsell } from '@/components/results/ReformReadyUpsell';
 import { ResultsDisclaimer } from '@/components/results/ResultsDisclaimer';
 
 interface HelpSectionProps {
@@ -32,22 +32,13 @@ export const HelpSection = forwardRef<HTMLElement, HelpSectionProps>(
           Next steps
         </p>
 
-        <ConsultingCTA
-          category={category}
-          pspName={pspName}
-          plSwing={plSwing}
-          volumeTier={volumeTier}
-        />
-
-        {/* Email contact fallback — replaces the old benchmark-mailing
-            EmailCapture form. The merchant already provided their email at
-            the pre-reveal gate, so we only surface a direct contact route
-            here for ad-hoc questions. */}
+        {/* Email contact fallback + disclaimer sit ABOVE the upsell so the
+            merchant has a free contact route before the paid ask. */}
         <p
-          className="mt-4 text-caption"
+          className="text-caption mb-4"
           style={{ color: 'var(--color-text-secondary)' }}
         >
-          Or email us:{' '}
+          Got a quick question? Email{' '}
           <a
             href="mailto:hello@nosurcharging.com.au"
             className="underline"
@@ -55,7 +46,15 @@ export const HelpSection = forwardRef<HTMLElement, HelpSectionProps>(
           >
             hello@nosurcharging.com.au
           </a>
+          .
         </p>
+
+        <ReformReadyUpsell
+          category={category}
+          pspName={pspName}
+          plSwing={plSwing}
+          volumeTier={volumeTier}
+        />
 
         <div className="mt-8 mb-4">
           <ResultsDisclaimer />

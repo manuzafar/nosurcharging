@@ -1,7 +1,9 @@
 'use client';
 
 import { forwardRef, useState } from 'react';
+import { MessagesSquare } from 'lucide-react';
 import { SubTabStrip } from '@/components/results/SubTabStrip';
+import { CollapsibleSection } from '@/components/results/CollapsibleSection';
 
 interface TalkToCustomersProps {
   category: 1 | 2 | 3 | 4 | 5;
@@ -94,31 +96,36 @@ export const TalkToCustomers = forwardRef<HTMLElement, TalkToCustomersProps>(
     };
 
     return (
-      <section id="customers" data-section="customers" ref={ref} className="pt-8">
+      <CollapsibleSection
+        id="customers"
+        ref={ref}
+        iconMark={<MessagesSquare size={14} aria-hidden />}
+        iconTint="orange"
+        title="Talk to customers"
+        subtitle="Email, counter sign, social, staff briefing"
+        badge="4 templates"
+        defaultOpen={false}
+      >
         <p
-          className="text-micro uppercase tracking-widest pb-3 mb-6"
           style={{
-            color: 'var(--color-text-tertiary)',
-            letterSpacing: '1.5px',
-            fontSize: '11px',
-            borderBottom: '1px solid var(--color-border-secondary)',
+            fontSize: '13px',
+            color: 'var(--color-text-secondary)',
+            margin: '0 0 14px',
+            lineHeight: 1.6,
+            maxWidth: '600px',
           }}
         >
-          Talk to customers
-        </p>
-
-        <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginBottom: '16px' }}>
           Ready-made templates to communicate the surcharge changes to your customers.
         </p>
 
         <SubTabStrip tabs={TEMPLATE_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
 
-        <div className="bg-white border border-rule rounded-xl p-6 mt-4">
+        <div className="mt-4">
           <div
             className="rounded-lg p-4"
             style={{
-              background: 'var(--color-bg-secondary, #F5F3EF)',
-              border: '1px solid var(--color-border-secondary)',
+              background: 'var(--color-background-secondary)',
+              border: '0.5px solid var(--color-border-secondary)',
               whiteSpace: 'pre-wrap',
               fontSize: '13px',
               lineHeight: '1.6',
@@ -144,7 +151,7 @@ export const TalkToCustomers = forwardRef<HTMLElement, TalkToCustomersProps>(
             {copied ? 'Copied!' : 'Copy to clipboard'}
           </button>
         </div>
-      </section>
+      </CollapsibleSection>
     );
   },
 );

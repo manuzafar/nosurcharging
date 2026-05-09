@@ -1,7 +1,21 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { NegotiationBrief } from '@/components/results/sections/NegotiationBrief';
 import type { AssessmentOutputs } from '@nosurcharging/calculations/types';
+
+// NegotiationBrief is wrapped in CollapsibleSection (collapsed by default).
+interface BriefProps {
+  pspName: string;
+  planType: 'flat' | 'costplus' | 'blended' | 'zero_cost';
+  volume: number;
+  category: 1 | 2 | 3 | 4 | 5;
+  outputs: AssessmentOutputs;
+}
+function renderOpen(props: BriefProps) {
+  const result = render(<NegotiationBrief {...props} />);
+  fireEvent.click(screen.getByRole('button', { name: /negotiation brief/i }));
+  return result;
+}
 
 function makeOutputs(overrides: Partial<AssessmentOutputs> = {}): AssessmentOutputs {
   return {
@@ -46,25 +60,25 @@ describe('NegotiationBrief', () => {
   });
 
   it('renders PSP contact card', () => {
-    render(<NegotiationBrief {...defaultProps} />);
+    renderOpen(defaultProps);
     expect(screen.getByText('Stripe contact')).toBeInTheDocument();
     expect(screen.getByText(/dashboard.stripe.com/)).toBeInTheDocument();
   });
 
   it('renders Tyro contact with phone number', () => {
-    render(<NegotiationBrief {...defaultProps} pspName="Tyro" />);
+    renderOpen({ ...defaultProps, pspName: 'Tyro' });
     expect(screen.getByText('Tyro contact')).toBeInTheDocument();
     expect(screen.getByText('1300 966 639')).toBeInTheDocument();
   });
 
   it('"Other" PSP shows generic instructions', () => {
-    render(<NegotiationBrief {...defaultProps} pspName="SomePSP" />);
+    renderOpen({ ...defaultProps, pspName: 'SomePSP' });
     expect(screen.getByText('SomePSP contact')).toBeInTheDocument();
     expect(screen.getByText(/Contact your payment provider/)).toBeInTheDocument();
   });
 
   it('renders 5 numbered steps', () => {
-    render(<NegotiationBrief {...defaultProps} />);
+    renderOpen(defaultProps);
     expect(screen.getByText('1.')).toBeInTheDocument();
     expect(screen.getByText('2.')).toBeInTheDocument();
     expect(screen.getByText('3.')).toBeInTheDocument();
@@ -73,12 +87,12 @@ describe('NegotiationBrief', () => {
   });
 
   it('script block interpolates volume and PSP name', () => {
-    render(<NegotiationBrief {...defaultProps} volume={1_000_000} />);
+    renderOpen({ ...defaultProps, volume: 1_000_000 });
     expect(screen.getByText(/\$1\.0m annually on a flat rate plan with Stripe/)).toBeInTheDocument();
   });
 
   it('renders alt PSP table', () => {
-    render(<NegotiationBrief {...defaultProps} pspName="CommBank" />);
+    renderOpen({ ...defaultProps, pspName: 'CommBank' });
     expect(screen.getByText(/If CommBank says no/)).toBeInTheDocument();
     // CommBank filtered out of table, so Stripe/Square/Tyro/Zeller shown
     expect(screen.getByText('Stripe')).toBeInTheDocument();
@@ -86,7 +100,7 @@ describe('NegotiationBrief', () => {
   });
 
   it('alt PSP table excludes current PSP', () => {
-    render(<NegotiationBrief {...defaultProps} pspName="Stripe" />);
+    renderOpen({ ...defaultProps, pspName: 'Stripe' });
     // Table should not contain Stripe
     const rows = screen.getAllByRole('row');
     // Header + 3 data rows (Stripe excluded from 4 ALT_PSPS)
