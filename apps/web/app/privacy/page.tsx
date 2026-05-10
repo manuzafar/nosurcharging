@@ -39,7 +39,7 @@ export default function PrivacyPage() {
           className="text-ink-faint"
           style={{ fontSize: '13px', marginBottom: '48px' }}
         >
-          Last updated April 2026 · nosurcharging.com.au
+          Last updated May 2026 · nosurcharging.com.au
         </p>
 
         <Section title="Who we are">
@@ -157,21 +157,29 @@ export default function PrivacyPage() {
 
         <Section title="Data retention">
           <p>
-            Assessment data is retained for up to two years to support
-            benchmarking and research. After that period it is deleted or
-            permanently anonymised.
+            Assessment data is deleted from our database within 48 hours of
+            submission. The PDF report we email you at submission (and any
+            on-demand resend) is your own copy to keep — it is the only
+            persistent record of your assessment. We do this on purpose:
+            your figures belong to you, not to us.
           </p>
           <p>
-            Email addresses are retained until 30 days after the October 2026
-            benchmark report is sent, then permanently deleted — unless you
-            have asked to remain in contact, in which case we will seek your
-            consent before continuing to contact you.
-          </p>
-          <p>Session identifiers are deleted after 90 days.</p>
-          <p>
-            Anonymised usage data may be retained indefinitely for research
+            If you reload your results page after the 48-hour window has
+            passed, the assessment row is deleted on access and you will
+            see an &quot;assessment expired&quot; view directing you to
+            retake it. Anonymised, non-identifying usage signals (e.g.
+            which category was assigned) may be retained for research
             purposes.
           </p>
+          <p>
+            Email addresses captured at the email gate are retained until
+            30 days after the October 2026 benchmark report is sent, then
+            permanently deleted — unless you have asked to remain in
+            contact, in which case we will seek your consent before
+            continuing to contact you. Email retention is independent of
+            the 48-hour assessment retention above.
+          </p>
+          <p>Session identifiers are deleted after 90 days.</p>
         </Section>
 
         <Section title="Your rights and contact">

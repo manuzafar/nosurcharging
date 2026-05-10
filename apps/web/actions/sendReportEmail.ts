@@ -1,23 +1,29 @@
 'use server';
 
 // sendReportEmail — server action invoked by ArtifactCard's "Email me
-// the PDF" button. Resolves the assessment, generates the PDF (M3
-// stub for M2 — placeholder buffer), and sends it via Resend with
-// the PDF as an attachment.
+// the PDF" button. Resolves the assessment, generates the React-PDF
+// report (lib/pdf/report.tsx), and sends it via Resend with the PDF
+// as an attachment.
 //
 // Lazy-init pattern matches captureEmail.ts (CI builds without
 // RESEND_API_KEY succeed). Never throws — returns { success } so the
 // UI can surface a toast.
 //
-// M2 contract: returns success even with a stub PDF so the UI flow
-// can be validated end-to-end. M3 swaps `generatePdfBuffer()` for the
-// real React-PDF generator.
+// M3 wires the real generator. The previous M2 stub returned a
+// 400-byte placeholder buffer; that's now replaced.
 
 import { Resend } from 'resend';
 import { getAssessment } from '@/actions/getAssessment';
 import { sanitiseForHTML } from '@/lib/security';
+import { resolveAssessmentInputs } from '@nosurcharging/calculations/rules/resolver';
 import { CATEGORY_VERDICTS } from '@nosurcharging/calculations/categories';
-import type { AssessmentOutputs } from '@nosurcharging/calculations/types';
+import type {
+  AssessmentOutputs,
+  ActionItem,
+  RawAssessmentData,
+  ResolutionContext,
+} from '@nosurcharging/calculations/types';
+import { generateReportPdf } from '@/lib/pdf/report';
 
 export interface SendReportEmailPayload {
   assessmentId: string;
@@ -42,23 +48,6 @@ function getResend(): Resend | null {
   return new Resend(key);
 }
 
-// M2 stub — returns a tiny placeholder PDF buffer so the email flow
-// works end-to-end. M3 replaces this with the real React-PDF generator.
-async function generatePdfBuffer(_outputs: AssessmentOutputs): Promise<Buffer> {
-  // Minimal valid 1-page PDF (~400 bytes) so Resend accepts the
-  // attachment and inboxes render a "PDF" icon. The content is a
-  // single line: "Your full report is being prepared. M3 ships the
-  // finished version." Replaced wholesale in M3.
-  const stub =
-    '%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n' +
-    '2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n' +
-    '3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj\n' +
-    '4 0 obj<</Length 88>>stream\nBT /F1 12 Tf 72 720 Td (Your No Surcharging report is being prepared.) Tj ET\nendstream endobj\n' +
-    '5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj\n' +
-    'xref\n0 6\n0000000000 65535 f\n0000000009 00000 n\n0000000054 00000 n\n0000000101 00000 n\n0000000196 00000 n\n0000000324 00000 n\n' +
-    'trailer<</Size 6/Root 1 0 R>>\nstartxref\n378\n%%EOF';
-  return Buffer.from(stub, 'binary');
-}
 
 export async function sendReportEmail(
   payload: SendReportEmailPayload,
@@ -77,13 +66,25 @@ export async function sendReportEmail(
     }
 
     const result = await getAssessment(payload.assessmentId);
-    if (!result.success || !result.data) {
+    if (!result.success) {
+      // Treat 'expired' the same as 'not_found' from the client's
+      // perspective — the assessment data is no longer retrievable.
+      // The UI surfaces a generic toast either way.
       return { success: false, error: 'assessment_not_found' };
     }
 
-    const outputs = result.data.outputs as AssessmentOutputs;
+    const stored = result.data;
+    const outputs = stored.outputs as AssessmentOutputs;
+    const actions =
+      (stored.outputs as { actions?: ActionItem[] }).actions ?? [];
     const category = outputs.category as 1 | 2 | 3 | 4 | 5;
     const verdict = CATEGORY_VERDICTS[category];
+
+    // Strategic-rate variant has no calculation surface to render — bail
+    // out cleanly. The merchant on this path doesn't have a P&L story.
+    if (stored.variant_type === 'strategic_rate') {
+      return { success: false, error: 'assessment_not_found' };
+    }
 
     const resend = getResend();
     if (!resend) {
@@ -95,7 +96,46 @@ export async function sendReportEmail(
       return { success: true };
     }
 
-    const pdfBuffer = await generatePdfBuffer(outputs);
+    // Resolve the inputs so the assumptions section can render the
+    // resolution trace. Skip for zero-cost (the resolver short-circuits).
+    const storedInputs = stored.inputs as Record<string, unknown>;
+    const planType =
+      (storedInputs.planType as RawAssessmentData['planType']) ?? 'flat';
+    const rawForResolve: RawAssessmentData = {
+      volume: (storedInputs.volume as number) ?? 0,
+      planType,
+      msfRate: (storedInputs.msfRate as number) ?? 0.014,
+      surcharging: (storedInputs.surcharging as boolean) ?? false,
+      surchargeRate: (storedInputs.surchargeRate as number) ?? 0,
+      surchargeNetworks:
+        (storedInputs.surchargeNetworks as string[]) ?? [],
+      industry: (storedInputs.industry as string) ?? 'other',
+      psp: sanitiseForHTML((storedInputs.psp as string) ?? 'Unknown'),
+      passThrough: 0,
+      country: 'AU',
+    };
+    const ctx: ResolutionContext = {
+      country: 'AU',
+      industry: rawForResolve.industry,
+      merchantInput:
+        storedInputs.merchantInput as ResolutionContext['merchantInput'],
+    };
+    const resolved =
+      planType === 'zero_cost' ? null : resolveAssessmentInputs(rawForResolve, ctx);
+
+    const pdfBuffer = await generateReportPdf({
+      outputs,
+      actions,
+      pspName: rawForResolve.psp,
+      volume: rawForResolve.volume,
+      // Strategic-rate already short-circuited above; this cast just
+      // narrows the planType union for the PDF generator's signature.
+      planType: planType as 'flat' | 'costplus' | 'blended' | 'zero_cost',
+      msfRate: rawForResolve.msfRate,
+      surcharging: rawForResolve.surcharging,
+      industry: rawForResolve.industry,
+      resolutionTrace: resolved?.resolutionTrace ?? {},
+    });
 
     try {
       await resend.emails.send({
