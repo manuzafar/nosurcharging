@@ -4,7 +4,10 @@ import { render, screen } from '@testing-library/react';
 import { VerdictSection } from '@/components/results/VerdictSection';
 import type { AssessmentOutputs } from '@nosurcharging/calculations/types';
 
-// ── Fixture builders ─────────────────────────────────────────────
+// VerdictSection (Ruthless Cut M2) is the single-block hero: situation
+// pill, eyebrow, P&L hero number, one-sentence verdict. Everything
+// else (body paragraph, range pill, daily pill, context line) moved
+// out of this component in M2 and is exercised in other test files.
 
 function makeOutputs(overrides: Partial<AssessmentOutputs> = {}): AssessmentOutputs {
   return {
@@ -32,182 +35,62 @@ function makeOutputs(overrides: Partial<AssessmentOutputs> = {}): AssessmentOutp
   };
 }
 
-const COMMON_PROPS = {
-  volume: 500_000,
-  pspName: 'Stripe',
-  planType: 'flat' as const,
-  msfRate: 0.014,
-  surcharging: true,
-  surchargeRate: 0.015,
-};
-
-// ── Tests ────────────────────────────────────────────────────────
-
-describe('VerdictSection', () => {
-  it('renders "Situation N" pill (not "Category N")', () => {
-    render(<VerdictSection outputs={makeOutputs()} {...COMMON_PROPS} />);
-    expect(screen.getByText(/Situation 4/)).toBeInTheDocument();
-    // Critical: "Category N" must NOT appear in the pill
-    const text = document.body.textContent ?? '';
-    expect(text).not.toMatch(/Category\s*4/);
+describe('VerdictSection — hero block', () => {
+  it('renders the situation pill with the category number', () => {
+    render(<VerdictSection outputs={makeOutputs({ category: 4 })} />);
+    expect(screen.getByText('Situation 4')).toBeInTheDocument();
   });
 
-  it('renders the confidence note "Estimated · market averages"', () => {
-    render(<VerdictSection outputs={makeOutputs()} {...COMMON_PROPS} />);
-    expect(screen.getByText(/Estimated · market averages/)).toBeInTheDocument();
-  });
-
-  it('renders the daily anchor with correct math (-$7,500 → ~$21/day)', () => {
-    // Math.round(7500 / 365) = 21
-    render(<VerdictSection outputs={makeOutputs()} {...COMMON_PROPS} />);
-    const text = document.body.textContent ?? '';
-    expect(text).toContain('$21 more per day');
-    expect(text).toContain('in net payments cost');
-  });
-
-  it('flips daily anchor copy for a positive plSwing', () => {
-    // +$3,650 → $10/day in your pocket
-    const positive = makeOutputs({ category: 1, plSwing: 3_650 });
-    render(<VerdictSection outputs={positive} {...COMMON_PROPS} planType="costplus" surcharging={false} />);
-    const text = document.body.textContent ?? '';
-    expect(text).toContain('$10 more per day');
-    expect(text).toContain('in your pocket');
-  });
-
-  it('renders the hero P&L number with the negative sign for cost increase', () => {
-    render(<VerdictSection outputs={makeOutputs()} {...COMMON_PROPS} />);
-    expect(screen.getByText('−$7,500')).toBeInTheDocument();
-  });
-
-  it('renders the hero P&L number with the plus sign for a saving', () => {
-    const saving = makeOutputs({ plSwing: 4_200 });
-    render(<VerdictSection outputs={saving} {...COMMON_PROPS} />);
-    expect(screen.getByText('+$4,200')).toBeInTheDocument();
-  });
-
-  it('renders the hero P&L number WITHOUT a sign when plSwing is exactly 0', () => {
-    // Cat 2 default state — flat rate, slider at 0% pass-through.
-    // A "+$0" hero contradicts the headline "the saving exists but won't
-    // arrive automatically". Render plain "$0" instead.
-    const zero = makeOutputs({ category: 2, plSwing: 0 });
-    render(<VerdictSection outputs={zero} {...COMMON_PROPS} planType="flat" surcharging={false} />);
-    expect(screen.getByText('$0')).toBeInTheDocument();
-    // No "+$0" anywhere — guard against the regression
-    const text = document.body.textContent ?? '';
-    expect(text).not.toContain('+$0');
-    expect(text).not.toContain('−$0');
-  });
-
-  it('builds the context line for flat-rate + surcharging merchants', () => {
-    render(<VerdictSection outputs={makeOutputs()} {...COMMON_PROPS} />);
-    const text = document.body.textContent ?? '';
-    expect(text).toContain('$500K annual card revenue');
-    expect(text).toContain('Stripe flat rate 1.40%');
-    expect(text).toContain('surcharging 1.50%');
-  });
-
-  it('builds the context line for cost-plus + non-surcharging merchants', () => {
-    const outputs = makeOutputs({ category: 1, plSwing: 1_000 });
-    render(
-      <VerdictSection
-        outputs={outputs}
-        volume={1_200_000}
-        pspName="Tyro"
-        planType="costplus"
-        msfRate={0}
-        surcharging={false}
-        surchargeRate={0}
-      />,
-    );
-    const text = document.body.textContent ?? '';
-    expect(text).toContain('$1.2M annual card revenue');
-    expect(text).toContain('Tyro cost-plus');
-    // Surcharging segment must NOT appear
-    expect(text).not.toContain('surcharging');
-    // Flat rate segment must NOT appear
-    expect(text).not.toContain('flat rate');
-  });
-
-  it('renders the per-category headline copy', () => {
-    render(<VerdictSection outputs={makeOutputs()} {...COMMON_PROPS} />);
+  it('renders the eyebrow "Estimated annual P&L impact from October 2026"', () => {
+    render(<VerdictSection outputs={makeOutputs()} />);
+    // jsdom converts the `&amp;` HTML entity back into a literal "&".
     expect(
-      screen.getByText('You face both challenges simultaneously.'),
+      screen.getByText(/Estimated annual P&L impact from October 2026/i),
     ).toBeInTheDocument();
   });
 
-  it('PSP name appears in the body — never "your PSP"', () => {
-    render(<VerdictSection outputs={makeOutputs()} {...COMMON_PROPS} />);
-    const text = document.body.textContent ?? '';
-    expect(text).toContain('Stripe');
-    expect(text).not.toMatch(/your PSP/i);
-    expect(text).not.toMatch(/your provider/i);
+  it('renders the signed P&L hero number', () => {
+    render(<VerdictSection outputs={makeOutputs({ plSwing: -7_500 })} />);
+    expect(screen.getByText('−$7,500')).toBeInTheDocument();
   });
 
-  describe('Category 5 — zero-cost EFTPOS', () => {
-    function cat5Outputs(): AssessmentOutputs {
-      return makeOutputs({
-        category: 5,
-        netToday: 0,
-        octNet: 8_400,
-        plSwing: -8_400,
-        plSwingLow: -9_600,
-        plSwingHigh: -7_200,
-        rangeDriver: 'post_reform_rate',
-        rangeNote: 'Range shows 1.2%–1.6% post-reform rate scenarios. Centre uses 1.4% market benchmark.',
-        estimatedMSFRate: 0.014,
-      });
-    }
+  it('renders the one-sentence CATEGORY_VERDICTS line', () => {
+    render(<VerdictSection outputs={makeOutputs({ category: 1 })} />);
+    expect(
+      screen.getByText('Your costs fall automatically on 1 October.'),
+    ).toBeInTheDocument();
+  });
 
-    it('renders "Situation 5" pill', () => {
-      render(<VerdictSection outputs={cat5Outputs()} {...COMMON_PROPS} planType="zero_cost" />);
-      expect(screen.getByText(/Situation 5/)).toBeInTheDocument();
-    });
+  it('positive P&L renders + sign and success colour', () => {
+    const { container } = render(
+      <VerdictSection outputs={makeOutputs({ plSwing: 5_000, category: 1 })} />,
+    );
+    expect(screen.getByText('+$5,000')).toBeInTheDocument();
+    const heroEl = container.querySelector('p.font-mono');
+    const style = heroEl?.getAttribute('style') ?? '';
+    expect(style).toContain('--color-text-success');
+  });
 
-    it('renders the Cat 5 verdict headline', () => {
-      render(<VerdictSection outputs={cat5Outputs()} {...COMMON_PROPS} planType="zero_cost" />);
-      expect(
-        screen.getByText('Your zero-cost plan ends on 1 October.'),
-      ).toBeInTheDocument();
-    });
+  it('negative P&L renders − sign and danger colour', () => {
+    const { container } = render(
+      <VerdictSection outputs={makeOutputs({ plSwing: -3_300, category: 4 })} />,
+    );
+    expect(screen.getByText('−$3,300')).toBeInTheDocument();
+    const heroEl = container.querySelector('p.font-mono');
+    const style = heroEl?.getAttribute('style') ?? '';
+    expect(style).toContain('--color-text-danger');
+  });
 
-    it('context line shows "zero-cost EFTPOS" not flat-rate %', () => {
-      render(
-        <VerdictSection
-          outputs={cat5Outputs()}
-          volume={600_000}
-          pspName="Square"
-          planType="zero_cost"
-          msfRate={0}
-          surcharging={false}
-          surchargeRate={0}
-        />,
-      );
-      const text = document.body.textContent ?? '';
-      expect(text).toContain('Square zero-cost EFTPOS');
-      expect(text).not.toContain('flat rate');
-    });
+  it('does not render the legacy daily pill or range pill (M2 removed)', () => {
+    render(<VerdictSection outputs={makeOutputs({ plSwing: -3_300 })} />);
+    expect(screen.queryByText(/more per day/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Range$/i)).not.toBeInTheDocument();
+  });
 
-    it('body explains the PSP-mediated surcharge ending and the post-October rate', () => {
-      render(<VerdictSection outputs={cat5Outputs()} {...COMMON_PROPS} pspName="Square" planType="zero_cost" />);
-      const text = document.body.textContent ?? '';
-      expect(text).toContain('You currently pay $0');
-      expect(text).toContain('flat-rate plan');
-      expect(text).toContain('Square');
-      expect(text).not.toMatch(/your PSP/i);
-    });
-
-    it('range expected line uses the 1.4% market estimate descriptor', () => {
-      render(<VerdictSection outputs={cat5Outputs()} {...COMMON_PROPS} planType="zero_cost" />);
-      const text = document.body.textContent ?? '';
-      expect(text).toContain('1.4% market estimate');
-    });
-
-    it('daily anchor reads as "in net payments cost" for the negative plSwing', () => {
-      render(<VerdictSection outputs={cat5Outputs()} {...COMMON_PROPS} planType="zero_cost" />);
-      const text = document.body.textContent ?? '';
-      // Math.round(8400 / 365) = 23
-      expect(text).toContain('$23 more per day');
-      expect(text).toContain('in net payments cost');
-    });
+  it('does not render the legacy body paragraph (moved to ContextParagraph)', () => {
+    render(<VerdictSection outputs={makeOutputs({ category: 4 })} />);
+    expect(
+      screen.queryByText(/face two challenges simultaneously/i),
+    ).not.toBeInTheDocument();
   });
 });

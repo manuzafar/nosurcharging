@@ -310,50 +310,59 @@ export function RefinementPanel({
 
   return (
     <section
-      className="rounded-xl p-5"
-      style={{
-        border: '0.5px solid var(--color-border-secondary)',
-        background: 'var(--color-background-primary)',
-      }}
+      className="px-5 md:px-8"
       aria-label="Refine your estimate"
     >
-      {/* Header + accuracy score */}
-      <div className="flex items-baseline justify-between gap-3">
-        <div>
-          <h3 className="text-body font-medium" style={{ color: 'var(--color-text-primary)' }}>
-            Make it yours
-          </h3>
-          <p className="mt-1 text-body-sm" style={{ color: 'var(--color-text-secondary)' }}>
-            Fill in what you know — the estimate sharpens as you go.
-          </p>
-        </div>
-        <div className="text-right shrink-0">
-          <p
+      {/* Header — eyebrow + inline accuracy. The previous progress bar
+          is gone; accuracy lives as a small mono stat at top-right per
+          the M2 brief. */}
+      <div className="flex items-baseline justify-between gap-3" style={{ marginBottom: '8px' }}>
+        <p
+          className="font-bold uppercase"
+          style={{
+            fontSize: '12px',
+            letterSpacing: '0.8px',
+            color: 'var(--color-text-primary)',
+          }}
+        >
+          Refine your estimate
+        </p>
+        <span
+          className="inline-flex items-baseline shrink-0"
+          style={{ gap: '6px' }}
+        >
+          <span
             className="font-mono"
-            style={{ fontSize: '22px', color: '#1A6B5A' }}
+            style={{
+              fontSize: '14px',
+              fontWeight: 600,
+              color: 'var(--color-text-success)',
+            }}
           >
             {accuracy}%
-          </p>
-          <p className="text-micro" style={{ color: 'var(--color-text-tertiary)' }}>
-            Estimate accuracy
-          </p>
-        </div>
+          </span>
+          <span
+            className="uppercase"
+            style={{
+              fontSize: '9px',
+              letterSpacing: '0.5px',
+              color: 'var(--color-text-tertiary)',
+            }}
+          >
+            Accuracy
+          </span>
+        </span>
       </div>
-
-      {/* Progress bar for accuracy */}
-      <div
-        className="mt-3 rounded-full overflow-hidden"
-        style={{ height: '4px', background: 'var(--color-background-secondary)' }}
+      <p
+        style={{
+          fontSize: '13px',
+          color: 'var(--color-text-secondary)',
+          lineHeight: 1.55,
+          marginBottom: '8px',
+        }}
       >
-        <div
-          style={{
-            height: '100%',
-            width: `${accuracy}%`,
-            background: '#1A6B5A',
-            transition: 'width 180ms ease-out',
-          }}
-        />
-      </div>
+        Fill in what you know — the estimate sharpens as you go.
+      </p>
 
       {/* ── Field 1: Average transaction value ───────────────── */}
       <FieldCard
@@ -421,8 +430,10 @@ export function RefinementPanel({
 
       {/* ── Field 3: Commercial card share ────────────────────── */}
       <div
-        className="mt-4 rounded-lg"
-        style={{ border: '0.5px solid var(--color-border-tertiary)', padding: '12px' }}
+        style={{
+          borderTop: '0.5px solid var(--color-border-secondary)',
+          padding: '14px 0',
+        }}
       >
         <button
           type="button"
@@ -561,10 +572,15 @@ interface FieldCardProps {
 }
 
 function FieldCard({ label, badge, chip, delta, hint, children }: FieldCardProps) {
+  // Settings-list row: hairline above, generous padding, no enclosing
+  // box. The chip + delta sit on the input row to keep vertical density
+  // tight on mobile.
   return (
     <div
-      className="mt-4 rounded-lg"
-      style={{ border: '0.5px solid var(--color-border-tertiary)', padding: '12px' }}
+      style={{
+        borderTop: '0.5px solid var(--color-border-secondary)',
+        padding: '14px 0',
+      }}
     >
       <div className="flex items-center justify-between gap-2">
         <p className="text-caption font-medium" style={{ color: 'var(--color-text-primary)' }}>
@@ -573,7 +589,7 @@ function FieldCard({ label, badge, chip, delta, hint, children }: FieldCardProps
         <Badge {...badge} />
       </div>
       <div className="mt-1">{chip}</div>
-      <div className="mt-3 flex flex-wrap items-center gap-3">
+      <div className="mt-2 flex flex-wrap items-center gap-3">
         {children}
         {delta.label && (
           <span

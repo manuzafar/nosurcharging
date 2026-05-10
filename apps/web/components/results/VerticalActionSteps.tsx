@@ -1,21 +1,22 @@
 'use client';
 
-// VerticalActionSteps — Results_V2 redesign replacement for ActionList.
-// Each action becomes a numbered step on a vertical timeline:
-//   • Coloured numbered dot (urgent red / plan amber / monitor neutral)
-//   • Vertical connector line through the dot column
-//   • Step body: priority badge + date + title + white card with script | RAO | why
+// VerticalActionSteps — Ruthless Cut M2 visual restyle.
 //
-// Cat 3 / Cat 4 action 2 carries `framework` (RaoFramework) instead of `script`.
-// We render a structured RAO card (R / A / O letter dots + condition + optional
-// break-even pill) so the lever copy is single-source-of-truth in actions.ts —
-// not embedded in script text.
+// Per docs/design/RESULTS_RUTHLESS_CUT_BRIEF.md §5: vertical hairline +
+// tier-coloured numbered dots; tier headers in small-caps coloured by
+// tier; "Exact script" left-bordered light-bg block; `why` as small
+// grey text below. The wrapper white-card per-step border is gone.
 //
-// A trailing DEADLINE marker (1 OCTOBER 2026) is appended below the steps to
-// anchor the timeline visually.
+// Scripts are collapsed by default (user selected). Each step renders
+// title + why + (if framework) RAO grid by default; the chevron toggle
+// reveals the "Exact script" block. Why stays visible because it's the
+// fastest read; framework stays visible because it IS the value of the
+// step it belongs to.
 
+import { useState } from 'react';
 import {
   CalendarDays,
+  ChevronDown,
   CircleAlert,
   Clock,
   Eye,
@@ -96,21 +97,27 @@ const PRIORITY_ICON: Record<ActionPriority | 'deadline', ReactNode> = {
   deadline: <CalendarDays size={10} aria-hidden />,
 };
 
-function PriorityBadge({ priority }: { priority: ActionPriority | 'deadline' }) {
-  const styles = dotStyles(priority);
-  const label = priority === 'deadline' ? 'DEADLINE' : PRIORITY_LABEL[priority];
+// Tier-coloured small-caps header (URGENT / PLAN / MONITOR / DEADLINE).
+// Sits above the title in place of the previous coloured-pill badge.
+function TierHeader({ priority }: { priority: ActionPriority | 'deadline' }) {
+  const label =
+    priority === 'deadline' ? 'DEADLINE' : PRIORITY_LABEL[priority];
+  const colour =
+    priority === 'urgent'
+      ? 'var(--color-text-danger)'
+      : priority === 'plan'
+        ? 'var(--color-text-warning)'
+        : priority === 'deadline'
+          ? 'var(--color-text-primary)'
+          : 'var(--color-text-tertiary)';
   return (
     <span
       className="inline-flex items-center font-bold uppercase"
       style={{
-        gap: '4px',
-        fontSize: '8px',
-        letterSpacing: '0.3px',
-        padding: '2px 8px',
-        borderRadius: '3px',
-        background: styles.bg,
-        color: styles.color,
-        border: styles.border ? `0.5px solid ${styles.border}` : 'none',
+        gap: '5px',
+        fontSize: '9px',
+        letterSpacing: '0.8px',
+        color: colour,
       }}
     >
       {PRIORITY_ICON[priority]}
@@ -124,7 +131,7 @@ function StepDot({
   content,
 }: {
   priority: ActionPriority | 'deadline';
-  content: React.ReactNode;
+  content: ReactNode;
 }) {
   const styles = dotStyles(priority);
   return (
@@ -188,8 +195,8 @@ function RaoCard({ framework }: { framework: RaoFramework }) {
       style={{
         background: 'var(--color-background-secondary)',
         borderRadius: '10px',
-        padding: '16px',
-        marginTop: '6px',
+        padding: '14px 16px',
+        marginTop: '10px',
       }}
     >
       <p
@@ -282,6 +289,17 @@ function RaoCard({ framework }: { framework: RaoFramework }) {
 
 // ── Step row ────────────────────────────────────────────────────
 
+interface StepRowProps {
+  number: number | string;
+  priority: ActionPriority | 'deadline';
+  timeAnchor: string;
+  title: string;
+  script?: string;
+  why?: string;
+  framework?: RaoFramework;
+  isLast?: boolean;
+}
+
 function StepRow({
   number,
   priority,
@@ -291,21 +309,17 @@ function StepRow({
   why,
   framework,
   isLast,
-}: {
-  number: number | string;
-  priority: ActionPriority | 'deadline';
-  timeAnchor: string;
-  title: string;
-  script?: string;
-  why?: string;
-  framework?: RaoFramework;
-  isLast?: boolean;
-}) {
-  const hasCard = !!script || !!why || !!framework;
+}: StepRowProps) {
+  // Scripts collapse by default (per Manu's M2 decision). The chevron
+  // toggle reveals the "Exact script" block below. Why + framework stay
+  // visible because they're the fastest read / load-bearing content.
+  const [scriptOpen, setScriptOpen] = useState(false);
+  const hasScript = !!script;
 
   return (
-    <div className="flex relative" style={{ gap: '14px', paddingBottom: '4px' }}>
-      {/* Vertical connector line — drawn behind the dot */}
+    <div className="flex relative" style={{ gap: '14px' }}>
+      {/* Vertical connector line — drawn behind the dot, anchored to
+          the dot column so it never crosses the body content. */}
       {!isLast && (
         <span
           aria-hidden
@@ -330,12 +344,13 @@ function StepRow({
       </div>
 
       {/* Body */}
-      <div className="flex-1" style={{ paddingBottom: '20px' }}>
+      <div className="flex-1" style={{ paddingBottom: '24px' }}>
+        {/* Tier header + date row */}
         <div
           className="flex items-center"
-          style={{ gap: '8px', marginBottom: '5px', paddingTop: '6px' }}
+          style={{ gap: '8px', marginBottom: '6px', paddingTop: '6px' }}
         >
-          <PriorityBadge priority={priority} />
+          <TierHeader priority={priority} />
           <span
             className="font-medium"
             style={{
@@ -347,40 +362,76 @@ function StepRow({
           </span>
         </div>
 
+        {/* Title */}
         <h3
-          className="font-bold"
           style={{
-            fontSize: '13px',
+            fontSize: '14px',
+            fontWeight: 600,
             color:
               priority === 'deadline'
                 ? 'var(--color-text-tertiary)'
                 : 'var(--color-text-primary)',
-            lineHeight: 1.4,
-            marginBottom: hasCard ? '6px' : 0,
+            lineHeight: 1.45,
+            marginBottom: why || framework || hasScript ? '8px' : 0,
           }}
         >
           {title}
         </h3>
 
-        {hasCard && (
-          <div
+        {/* Why — small grey, sits below title (always visible) */}
+        {why && (
+          <p
             style={{
-              background: '#FFFFFF',
-              border: '0.5px solid var(--color-border-secondary)',
-              borderRadius: '10px',
-              padding: '14px',
-              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+              fontSize: '12px',
+              color: 'var(--color-text-tertiary)',
+              lineHeight: 1.6,
             }}
           >
-            {script && (
-              <>
+            {why}
+          </p>
+        )}
+
+        {/* Framework — Cat 3/4 RAO card, always visible (it IS the value) */}
+        {framework && <RaoCard framework={framework} />}
+
+        {/* Exact script — collapses by default */}
+        {hasScript && (
+          <div style={{ marginTop: '10px' }}>
+            <button
+              type="button"
+              onClick={() => setScriptOpen((v) => !v)}
+              className="inline-flex items-center font-bold uppercase cursor-pointer"
+              aria-expanded={scriptOpen}
+              style={{
+                gap: '5px',
+                fontSize: '10px',
+                letterSpacing: '0.5px',
+                color: 'var(--color-text-tertiary)',
+                background: 'none',
+                border: 'none',
+                padding: 0,
+              }}
+            >
+              <ChevronDown
+                size={11}
+                aria-hidden
+                style={{
+                  transition: 'transform 0.2s',
+                  transform: scriptOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                }}
+              />
+              {scriptOpen ? 'Hide script' : 'Show exact script'}
+            </button>
+
+            {scriptOpen && (
+              <div style={{ marginTop: '8px' }}>
                 <p
                   className="font-bold uppercase"
                   style={{
-                    fontSize: '8.5px',
+                    fontSize: '9px',
                     letterSpacing: '0.5px',
                     color: 'var(--color-text-tertiary)',
-                    marginBottom: '8px',
+                    marginBottom: '6px',
                   }}
                 >
                   Exact script
@@ -390,30 +441,16 @@ function StepRow({
                     fontSize: '12px',
                     color: 'var(--color-text-secondary)',
                     lineHeight: 1.7,
-                    borderLeft: '2px solid var(--color-accent-border)',
-                    paddingLeft: '10px',
                     fontStyle: 'italic',
-                    marginBottom: framework || why ? '8px' : 0,
+                    background: 'var(--color-background-secondary)',
+                    borderLeft: '2px solid var(--color-accent-border)',
+                    padding: '12px 14px',
+                    borderRadius: '0 8px 8px 0',
                   }}
                 >
                   {script}
                 </p>
-              </>
-            )}
-
-            {framework && <RaoCard framework={framework} />}
-
-            {why && (
-              <p
-                style={{
-                  fontSize: '11px',
-                  color: 'var(--color-text-tertiary)',
-                  lineHeight: 1.6,
-                  marginTop: framework || script ? '10px' : 0,
-                }}
-              >
-                {why}
-              </p>
+              </div>
             )}
           </div>
         )}
@@ -432,7 +469,6 @@ export function VerticalActionSteps({ actions }: VerticalActionStepsProps) {
 
   const eyebrowId = 'action-list-eyebrow';
 
-  // Counter pill text — only include non-zero buckets.
   const countParts: string[] = [];
   if (urgentCount > 0) countParts.push(`${urgentCount} urgent`);
   if (planCount > 0) countParts.push(`${planCount} plan`);
@@ -440,11 +476,10 @@ export function VerticalActionSteps({ actions }: VerticalActionStepsProps) {
   const countText = countParts.join(' · ');
 
   return (
-    <section aria-labelledby={eyebrowId}>
-      {/* Header — title + count pill */}
+    <section aria-labelledby={eyebrowId} className="px-5 md:px-8">
       <div
         className="flex items-center justify-between flex-wrap"
-        style={{ gap: '10px', marginBottom: '16px', maxWidth: '700px' }}
+        style={{ gap: '10px', marginBottom: '20px' }}
       >
         <p
           id={eyebrowId}
@@ -474,8 +509,7 @@ export function VerticalActionSteps({ actions }: VerticalActionStepsProps) {
         )}
       </div>
 
-      {/* Vertical timeline */}
-      <div style={{ maxWidth: '700px', position: 'relative' }}>
+      <div style={{ position: 'relative' }}>
         {sorted.map((action, i) => (
           <StepRow
             key={i}

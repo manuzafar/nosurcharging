@@ -10,7 +10,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Info } from 'lucide-react';
 import { SITUATION_PILLS } from '@/components/results/VerdictSection';
 import { FeedbackModal } from '@/components/results/FeedbackModal';
 import { Analytics } from '@/lib/analytics';
@@ -18,7 +17,6 @@ import { Analytics } from '@/lib/analytics';
 interface ResultsTopBarProps {
   category: 1 | 2 | 3 | 4 | 5;
   plSwing: number;
-  accuracy: number;
   volume: number;
   assessmentId?: string;
 }
@@ -31,7 +29,6 @@ function formatSignedDollar(value: number): string {
 export function ResultsTopBar({
   category,
   plSwing,
-  accuracy,
   volume,
   assessmentId,
 }: ResultsTopBarProps) {
@@ -103,25 +100,15 @@ export function ResultsTopBar({
             {formatSignedDollar(plSwing)}
           </span>
 
-          {/* Accuracy indicator — hidden on mobile */}
-          <span
-            className="hidden md:inline-flex items-center shrink-0"
-            style={{
-              gap: '4px',
-              fontSize: '10px',
-              color: 'rgba(255,255,255,0.35)',
-              cursor: 'pointer',
-            }}
-          >
-            <Info size={11} aria-hidden />
-            Accuracy ▪ {Math.round(accuracy)}%
-          </span>
-
-          {/* Result looks off? — hidden on mobile */}
+          {/* Result looks off? — hidden on mobile.
+              The accuracy indicator that lived here moved into the
+              RefinementPanel header in M2. The analytics event still
+              records accuracy_pct as 0 from this surface; the in-page
+              feedback flow captures the live accuracy separately. */}
           <button
             type="button"
             onClick={() => {
-              Analytics.resultLooksOff({ category, accuracy_pct: accuracy });
+              Analytics.resultLooksOff({ category, accuracy_pct: 0 });
               setFeedbackOpen(true);
             }}
             className="hidden md:inline cursor-pointer hover:!text-white/60 hover:underline shrink-0"
