@@ -42,8 +42,9 @@ describe('VerticalActionSteps', () => {
 
   it('RECOVER lever shows the break-even pill with percentage', () => {
     render(<VerticalActionSteps actions={buildActions(4, 'Stripe', 'cafe', CTX)} />);
-    // Pill is rendered as "Break-even: 0.66% increase recovers $3,300"
-    expect(screen.getByText(/Break-even: 0\.66% increase recovers \$3,300/)).toBeInTheDocument();
+    // Editorial M2 inline-grid drops the "Break-even:" prefix to keep
+    // the tile compact — the value alone carries the meaning.
+    expect(screen.getByText(/0\.66% increase recovers \$3,300/)).toBeInTheDocument();
   });
 
   it('always renders the OCT 2026 deadline marker as the last step', () => {

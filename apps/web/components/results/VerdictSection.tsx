@@ -73,61 +73,74 @@ export function VerdictSection({ outputs }: VerdictSectionProps) {
         : 'var(--color-text-secondary)';
 
   return (
-    <section className="bg-white">
-      <div className="px-5 py-7 md:px-8 md:py-9">
-        {/* Situation pill */}
-        <span
-          className="inline-block font-bold uppercase"
-          style={{
-            ...pillStyle,
-            fontSize: '8.5px',
-            letterSpacing: '0.5px',
-            padding: '3px 9px',
-            borderRadius: '4px',
-            marginBottom: '14px',
-          }}
-        >
-          Situation {category}
-        </span>
+    // No card wrapper — editorial M2 drops the white container so the
+    // hero floats against the paper background. Page padding lives on
+    // this section directly so the eyebrow, P&L, and headline align
+    // with every other editorial section's gutter.
+    <section className="px-5 min-[501px]:px-8 pt-7 min-[501px]:pt-9 pb-7 min-[501px]:pb-9">
+      {/* Situation pill */}
+      <span
+        className="inline-block uppercase"
+        style={{
+          ...pillStyle,
+          fontSize: '8.5px',
+          fontWeight: 500,
+          letterSpacing: '0.5px',
+          padding: '3px 9px',
+          borderRadius: '4px',
+          marginBottom: '28px',
+        }}
+      >
+        Situation {category}
+      </span>
 
-        {/* Eyebrow */}
-        <p
-          style={{
-            fontSize: '11px',
-            color: 'var(--color-text-tertiary)',
-            letterSpacing: '0.3px',
-            marginBottom: '6px',
-          }}
-        >
-          Estimated annual P&amp;L impact from October 2026
-        </p>
+      {/* Eyebrow */}
+      <p
+        className="uppercase"
+        style={{
+          fontSize: '11px',
+          fontWeight: 500,
+          letterSpacing: '0.08em',
+          color: 'var(--color-text-secondary)',
+          marginBottom: '6px',
+        }}
+      >
+        Estimated annual P&amp;L impact from October 2026
+      </p>
 
-        {/* P&L hero number */}
-        <p
-          className="font-mono font-bold leading-none"
-          style={{
-            fontSize: 'clamp(40px, 8vw, 48px)',
-            color: pnlColor,
-            letterSpacing: '-1.5px',
-            marginBottom: '14px',
-          }}
-        >
-          {formatSignedDollar(plSwing)}
-        </p>
+      {/* P&L hero number — 64px desktop / 40px mobile (PB-5).
+          Clamped fluidly with vw so it scales smoothly between. */}
+      <p
+        className="font-mono leading-none"
+        style={{
+          fontSize: 'clamp(40px, 8vw, 64px)',
+          fontWeight: 500,
+          color: pnlColor,
+          letterSpacing: '-0.03em',
+          marginBottom: '22px',
+        }}
+      >
+        {formatSignedDollar(plSwing)}
+      </p>
 
-        {/* One-sentence verdict */}
-        <h1
-          className="font-serif"
-          style={{
-            fontSize: '20px',
-            lineHeight: 1.4,
-            color: 'var(--color-text-primary)',
-            fontWeight: 500,
-          }}
-        >
-          {CATEGORY_VERDICTS[category]}
-        </h1>
-      </div>
+      {/* One-sentence verdict — serif headline.
+          24px desktop / 19px mobile per editorial spec. Max-width 520px
+          keeps the line measure tight on wide viewports so the verdict
+          reads as a single thought rather than a banner. */}
+      <h1
+        className="font-serif"
+        style={{
+          fontSize: 'clamp(19px, 3.5vw, 24px)',
+          lineHeight: 1.3,
+          letterSpacing: '-0.01em',
+          color: 'var(--color-text-primary)',
+          fontWeight: 500,
+          maxWidth: '520px',
+          margin: 0,
+        }}
+      >
+        {CATEGORY_VERDICTS[category]}
+      </h1>
     </section>
   );
 }
