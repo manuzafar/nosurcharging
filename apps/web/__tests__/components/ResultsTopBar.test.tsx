@@ -83,14 +83,14 @@ describe('ResultsTopBar', () => {
     expect(screen.getByTestId('feedback-modal')).toBeInTheDocument();
   });
 
-  it('renders the "Save result" outline button', () => {
+  it('does not render the legacy "Save result" button (M1 removed)', () => {
     render(<ResultsTopBar {...defaultProps} />);
-    expect(screen.getByRole('button', { name: 'Save result' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Save result' })).not.toBeInTheDocument();
   });
 
-  it('renders the "Get help" primary CTA', () => {
+  it('does not render the legacy "Get help" CTA (M1 removed)', () => {
     render(<ResultsTopBar {...defaultProps} />);
-    expect(screen.getByRole('link', { name: 'Get help' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Get help' })).not.toBeInTheDocument();
   });
 
   it('header uses dark ink background and 56px height', () => {

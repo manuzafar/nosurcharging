@@ -1,47 +1,58 @@
 'use client';
 
-// Results page — two-column sticky layout with scroll-based navigation.
+// Results page — single-column linear scroll (Ruthless Cut M1).
+//
+// Per docs/design/RESULTS_RUTHLESS_CUT_BRIEF.md, the previous shell
+// (sidebar + sub-tabs + section observer) is gone. Sections that
+// owned editorial content move to the PDF artifact (M3); the page
+// now mounts the surviving components in scroll order.
+//
+// M1 scope: structural cut only. Visual restyles (VerticalActionSteps
+// hairline, RefinementPanel settings-list, ContextParagraph extraction,
+// ArtifactCard, print stylesheet, ReformTimelineCompact, QuietUpsell)
+// land in M2. PDF + 48h retention land in M3.
 //
 // Routing:
 //   strategicRateExit → StrategicRateExitPage (no dollar figures)
-//   standard          → full results with sidebar, sections, sticky top bar
-//                       (Cat 1-5 all flow through this single shell)
+//   standard          → linear results page (Cat 1-5)
 //
 // State managed here:
-//   outputs: AssessmentOutputs (from server, updated by slider/refinement)
-//   actions: ActionItem[] (immutable after initial load — slider does NOT touch)
-//   passThrough: number (0-1, driven by PassThroughSlider, default 0.45)
+//   outputs:     AssessmentOutputs (server, updated by slider/refinement)
+//   actions:     ActionItem[] (immutable after initial load)
+//   passThrough: 0-1, default 0.45 (CB-08 centre estimate)
+//   accuracy:    base 20%, updated by RefinementPanel — moves into
+//                RefinementPanel header in M2; lives here for now.
 
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getAssessment } from '@/actions/getAssessment';
 import type { StoredAssessment } from '@/actions/getAssessment';
-import type { AssessmentOutputs, RawAssessmentData, ResolutionContext, ActionItem } from '@nosurcharging/calculations/types';
+import type {
+  AssessmentOutputs,
+  RawAssessmentData,
+  ResolutionContext,
+  ActionItem,
+} from '@nosurcharging/calculations/types';
 import { resolveAssessmentInputs } from '@nosurcharging/calculations/rules/resolver';
 import { sanitiseForHTML } from '@/lib/sanitise';
 import { Analytics, getVolumeTier, getPlSwingBucket } from '@/lib/analytics';
-import { useScrollSpy } from '@/hooks/useScrollSpy';
 
 import { SkeletonLoader } from '@/components/results/SkeletonLoader';
 import { StrategicRateExitPage } from '@/components/results/StrategicRateExitPage';
 import { Footer } from '@/components/homepage/Footer';
 
-// Shell
 import { ResultsTopBar } from '@/components/results/shell/ResultsTopBar';
-import { ResultsSidebar } from '@/components/results/shell/ResultsSidebar';
-import { MobileMiniNav } from '@/components/results/shell/MobileMiniNav';
-import { MobileBottomBar } from '@/components/results/shell/MobileBottomBar';
 
-// Sections
-import { OverviewSection } from '@/components/results/sections/OverviewSection';
-import { ActionsSection } from '@/components/results/sections/ActionsSection';
-import { ValuesSection } from '@/components/results/sections/ValuesSection';
-import { RefineSection } from '@/components/results/sections/RefineSection';
-import { HelpSection } from '@/components/results/sections/HelpSection';
-import { TalkToCustomers } from '@/components/results/sections/TalkToCustomers';
-import { NegotiationBrief } from '@/components/results/sections/NegotiationBrief';
-import { ReadinessChecklist } from '@/components/results/sections/ReadinessChecklist';
-import { PSPRegistrySection } from '@/components/results/sections/PSPRegistrySection';
+import { VerdictSection } from '@/components/results/VerdictSection';
+import { MetricCards } from '@/components/results/MetricCards';
+import { ProblemsBlock } from '@/components/results/ProblemsBlock';
+import { VerticalActionSteps } from '@/components/results/VerticalActionSteps';
+import { RefinementPanel } from '@/components/results/RefinementPanel';
+import { PassThroughSlider } from '@/components/results/PassThroughSlider';
+import { EscapeScenarioCard } from '@/components/results/EscapeScenarioCard';
+import { AssumptionsPanel } from '@/components/results/AssumptionsPanel';
+import { ReformReadyUpsell } from '@/components/results/ReformReadyUpsell';
+import { ResultsDisclaimer } from '@/components/results/ResultsDisclaimer';
 
 export default function ResultsPage() {
   return (
@@ -58,29 +69,15 @@ function ResultsContent() {
 
   const [assessment, setAssessment] = useState<StoredAssessment | null>(null);
   const [outputs, setOutputs] = useState<AssessmentOutputs | null>(null);
-  // `actions` lives in its own state, seeded ONCE from the initial DB load.
-  // It is deliberately NOT part of `outputs` — the slider recalculates
-  // outputs via calculateMetrics() which returns a clean AssessmentOutputs
-  // (no actions). If actions were part of outputs, every slider tick would
-  // blank the ActionList, causing the section to collapse and the viewport
-  // to jump. Keep actions separate and immutable after initial load.
+  // `actions` is seeded once from the initial DB load and is deliberately
+  // separate from `outputs`. The slider recalculates outputs without
+  // touching actions — keeping them split prevents the action list from
+  // remounting on every slider tick.
   const [actions, setActions] = useState<ActionItem[]>([]);
-  const [passThrough, setPassThrough] = useState(0.45); // CB-08: 45% default
+  const [passThrough, setPassThrough] = useState(0.45); // CB-08
   const [loading, setLoading] = useState(true);
-  // Strategic rate exit is the only non-standard route post-Cat-5-refactor.
   const [isStrategicExit, setIsStrategicExit] = useState(false);
-  // Accuracy — base 20%, updated live by RefinementPanel via onAccuracyChange
   const [accuracy, setAccuracy] = useState(20);
-
-  // Analytics refs — set when results_viewed fires so section_visited
-  // can compute time_since_results_viewed_seconds. visitedSections
-  // dedupes per-page-load: each section fires section_visited at most once.
-  const resultsViewTimeRef = useRef<number>(0);
-  const visitedSections = useRef(new Set<string>());
-
-  // Scroll spy — must be unconditional (Rules of Hooks).
-  // Pass !loading so the observer starts AFTER sections are in the DOM.
-  const { activeSection, scrollToSection } = useScrollSpy(!loading);
 
   useEffect(() => {
     if (!assessmentId) {
@@ -97,7 +94,6 @@ function ResultsContent() {
       const data = result.data;
       setAssessment(data);
 
-      // Route by variant type
       if (data.variant_type === 'strategic_rate') {
         setIsStrategicExit(true);
         setLoading(false);
@@ -108,11 +104,7 @@ function ResultsContent() {
       setActions((data.outputs as { actions?: ActionItem[] }).actions ?? []);
       setLoading(false);
 
-      // Fire results_viewed for the standard Cat 1-5 path. Strategic-rate
-      // exit returned earlier above.
-      // Set the time ref BEFORE the event so any section_visited that
-      // races in computes a sane time_since_results_viewed_seconds.
-      resultsViewTimeRef.current = Date.now();
+      // results_viewed fires once for the standard Cat 1-5 path.
       const stdOutputs = data.outputs as AssessmentOutputs;
       const rawInputs = data.inputs as Record<string, unknown>;
       Analytics.resultsViewed({
@@ -126,42 +118,23 @@ function ResultsContent() {
         pl_swing_bucket: getPlSwingBucket(stdOutputs.plSwing),
         surcharging: (rawInputs.surcharging as boolean) ?? false,
         accuracy_pct: 20,
-        is_mobile: typeof window !== 'undefined' ? window.innerWidth < 768 : false,
+        is_mobile:
+          typeof window !== 'undefined' ? window.innerWidth < 768 : false,
       });
     });
   }, [assessmentId, router]);
 
-  // section_visited — fires at most once per section per page load.
-  // Skips 'overview' since that's the initial mount value and would fire
-  // before resultsViewTimeRef is set.
-  useEffect(() => {
-    if (!outputs) return;
-    if (activeSection === 'overview') return;
-    if (visitedSections.current.has(activeSection)) return;
-    visitedSections.current.add(activeSection);
-    Analytics.sectionVisited({
-      section: activeSection,
-      category: outputs.category,
-      time_since_results_viewed_seconds:
-        resultsViewTimeRef.current > 0
-          ? Math.round((Date.now() - resultsViewTimeRef.current) / 1000)
-          : 0,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSection]);
-
-  // Resolved inputs for the RefinementPanel. Memoised on `assessment` so
-  // it runs once per page load. Must live above the conditional returns
-  // below — React's Rules of Hooks require unconditional ordering.
+  // Resolved inputs — feeds RefinementPanel. Memoised on `assessment` so it
+  // runs once per page load. Must live above conditional returns (Rules of
+  // Hooks). Returns null for zero-cost / strategic-rate, which RefinementPanel
+  // (gated below) treats as the no-render case.
   const resolvedInputs = useMemo(() => {
     if (!assessment) return null;
     const stored = assessment.inputs as Record<string, unknown>;
-    const rawPlanType = (stored.planType as RawAssessmentData['planType']) ?? 'flat';
-    // Refinement only applies to the standard Cat 1-4 flow.
-    // Strategic rate exit doesn't run refinement (no rate context). Cat 5
-    // (zero_cost) does flow through the main shell, but RefinementPanel only
-    // applies to flat/costplus/blended cost composition — skip for Cat 5.
-    if (rawPlanType === 'zero_cost' || rawPlanType === 'strategic_rate') return null;
+    const rawPlanType =
+      (stored.planType as RawAssessmentData['planType']) ?? 'flat';
+    if (rawPlanType === 'zero_cost' || rawPlanType === 'strategic_rate')
+      return null;
     const rawForResolve: RawAssessmentData = {
       volume: (stored.volume as number) ?? 0,
       planType: rawPlanType,
@@ -182,29 +155,24 @@ function ResultsContent() {
     return resolveAssessmentInputs(rawForResolve, ctx);
   }, [assessment]);
 
-  if (loading) {
-    return <SkeletonLoader />;
-  }
+  if (loading) return <SkeletonLoader />;
 
-  // Strategic rate exit — no dollar figures
   if (isStrategicExit) {
     return <StrategicRateExitPage onBack={() => router.push('/assessment')} />;
   }
 
-  if (!assessment || !outputs) {
-    return <SkeletonLoader />;
-  }
+  if (!assessment || !outputs) return <SkeletonLoader />;
 
-  // ── Extract data from stored assessment ────────────────────────
+  // ── Inputs derived from the stored assessment row ────────────────────
   const storedInputs = assessment.inputs as Record<string, unknown>;
   const category = outputs.category;
   const volume = (storedInputs.volume as number) ?? 0;
   const pspName = sanitiseForHTML((storedInputs.psp as string) ?? 'Unknown');
-  const planType = (storedInputs.planType as 'flat' | 'costplus' | 'blended' | 'zero_cost') ?? 'flat';
-  // Use freshly computed resolutionTrace from resolvedInputs (PB-3)
+  const planType =
+    (storedInputs.planType as 'flat' | 'costplus' | 'blended' | 'zero_cost') ??
+    'flat';
   const resolutionTrace = resolvedInputs?.resolutionTrace ?? {};
 
-  // Build raw and context for slider recalculation
   const originalRaw: RawAssessmentData = {
     volume,
     planType,
@@ -224,116 +192,136 @@ function ResultsContent() {
     merchantInput: storedInputs.merchantInput as ResolutionContext['merchantInput'],
   };
 
-  // ── Urgent action count for sidebar badge ─────────────────────
-  const urgentCount = actions.filter((a) => a.priority === 'urgent').length;
-
-  // ── Slider callback — single state update, all children re-render ──
+  // Slider callback — single state update; all children re-render.
   const handleOutputsChange = (newOutputs: AssessmentOutputs, pt: number) => {
     setOutputs(newOutputs);
     setPassThrough(pt);
   };
 
-  // ── RefinementPanel callback — updates headline P&L outputs only ──
+  // RefinementPanel callback — updates headline P&L outputs only.
   const handleRefinedResult = (newOutputs: AssessmentOutputs) => {
     setOutputs(newOutputs);
   };
 
   return (
     <div className="min-h-screen bg-paper">
-      <ResultsTopBar category={category} plSwing={outputs.plSwing} accuracy={accuracy} volume={volume} assessmentId={assessmentId ?? undefined} />
-
-      <MobileMiniNav
-        activeSection={activeSection}
-        onNavClick={scrollToSection}
+      <ResultsTopBar
+        category={category}
         plSwing={outputs.plSwing}
+        accuracy={accuracy}
+        volume={volume}
+        assessmentId={assessmentId ?? undefined}
       />
 
-      <div className="flex">
-        <ResultsSidebar
-          activeSection={activeSection}
-          onNavClick={scrollToSection}
-          urgentCount={urgentCount}
-          category={category}
+      <main className="mx-auto max-w-3xl px-5 pb-20 md:pb-12 pt-6 space-y-8">
+        {/* Hero — situation pill, P&L, verdict + body. M2 splits the body
+            into a sibling ContextParagraph; for M1 the existing card holds. */}
+        <VerdictSection
+          outputs={outputs}
+          volume={volume}
+          pspName={pspName}
+          planType={planType}
+          msfRate={originalRaw.msfRate}
+          surcharging={originalRaw.surcharging}
+          surchargeRate={originalRaw.surchargeRate}
         />
 
-        <main className="flex-1 min-w-0 px-8 pb-20 md:pb-12 max-w-4xl">
-          <OverviewSection
-            outputs={outputs}
-            volume={volume}
-            pspName={pspName}
-            planType={planType}
-            msfRate={originalRaw.msfRate}
-            surcharging={originalRaw.surcharging}
-            surchargeRate={originalRaw.surchargeRate}
-          />
+        {/* Numbers — 3-mode metric cards. */}
+        <MetricCards
+          outputs={outputs}
+          planType={planType}
+          volume={volume}
+        />
 
-          <ActionsSection
-            actions={actions}
-            category={category}
-            outputs={outputs}
-            passThrough={passThrough}
-            volume={volume}
-            surcharging={originalRaw.surcharging}
-            pspName={pspName}
-          />
+        {/* Why this is happening — Cat-conditional problem cards. */}
+        <ProblemsBlock
+          category={category}
+          pspName={pspName}
+          surchargeRevenue={outputs.surchargeRevenue}
+          icSaving={outputs.icSaving}
+          octNet={outputs.octNet}
+          estimatedMSFRate={outputs.estimatedMSFRate}
+        />
 
-          <TalkToCustomers category={category} pspName={pspName} />
+        {/* Action plan — vertical numbered timeline. */}
+        <VerticalActionSteps actions={actions} />
 
-          <NegotiationBrief
-            pspName={pspName}
-            planType={planType}
-            volume={volume}
-            category={category}
-            outputs={outputs}
-          />
+        {/* Refine — only renders when resolvedInputs exist (skips zero-cost
+            + strategic-rate variants). PassThroughSlider + EscapeScenarioCard
+            internally gate to Cat 2 / 4. */}
+        {resolvedInputs && (
+          <section className="bg-white border border-rule rounded-xl p-6">
+            <p
+              className="uppercase tracking-widest pb-3 mb-6"
+              style={{
+                color: 'var(--color-text-tertiary)',
+                letterSpacing: '1.5px',
+                fontSize: '11px',
+                fontWeight: 500,
+                borderBottom: '1px solid var(--color-border-secondary)',
+              }}
+            >
+              Refine your estimate
+            </p>
 
-          <ReadinessChecklist category={category} pspName={pspName} />
+            <RefinementPanel
+              initialResult={outputs}
+              resolutionTrace={resolutionTrace}
+              inputs={resolvedInputs}
+              industry={originalRaw.industry}
+              onRefinedResult={handleRefinedResult}
+              onAccuracyChange={setAccuracy}
+            />
 
-          <PSPRegistrySection
-            assessmentId={assessmentId ?? ''}
-            pspName={pspName}
-            planType={planType === 'blended' || planType === 'zero_cost' ? 'flat' : planType}
-            volume={volume}
-            category={category}
-            industry={(storedInputs.industry as string) ?? 'other'}
-          />
+            <div className="mt-6">
+              <PassThroughSlider
+                category={category}
+                passThrough={passThrough}
+                outputs={outputs}
+                originalRaw={originalRaw}
+                resolutionContext={resolutionContext}
+                pspName={pspName}
+                onOutputsChange={handleOutputsChange}
+              />
+            </div>
 
-          <ValuesSection
-            outputs={outputs}
-            passThrough={passThrough}
-            resolutionTrace={resolutionTrace}
-            volume={volume}
-            pspName={pspName}
-            planType={planType}
-            msfRate={originalRaw.msfRate}
-            surcharging={originalRaw.surcharging}
-            surchargeRate={originalRaw.surchargeRate}
-            avgTransactionValue={(storedInputs.avgTransactionValue as number) ?? 65}
-          />
+            <div className="mt-4">
+              <EscapeScenarioCard
+                category={category}
+                outputs={outputs}
+                passThrough={passThrough}
+                originalRaw={originalRaw}
+                resolutionContext={resolutionContext}
+                pspName={pspName}
+              />
+            </div>
+          </section>
+        )}
 
-          <RefineSection
-            outputs={outputs}
-            resolvedInputs={resolvedInputs}
-            passThrough={passThrough}
-            originalRaw={originalRaw}
-            resolutionContext={resolutionContext}
-            pspName={pspName}
-            onOutputsChange={handleOutputsChange}
-            onRefinedResult={handleRefinedResult}
-            onAccuracyChange={setAccuracy}
-          />
+        {/* Assumptions — expand-on-demand. M2 audits this is collapsed-by-default. */}
+        <AssumptionsPanel
+          outputs={outputs}
+          passThrough={passThrough}
+          resolutionTrace={resolutionTrace}
+          volume={volume}
+          pspName={pspName}
+          planType={planType === 'blended' ? 'flat' : planType}
+          msfRate={originalRaw.msfRate}
+          surcharging={originalRaw.surcharging}
+          surchargeRate={originalRaw.surchargeRate}
+        />
 
-          <HelpSection
-            category={category}
-            pspName={pspName}
-            assessmentId={assessmentId ?? ''}
-            plSwing={outputs.plSwing}
-            volumeTier={getVolumeTier(volume)}
-          />
-        </main>
-      </div>
+        {/* Upsell — replaced in M2 with QuietUpsell single-line link.
+            For M1 the dark $149 card stays so the offer is still surfaced. */}
+        <ReformReadyUpsell
+          category={category}
+          pspName={pspName}
+          plSwing={outputs.plSwing}
+          volumeTier={getVolumeTier(volume)}
+        />
 
-      <MobileBottomBar category={category} />
+        <ResultsDisclaimer />
+      </main>
 
       <Footer />
     </div>
