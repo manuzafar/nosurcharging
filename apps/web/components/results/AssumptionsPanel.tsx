@@ -118,8 +118,9 @@ export function AssumptionsPanel({
           : 'var(--color-text-danger)',
     });
     return (
+      // Editorial M3: cost-plus path — no card wrapper, hairline-topped
+      // toggle, flat expanded content.
       <div>
-        {/* Toggle */}
         <button
           type="button"
           onClick={() => {
@@ -128,12 +129,14 @@ export function AssumptionsPanel({
             }
             setExpanded(!expanded);
           }}
-          className="text-caption cursor-pointer"
+          className="cursor-pointer w-full text-left"
           style={{
-            color: 'var(--color-text-secondary)',
+            color: 'var(--color-text-tertiary)',
             background: 'none',
             border: 'none',
-            padding: 0,
+            padding: '14px 0 0',
+            borderTop: '0.5px solid var(--color-border-secondary)',
+            fontSize: '12px',
           }}
         >
           <span className="inline-flex items-center" style={{ gap: '6px' }}>
@@ -144,13 +147,11 @@ export function AssumptionsPanel({
 
         <div
           className={`overflow-hidden transition-all duration-200 ease-out ${
-            expanded ? 'mt-3 max-h-[3000px] opacity-100' : 'max-h-0 opacity-0'
+            expanded ? 'mt-4 max-h-[3000px] opacity-100' : 'max-h-0 opacity-0'
           }`}
         >
-          <div
-            className="p-4"
-            style={{ border: '0.5px solid var(--color-border-secondary)' }}
-          >
+          <div className="pt-2">
+
             <p
               className="text-caption font-medium"
               style={{ color: 'var(--color-text-primary)' }}
@@ -278,8 +279,9 @@ export function AssumptionsPanel({
   });
 
   return (
+    // Editorial M3: no card wrapper. Toggle is a hairline-topped text
+    // link; expanded content uses hairline rows with no enclosing box.
     <div>
-      {/* Toggle — new wording per spec §3.9 */}
       <button
         type="button"
         onClick={() => {
@@ -288,12 +290,14 @@ export function AssumptionsPanel({
           }
           setExpanded(!expanded);
         }}
-        className="text-caption cursor-pointer"
+        className="cursor-pointer w-full text-left"
         style={{
-          color: 'var(--color-text-secondary)',
+          color: 'var(--color-text-tertiary)',
           background: 'none',
           border: 'none',
-          padding: 0,
+          padding: '14px 0 0',
+          borderTop: '0.5px solid var(--color-border-secondary)',
+          fontSize: '12px',
         }}
       >
         <span className="inline-flex items-center" style={{ gap: '6px' }}>
@@ -305,13 +309,11 @@ export function AssumptionsPanel({
       {/* Expanded content */}
       <div
         className={`overflow-hidden transition-all duration-200 ease-out ${
-          expanded ? 'mt-3 max-h-[3000px] opacity-100' : 'max-h-0 opacity-0'
+          expanded ? 'mt-4 max-h-[3000px] opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-        <div
-          className="p-4"
-          style={{ border: '0.5px solid var(--color-border-secondary)' }}
-        >
+        <div className="pt-2">
+
           {/* Formula rows */}
           <p
             className="text-caption font-medium"

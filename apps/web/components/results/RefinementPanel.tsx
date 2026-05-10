@@ -272,11 +272,16 @@ export function RefinementPanel({
   // ── Commercial share field ──
   const commercialEdited = edits.commercialShare !== undefined;
   const commercialValue = edits.commercialShare ?? commercialPrefill;
-  const [commercialExpanded, setCommercialExpanded] = useState(isB2B);
   const commercialBadge = getBadge('cardMix.visa_credit', commercialEdited, resolutionTrace);
   const commercialDelta = commercialEdited
     ? computeFieldDelta('commercialShare', commercialValue, initialResult, inputs)
     : { label: '', positive: true };
+
+  // ── More options toggle (fields 4 + 5) ──
+  // Default collapsed per editorial M3 brief. The previous
+  // `commercialExpanded` toggle is gone — commercial share is now
+  // a regular always-visible row above the toggle.
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
 
   // ── Monthly debit txns field ──
   const monthlyTxnsEdited = edits.monthlyDebitTxns !== undefined;
@@ -334,7 +339,7 @@ export function RefinementPanel({
         delta={avtDelta}
         hint={avtHint}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center" style={{ gap: '4px' }}>
           <span className="text-body-sm" style={{ color: 'var(--color-text-tertiary)' }}>$</span>
           <input
             type="number"
@@ -346,14 +351,15 @@ export function RefinementPanel({
               if (isNaN(v) || v <= 0) clearEdit('avgTransactionValue');
               else updateEdit('avgTransactionValue', v);
             }}
-            className="w-24 rounded-lg px-2 py-1 font-mono text-body-sm outline-none min-h-[40px]"
+            className="refine-input w-20 font-mono"
             style={{
-              border: '0.5px solid var(--color-border-secondary)',
-              background: 'var(--color-background-primary)',
+              fontSize: '14px',
+              fontWeight: 500,
               color: 'var(--color-text-primary)',
+              textAlign: 'right',
             }}
           />
-          <span className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>per transaction</span>
+          <span className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>per txn</span>
         </div>
       </FieldCard>
 
@@ -366,7 +372,7 @@ export function RefinementPanel({
           delta={creditDelta}
           hint="Small merchants may pay up to 0.80%; enterprise merchants closer to 0.30%. Find it on the interchange line of your statement."
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center" style={{ gap: '4px' }}>
             <input
               type="number"
               min={0.10}
@@ -378,11 +384,12 @@ export function RefinementPanel({
                 if (isNaN(v) || v <= 0) clearEdit('creditPct');
                 else updateEdit('creditPct', v);
               }}
-              className="w-24 rounded-lg px-2 py-1 font-mono text-body-sm outline-none min-h-[40px]"
+              className="refine-input w-20 font-mono"
               style={{
-                border: '0.5px solid var(--color-border-secondary)',
-                background: 'var(--color-background-primary)',
+                fontSize: '14px',
+                fontWeight: 500,
                 color: 'var(--color-text-primary)',
+                textAlign: 'right',
               }}
             />
             <span className="text-body-sm" style={{ color: 'var(--color-text-tertiary)' }}>%</span>
@@ -390,129 +397,132 @@ export function RefinementPanel({
         </FieldCard>
       )}
 
-      {/* ── Field 3: Commercial card share ────────────────────── */}
-      <div
-        style={{
-          borderTop: '0.5px solid var(--color-border-secondary)',
-          padding: '14px 0',
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => setCommercialExpanded((v) => !v)}
-          className="flex w-full items-center justify-between cursor-pointer"
-          style={{ background: 'none', border: 'none', padding: 0 }}
-        >
-          <span className="inline-flex items-center text-caption font-medium" style={{ gap: '6px', color: 'var(--color-text-primary)' }}>
-            {commercialExpanded ? <ChevronUp size={12} aria-hidden /> : <ChevronDown size={12} aria-hidden />}
-            Corporate / business card share{isB2B ? ' (likely relevant)' : ' (optional)'}
-          </span>
-          <Badge {...commercialBadge} />
-        </button>
-        {commercialExpanded && (
-          <div className="mt-3">
-            <p className="text-caption" style={{ color: 'var(--color-text-secondary)' }}>
-              Corporate card interchange is UNCHANGED by the reform — raising this share lowers
-              your projected saving.
-            </p>
-            <div className="mt-2 flex items-center gap-2">
-              <input
-                type="number"
-                min={0}
-                max={100}
-                step={1}
-                value={edits.commercialShare !== undefined ? Math.round(edits.commercialShare * 100) : Math.round(commercialPrefill * 100)}
-                onChange={(e) => {
-                  const v = parseFloat(e.target.value);
-                  if (isNaN(v) || v < 0) clearEdit('commercialShare');
-                  else updateEdit('commercialShare', Math.min(100, v) / 100);
-                }}
-                className="w-24 rounded-lg px-2 py-1 font-mono text-body-sm outline-none min-h-[40px]"
-                style={{
-                  border: '0.5px solid var(--color-border-secondary)',
-                  background: 'var(--color-background-primary)',
-                  color: 'var(--color-text-primary)',
-                }}
-              />
-              <span className="text-body-sm" style={{ color: 'var(--color-text-tertiary)' }}>%</span>
-              {commercialDelta.label && (
-                <span
-                  className="font-mono text-caption"
-                  style={{
-                    color: commercialDelta.positive ? 'var(--color-text-success)' : 'var(--color-text-danger)',
-                  }}
-                >
-                  {commercialDelta.label}
-                </span>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ── Field 4: Monthly debit transactions ───────────────── */}
+      {/* ── Field 3: Commercial card share — also a settings-row ── */}
       <FieldCard
-        label="Monthly debit card transactions (optional)"
-        badge={getBadge('__monthlyDebitTxns', monthlyTxnsEdited, resolutionTrace)}
-        chip={<ImpactChip label="Alternative to AVT" tone="neutral" />}
-        delta={monthlyTxnsDelta}
-        hint="If you'd rather count transactions than guess an average, enter your monthly Visa + Mastercard + eftpos count."
+        label={`Corporate / business card share${isB2B ? ' (likely relevant)' : ' (optional)'}`}
+        badge={commercialBadge}
+        chip={<ImpactChip label="Corporate IC unchanged" tone="neutral" />}
+        delta={commercialDelta}
+        hint="Corporate card interchange is UNCHANGED by the reform — raising this share lowers your projected saving."
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center" style={{ gap: '4px' }}>
           <input
             type="number"
             min={0}
+            max={100}
             step={1}
-            value={edits.monthlyDebitTxns ?? ''}
-            placeholder="e.g. 1,200"
+            value={edits.commercialShare !== undefined ? Math.round(edits.commercialShare * 100) : Math.round(commercialPrefill * 100)}
             onChange={(e) => {
               const v = parseFloat(e.target.value);
-              if (isNaN(v) || v <= 0) clearEdit('monthlyDebitTxns');
-              else updateEdit('monthlyDebitTxns', v);
+              if (isNaN(v) || v < 0) clearEdit('commercialShare');
+              else updateEdit('commercialShare', Math.min(100, v) / 100);
             }}
-            className="w-32 rounded-lg px-2 py-1 font-mono text-body-sm outline-none min-h-[40px]"
+            className="refine-input w-20 font-mono"
             style={{
-              border: '0.5px solid var(--color-border-secondary)',
-              background: 'var(--color-background-primary)',
+              fontSize: '14px',
+              fontWeight: 500,
               color: 'var(--color-text-primary)',
+              textAlign: 'right',
             }}
           />
-          <span className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>per month</span>
+          <span className="text-body-sm" style={{ color: 'var(--color-text-tertiary)' }}>%</span>
         </div>
       </FieldCard>
 
-      {/* ── Field 5: Minimum monthly fee (flat/blended only) ─── */}
-      {showMinFeeField && (
-        <FieldCard
-          label="Minimum monthly fee (optional)"
-          badge={minFeeBadge}
-          chip={<ImpactChip label="Floors your annual MSF" tone="neutral" />}
-          delta={{ label: '', positive: true }}
-          hint="Many PSP contracts include a minimum monthly charge. Check your last few statements for a line like 'Minimum monthly fee'."
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-body-sm" style={{ color: 'var(--color-text-tertiary)' }}>$</span>
-            <input
-              type="number"
-              min={0}
-              step={1}
-              value={minFeeValue}
-              placeholder="e.g. 25"
-              onChange={(e) => {
-                const v = parseFloat(e.target.value);
-                if (isNaN(v) || v <= 0) clearEdit('minMonthlyFee');
-                else updateEdit('minMonthlyFee', v);
-              }}
-              className="w-24 rounded-lg px-2 py-1 font-mono text-body-sm outline-none min-h-[40px]"
-              style={{
-                border: '0.5px solid var(--color-border-secondary)',
-                background: 'var(--color-background-primary)',
-                color: 'var(--color-text-primary)',
-              }}
-            />
-            <span className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>per month</span>
-          </div>
-        </FieldCard>
+      {/* "+ More options" — fields 4 and 5 hide behind this toggle.
+          Default state collapsed per the editorial brief §"Refine
+          overhaul · More options link". */}
+      <button
+        type="button"
+        onClick={() => setShowMoreOptions((v) => !v)}
+        className="cursor-pointer w-full text-left"
+        style={{
+          background: 'none',
+          border: 'none',
+          padding: '14px 0 0',
+          color: 'var(--color-text-tertiary)',
+          fontSize: '12px',
+        }}
+      >
+        <span className="inline-flex items-center" style={{ gap: '6px' }}>
+          {showMoreOptions ? (
+            <ChevronUp size={12} aria-hidden />
+          ) : (
+            <ChevronDown size={12} aria-hidden />
+          )}
+          {showMoreOptions ? 'Fewer options' : 'More options'}
+        </span>
+      </button>
+
+      {showMoreOptions && (
+        <>
+          {/* ── Field 4: Monthly debit transactions ───────────────── */}
+          <FieldCard
+            label="Monthly debit card transactions"
+            badge={getBadge('__monthlyDebitTxns', monthlyTxnsEdited, resolutionTrace)}
+            chip={<ImpactChip label="Alternative to AVT" tone="neutral" />}
+            delta={monthlyTxnsDelta}
+            hint="If you'd rather count transactions than guess an average, enter your monthly Visa + Mastercard + eftpos count."
+          >
+            <div className="flex items-center" style={{ gap: '4px' }}>
+              <input
+                type="number"
+                min={0}
+                step={1}
+                value={edits.monthlyDebitTxns ?? ''}
+                placeholder="e.g. 1,200"
+                onChange={(e) => {
+                  const v = parseFloat(e.target.value);
+                  if (isNaN(v) || v <= 0) clearEdit('monthlyDebitTxns');
+                  else updateEdit('monthlyDebitTxns', v);
+                }}
+                className="refine-input w-24 font-mono"
+                style={{
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  color: 'var(--color-text-primary)',
+                  textAlign: 'right',
+                }}
+              />
+              <span className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>/month</span>
+            </div>
+          </FieldCard>
+
+          {/* ── Field 5: Minimum monthly fee (flat/blended only) ─── */}
+          {showMinFeeField && (
+            <FieldCard
+              label="Minimum monthly fee"
+              badge={minFeeBadge}
+              chip={<ImpactChip label="Floors your annual MSF" tone="neutral" />}
+              delta={{ label: '', positive: true }}
+              hint="Many PSP contracts include a minimum monthly charge. Check your last few statements for a line like 'Minimum monthly fee'."
+            >
+              <div className="flex items-center" style={{ gap: '4px' }}>
+                <span className="text-body-sm" style={{ color: 'var(--color-text-tertiary)' }}>$</span>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={minFeeValue}
+                  placeholder="25"
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    if (isNaN(v) || v <= 0) clearEdit('minMonthlyFee');
+                    else updateEdit('minMonthlyFee', v);
+                  }}
+                  className="refine-input w-20 font-mono"
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    color: 'var(--color-text-primary)',
+                    textAlign: 'right',
+                  }}
+                />
+                <span className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>/month</span>
+              </div>
+            </FieldCard>
+          )}
+        </>
       )}
 
       <p className="mt-4 text-micro" style={{ color: 'var(--color-text-tertiary)' }}>

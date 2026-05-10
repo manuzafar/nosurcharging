@@ -71,10 +71,10 @@ export function PassThroughSlider({
   };
 
   return (
-    <section
-      className="py-5"
-      style={{ borderBottom: '1px solid var(--color-border-secondary)' }}
-    >
+    // Editorial M3: no card wrapper. The slider + result rows sit
+    // directly inside the page column. Hairline rows replace the
+    // previous tinted result box.
+    <section>
       {/* Eyebrow ("Model your outcome") moved out to page-level SectionHeader. */}
 
       {/* Intro */}
@@ -83,7 +83,8 @@ export function PassThroughSlider({
           fontSize: '13px',
           color: 'var(--color-text-secondary)',
           lineHeight: 1.65,
-          marginBottom: '16px',
+          marginBottom: '18px',
+          maxWidth: '540px',
         }}
       >
         Our central scenario assumes ~45% pass-through — the actual figure depends on {pspName}.
@@ -138,63 +139,76 @@ export function PassThroughSlider({
         <span>Fully reflected (100%)</span>
       </div>
 
-      {/* Result box — accent-light bg, accent-border, 8px radius
-          (structured content on the 8px tier of the Modern Fintech Hierarchy). */}
-      <div
-        style={{
-          background: '#EBF6F3',
-          border: '1px solid #72C4B0',
-          padding: '12px 14px',
-          marginTop: '14px',
-          borderRadius: '8px',
-        }}
-      >
-        <div className="flex items-center justify-between" style={{ marginBottom: '6px' }}>
-          <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-            Cost reduction in your {pspName} rate
-          </span>
-          <span
-            className="font-mono font-medium"
-            style={{ fontSize: '13px', color: 'var(--color-text-success)' }}
-          >
-            +{formatDollar(reflectedSaving)}/yr
-          </span>
-        </div>
-
-        <div className="flex items-center justify-between" style={{ marginBottom: '6px' }}>
-          <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-            Your net annual impact
-          </span>
-          <span
-            className="font-mono font-medium"
-            style={{
-              fontSize: '13px',
-              color: netImpact >= 0 ? 'var(--color-text-success)' : 'var(--color-text-danger)',
-            }}
-          >
-            {netImpact >= 0 ? '+' : '−'}
-            {formatDollar(netImpact)}/yr
-          </span>
-        </div>
-
-        <div
-          className="flex items-center justify-between"
-          style={{
-            paddingTop: '6px',
-            borderTop: '0.5px solid #72C4B0',
-          }}
-        >
-          <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-            Net cost from October
-          </span>
-          <span
-            className="font-mono font-medium"
-            style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}
-          >
-            {formatDollar(netCostFromOct)}/yr
-          </span>
-        </div>
+      {/* Three result rows — hairline-divided settings-list pattern.
+          Replaces the previous accent-bordered tinted card so the
+          section flows with the rest of the editorial layout. */}
+      <div style={{ marginTop: '24px' }}>
+        <ResultRow
+          label={`Cost reduction in your ${pspName} rate`}
+          value={`+${formatDollar(reflectedSaving)}/yr`}
+          valueColor="var(--color-text-success)"
+        />
+        <ResultRow
+          label="Your net annual impact"
+          value={`${netImpact >= 0 ? '+' : '−'}${formatDollar(netImpact)}/yr`}
+          valueColor={
+            netImpact >= 0
+              ? 'var(--color-text-success)'
+              : 'var(--color-text-danger)'
+          }
+        />
+        <ResultRow
+          label="Net cost from October"
+          value={`${formatDollar(netCostFromOct)}/yr`}
+          valueColor="var(--color-text-primary)"
+          isLast
+        />
       </div>
     </section>
+  );
+}
+
+// Single hairline-divided result row used by the slider's three-row
+// readout. Hairline lives on the bottom; the last row suppresses it.
+function ResultRow({
+  label,
+  value,
+  valueColor,
+  isLast,
+}: {
+  label: string;
+  value: string;
+  valueColor: string;
+  isLast?: boolean;
+}) {
+  return (
+    <div
+      className="flex items-center justify-between"
+      style={{
+        padding: '14px 0',
+        borderBottom: isLast
+          ? 'none'
+          : '0.5px solid var(--color-border-secondary)',
+      }}
+    >
+      <span
+        style={{
+          fontSize: '13px',
+          color: 'var(--color-text-secondary)',
+        }}
+      >
+        {label}
+      </span>
+      <span
+        className="font-mono"
+        style={{
+          fontSize: '14px',
+          fontWeight: 500,
+          color: valueColor,
+        }}
+      >
+        {value}
+      </span>
+    </div>
   );
 }
