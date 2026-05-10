@@ -71,7 +71,7 @@ const SIDEBAR_GROUPS: { label: string; items: SidebarItem[] }[] = [
   },
   {
     label: 'NEXT STEP',
-    items: [{ id: 'help', text: 'Get help', priceTag: '$3,500' }],
+    items: [{ id: 'help', text: 'Save your report' }],
   },
 ];
 
@@ -402,7 +402,7 @@ export function PreviewSection() {
                   borderRadius: '100px',
                 }}
               >
-                Get help · $3,500
+                Email me the PDF
               </span>
             </div>
 

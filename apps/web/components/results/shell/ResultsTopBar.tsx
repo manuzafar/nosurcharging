@@ -1,13 +1,14 @@
 'use client';
 
-// Unified dark sticky header for the results page. Replaces the previous
-// paper-white 44px bar with a single 56px ink bar that combines the
-// homepage-style branded logo on the left, result context in the middle
-// (situation pill + P&L + accuracy + feedback link), and CTAs on the right
-// ("Save result" + "Get help"). MobileBottomBar still renders below the
-// fold on mobile and is unchanged.
+// Unified dark sticky header for the results page. Per the Ruthless Cut
+// (M1), the right-side CTAs ("Save result" + "Get help") are gone — the
+// PDF artifact handoff (M2) and the quiet $149 upsell at the bottom of
+// the page replace them. MobileBottomBar was deleted with the sidebar.
+//
+// Remaining structure: branded logo (left) · situation pill + P&L +
+// accuracy indicator + "Result looks off?" link (centre).
 
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Info } from 'lucide-react';
 import { SITUATION_PILLS } from '@/components/results/VerdictSection';
@@ -37,29 +38,11 @@ export function ResultsTopBar({
   const pillStyle = SITUATION_PILLS[category];
   const isPositive = plSwing >= 0;
   const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL ?? '#';
-
-  const handleSave = useCallback(() => {
-    if (typeof window === 'undefined') return;
-    navigator.clipboard.writeText(window.location.href).then(() => {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    });
-  }, []);
-
-  const handleHelpClick = () => {
-    Analytics.ctaClicked({
-      cta_type: 'consulting',
-      cta_location: 'top_bar',
-      category,
-    });
-  };
 
   return (
     <>
       <header
-        className="sticky top-0 z-20 flex items-center justify-between gap-3 px-5"
+        className="sticky top-0 z-20 flex items-center gap-4 px-5"
         style={{ background: '#1A1409', height: '56px' }}
       >
         {/* LEFT — branded logo, identical to homepage nav */}
@@ -155,47 +138,6 @@ export function ResultsTopBar({
           </button>
         </div>
 
-        {/* RIGHT — CTAs */}
-        <div className="flex items-center shrink-0" style={{ gap: '8px' }}>
-          {/* Save result — hidden on mobile */}
-          <button
-            type="button"
-            onClick={handleSave}
-            className="hidden md:inline-flex cursor-pointer hover:!text-white hover:!border-white/40"
-            style={{
-              fontSize: '11px',
-              fontWeight: 500,
-              color: 'rgba(255,255,255,0.5)',
-              background: 'transparent',
-              border: '1px solid rgba(255,255,255,0.15)',
-              padding: '5px 12px',
-              borderRadius: '100px',
-              transition: 'color 150ms ease, border-color 150ms ease',
-            }}
-          >
-            {saved ? 'Copied' : 'Save result'}
-          </button>
-
-          {/* Get help — primary CTA, always visible */}
-          <a
-            href={calendlyUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={handleHelpClick}
-            className="hover:opacity-85"
-            style={{
-              fontSize: '11px',
-              fontWeight: 600,
-              color: '#FFFFFF',
-              background: '#1A6B5A',
-              padding: '6px 14px',
-              borderRadius: '100px',
-              transition: 'opacity 150ms ease',
-            }}
-          >
-            Get help
-          </a>
-        </div>
       </header>
 
       <FeedbackModal

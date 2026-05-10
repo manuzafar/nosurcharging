@@ -51,9 +51,10 @@ describe('SkeletonLoader', () => {
     }
   });
 
-  it('includes a sidebar skeleton visible on md+', () => {
+  it('renders a single linear content column (no sidebar after M1 cut)', () => {
     const { container } = render(<SkeletonLoader />);
     const sidebar = container.querySelector('.hidden.md\\:block');
-    expect(sidebar).toBeInTheDocument();
+    expect(sidebar).not.toBeInTheDocument();
+    expect(container.querySelector('main.mx-auto')).toBeInTheDocument();
   });
 });

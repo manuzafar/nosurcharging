@@ -1,6 +1,6 @@
-// SkeletonLoader — matches two-column shell layout.
-// Desktop: top bar + sidebar + content column.
-// Mobile: top bar + content column.
+// SkeletonLoader — matches the linear single-column results layout.
+// Top bar + max-w-3xl content column. No sidebar (the M1 ruthless cut
+// removed it).
 //
 // Animation: opacity pulses 0.35 → 0.65 (1.5s ease-in-out infinite).
 // Background: ink at 10% opacity (rgba(26, 20, 9, 0.1)).
@@ -40,7 +40,7 @@ export function SkeletonLoader() {
       aria-live="polite"
       aria-label="Loading your results"
     >
-      {/* Top bar skeleton */}
+      {/* Top bar */}
       <div
         className="sticky top-0 z-50 flex items-center gap-3 px-4 border-b border-rule bg-paper-white"
         style={{ height: '44px' }}
@@ -49,87 +49,50 @@ export function SkeletonLoader() {
         <div className="w-px h-4 bg-rule" />
         <Block width="80px" height="18px" rounded />
         <Block width="70px" height="14px" rounded />
-        <div className="hidden sm:flex items-center gap-1.5 ml-2">
-          <Block width="48px" height="4px" rounded />
-          <Block width="28px" height="12px" rounded />
-        </div>
       </div>
 
-      <div className="flex">
-        {/* Sidebar skeleton — desktop only */}
-        <div
-          className="hidden md:block shrink-0 border-r border-rule"
-          style={{ width: '200px' }}
-        >
-          <div className="pt-6 pb-4 px-4">
-            {/* Group 1 */}
-            <Block width="50px" height="9px" marginTop="0" />
-            <Block width="100%" height="14px" marginTop="12px" rounded />
-            <Block width="100%" height="14px" marginTop="6px" rounded />
-
-            {/* Group 2 */}
-            <Block width="70px" height="9px" marginTop="24px" />
-            <Block width="100%" height="14px" marginTop="12px" rounded />
-            <Block width="100%" height="14px" marginTop="6px" rounded />
-
-            {/* Group 3 */}
-            <Block width="60px" height="9px" marginTop="24px" />
-            <Block width="100%" height="14px" marginTop="12px" rounded />
-          </div>
+      {/* Linear content column */}
+      <main className="mx-auto max-w-3xl px-5 pt-6 pb-20 md:pb-12 space-y-8">
+        {/* Hero block — situation pill, headline, P&L, body */}
+        <div>
+          <Block width="92px" height="22px" rounded />
+          <Block width="75%" height="20px" marginTop="16px" />
+          <Block width="260px" height="44px" marginTop="16px" />
+          <Block width="180px" height="14px" marginTop="8px" />
+          <Block width="100%" height="14px" marginTop="16px" />
+          <Block width="90%" height="14px" marginTop="6px" />
         </div>
 
-        {/* Content skeleton */}
-        <main className="flex-1 min-w-0 px-5 pb-12 mx-auto max-w-results">
-          {/* Overview section */}
-          <div className="pt-8">
-            {/* Category pill */}
-            <Block width="92px" height="22px" rounded />
+        {/* Metric cards block — 2x2 on mobile / 2x3 on desktop */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <Block height="100px" rounded />
+          <Block height="100px" rounded />
+          <Block height="100px" rounded />
+          <Block height="100px" rounded />
+          <Block height="100px" rounded />
+          <Block height="100px" rounded />
+        </div>
 
-            {/* Headline */}
-            <Block width="75%" height="20px" marginTop="16px" />
+        {/* Problem cards block */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+          <Block height="88px" rounded />
+          <Block height="88px" rounded />
+        </div>
 
-            {/* Range number */}
-            <Block width="260px" height="36px" marginTop="16px" />
+        {/* Action list block */}
+        <div>
+          <Block width="180px" height="12px" />
+          <Block height="80px" marginTop="16px" rounded />
+          <Block height="80px" marginTop="8px" rounded />
+          <Block height="80px" marginTop="8px" rounded />
+        </div>
 
-            {/* Subtext */}
-            <Block width="180px" height="14px" marginTop="8px" />
-
-            {/* Body */}
-            <Block width="100%" height="14px" marginTop="16px" />
-            <Block width="90%" height="14px" marginTop="6px" />
-
-            {/* Metric cards 2x2 */}
-            <div className="grid grid-cols-2 gap-3 mt-6">
-              <Block height="80px" rounded />
-              <Block height="80px" rounded />
-              <Block height="80px" rounded />
-              <Block height="80px" rounded />
-            </div>
-
-            {/* Problems */}
-            <Block height="88px" marginTop="24px" rounded />
-          </div>
-
-          {/* Actions section */}
-          <div className="pt-8">
-            <Block width="120px" height="9px" />
-            <div className="flex gap-2 mt-4">
-              <Block width="70px" height="22px" rounded />
-              <Block width="70px" height="22px" rounded />
-              <Block width="80px" height="22px" rounded />
-            </div>
-            <Block height="80px" marginTop="12px" />
-            <Block height="80px" marginTop="8px" />
-            <Block height="80px" marginTop="8px" />
-          </div>
-
-          {/* Values section */}
-          <div className="pt-8">
-            <Block width="100px" height="9px" />
-            <Block height="200px" marginTop="16px" rounded />
-          </div>
-        </main>
-      </div>
+        {/* Refine block */}
+        <div>
+          <Block width="160px" height="12px" />
+          <Block height="200px" marginTop="16px" rounded />
+        </div>
+      </main>
     </div>
   );
 }

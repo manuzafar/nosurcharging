@@ -240,18 +240,18 @@ describe('ResultsPage — actions persistence regression', () => {
     expect(screen.getByText(/Check your October statement/)).toBeInTheDocument();
   });
 
-  it('renders all five sections in the new layout', async () => {
+  it('renders the surviving M1 components in linear order', async () => {
     render(<ResultsPage />);
 
     await waitFor(() => {
       expect(screen.getByText(/Ask Stripe whether your rate will change/)).toBeInTheDocument();
     });
 
-    // All section wrappers should be present
-    expect(document.querySelector('[data-section="overview"]')).toBeInTheDocument();
-    expect(document.querySelector('[data-section="actions"]')).toBeInTheDocument();
-    expect(document.querySelector('[data-section="values"]')).toBeInTheDocument();
-    expect(document.querySelector('[data-section="refine"]')).toBeInTheDocument();
-    expect(document.querySelector('[data-section="help"]')).toBeInTheDocument();
+    // Verdict, MetricCards, ProblemsBlock, action steps, refine zone are
+    // all rendered in the same <main>. The old data-section anchors are
+    // intentionally removed with the sidebar shell. Use stable text and
+    // role markers instead.
+    expect(screen.getByText(/What to do, in order/i)).toBeInTheDocument();
+    expect(screen.getByRole('slider')).toBeInTheDocument();
   });
 });
