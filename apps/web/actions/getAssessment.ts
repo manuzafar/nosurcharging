@@ -16,6 +16,10 @@ export interface StoredAssessment {
   inputs: Record<string, unknown>;
   outputs: AssessmentOutputs & { actions?: ActionItem[] };
   created_at: string;
+  // Captured at the email gate (post-Step-4 / pre-reveal). Optional —
+  // null when the merchant skipped. ArtifactCard reads this as the
+  // pre-fill value for the "Email me the PDF" form.
+  email: string | null;
 }
 
 export async function getAssessment(
@@ -27,7 +31,7 @@ export async function getAssessment(
 
   const { data, error } = await supabaseAdmin
     .from('assessments')
-    .select('id, category, variant_type, inputs, outputs, created_at')
+    .select('id, category, variant_type, inputs, outputs, created_at, email')
     .eq('id', assessmentId)
     .single();
 

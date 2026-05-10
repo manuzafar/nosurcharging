@@ -44,14 +44,17 @@ import { Footer } from '@/components/homepage/Footer';
 import { ResultsTopBar } from '@/components/results/shell/ResultsTopBar';
 
 import { VerdictSection } from '@/components/results/VerdictSection';
+import { ContextParagraph } from '@/components/results/ContextParagraph';
 import { MetricCards } from '@/components/results/MetricCards';
 import { ProblemsBlock } from '@/components/results/ProblemsBlock';
 import { VerticalActionSteps } from '@/components/results/VerticalActionSteps';
+import { ReformTimelineCompact } from '@/components/results/sections/ReformTimelineCompact';
 import { RefinementPanel } from '@/components/results/RefinementPanel';
 import { PassThroughSlider } from '@/components/results/PassThroughSlider';
 import { EscapeScenarioCard } from '@/components/results/EscapeScenarioCard';
 import { AssumptionsPanel } from '@/components/results/AssumptionsPanel';
-import { ReformReadyUpsell } from '@/components/results/ReformReadyUpsell';
+import { ArtifactCard } from '@/components/results/sections/ArtifactCard';
+import { QuietUpsell } from '@/components/results/QuietUpsell';
 import { ResultsDisclaimer } from '@/components/results/ResultsDisclaimer';
 
 export default function ResultsPage() {
@@ -208,62 +211,50 @@ function ResultsContent() {
       <ResultsTopBar
         category={category}
         plSwing={outputs.plSwing}
-        accuracy={accuracy}
         volume={volume}
         assessmentId={assessmentId ?? undefined}
       />
 
-      <main className="mx-auto max-w-3xl px-5 pb-20 md:pb-12 pt-6 space-y-8">
-        {/* Hero — situation pill, P&L, verdict + body. M2 splits the body
-            into a sibling ContextParagraph; for M1 the existing card holds. */}
-        <VerdictSection
-          outputs={outputs}
-          volume={volume}
-          pspName={pspName}
-          planType={planType}
-          msfRate={originalRaw.msfRate}
-          surcharging={originalRaw.surcharging}
-          surchargeRate={originalRaw.surchargeRate}
-        />
+      <main className="mx-auto max-w-3xl pb-20 md:pb-12 pt-6 space-y-8">
+        {/* Hero — situation pill, eyebrow, P&L hero number, one-sentence
+            verdict. Nothing else competes (per brief §2). */}
+        <VerdictSection outputs={outputs} />
+
+        {/* Context paragraph — 2–3 sentences in plain English. */}
+        <ContextParagraph category={category} pspName={pspName} />
 
         {/* Numbers — 3-mode metric cards. */}
-        <MetricCards
-          outputs={outputs}
-          planType={planType}
-          volume={volume}
-        />
+        <div className="px-5 md:px-8">
+          <MetricCards
+            outputs={outputs}
+            planType={planType}
+            volume={volume}
+          />
+        </div>
 
         {/* Why this is happening — Cat-conditional problem cards. */}
-        <ProblemsBlock
-          category={category}
-          pspName={pspName}
-          surchargeRevenue={outputs.surchargeRevenue}
-          icSaving={outputs.icSaving}
-          octNet={outputs.octNet}
-          estimatedMSFRate={outputs.estimatedMSFRate}
-        />
+        <div className="px-5 md:px-8">
+          <ProblemsBlock
+            category={category}
+            pspName={pspName}
+            surchargeRevenue={outputs.surchargeRevenue}
+            icSaving={outputs.icSaving}
+            octNet={outputs.octNet}
+            estimatedMSFRate={outputs.estimatedMSFRate}
+          />
+        </div>
 
         {/* Action plan — vertical numbered timeline. */}
         <VerticalActionSteps actions={actions} />
 
-        {/* Refine — only renders when resolvedInputs exist (skips zero-cost
-            + strategic-rate variants). PassThroughSlider + EscapeScenarioCard
-            internally gate to Cat 2 / 4. */}
-        {resolvedInputs && (
-          <section className="bg-white border border-rule rounded-xl p-6">
-            <p
-              className="uppercase tracking-widest pb-3 mb-6"
-              style={{
-                color: 'var(--color-text-tertiary)',
-                letterSpacing: '1.5px',
-                fontSize: '11px',
-                fontWeight: 500,
-                borderBottom: '1px solid var(--color-border-secondary)',
-              }}
-            >
-              Refine your estimate
-            </p>
+        {/* Reform timeline — compact 5-row calendar. */}
+        <ReformTimelineCompact />
 
+        {/* Refine — only renders when resolvedInputs exist (skips
+            zero-cost + strategic-rate variants). PassThroughSlider +
+            EscapeScenarioCard internally gate to Cat 2 / 4. */}
+        {resolvedInputs && (
+          <>
             <RefinementPanel
               initialResult={outputs}
               resolutionTrace={resolutionTrace}
@@ -273,7 +264,7 @@ function ResultsContent() {
               onAccuracyChange={setAccuracy}
             />
 
-            <div className="mt-6">
+            <div className="px-5 md:px-8">
               <PassThroughSlider
                 category={category}
                 passThrough={passThrough}
@@ -285,7 +276,7 @@ function ResultsContent() {
               />
             </div>
 
-            <div className="mt-4">
+            <div className="px-5 md:px-8">
               <EscapeScenarioCard
                 category={category}
                 outputs={outputs}
@@ -295,32 +286,41 @@ function ResultsContent() {
                 pspName={pspName}
               />
             </div>
-          </section>
+          </>
         )}
 
-        {/* Assumptions — expand-on-demand. M2 audits this is collapsed-by-default. */}
-        <AssumptionsPanel
-          outputs={outputs}
-          passThrough={passThrough}
-          resolutionTrace={resolutionTrace}
-          volume={volume}
-          pspName={pspName}
-          planType={planType === 'blended' ? 'flat' : planType}
-          msfRate={originalRaw.msfRate}
-          surcharging={originalRaw.surcharging}
-          surchargeRate={originalRaw.surchargeRate}
+        {/* Assumptions — expand-on-demand. */}
+        <div className="px-5 md:px-8">
+          <AssumptionsPanel
+            outputs={outputs}
+            passThrough={passThrough}
+            resolutionTrace={resolutionTrace}
+            volume={volume}
+            pspName={pspName}
+            planType={planType === 'blended' ? 'flat' : planType}
+            msfRate={originalRaw.msfRate}
+            surcharging={originalRaw.surcharging}
+            surchargeRate={originalRaw.surchargeRate}
+          />
+        </div>
+
+        {/* Save the full report — pre-fills email captured at EmailGate. */}
+        <ArtifactCard
+          assessmentId={assessmentId ?? ''}
+          initialEmail={assessment.email}
         />
 
-        {/* Upsell — replaced in M2 with QuietUpsell single-line link.
-            For M1 the dark $149 card stays so the offer is still surfaced. */}
-        <ReformReadyUpsell
+        {/* Quiet upsell — single-line $149 link replaces the dark card. */}
+        <QuietUpsell
           category={category}
           pspName={pspName}
           plSwing={outputs.plSwing}
           volumeTier={getVolumeTier(volume)}
         />
 
-        <ResultsDisclaimer />
+        <div className="px-5 md:px-8">
+          <ResultsDisclaimer />
+        </div>
       </main>
 
       <Footer />

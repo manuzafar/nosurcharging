@@ -26,7 +26,6 @@ vi.mock('@/lib/analytics', () => ({
 const defaultProps = {
   category: 1 as const,
   plSwing: 1700,
-  accuracy: 20,
   volume: 500_000,
   assessmentId: 'test-123',
 };
@@ -43,7 +42,7 @@ describe('ResultsTopBar', () => {
   });
 
   it('renders the situation pill', () => {
-    render(<ResultsTopBar {...defaultProps} category={2} plSwing={765} accuracy={45} />);
+    render(<ResultsTopBar {...defaultProps} category={2} plSwing={765} />);
     expect(screen.getByText('Situation 2')).toBeInTheDocument();
   });
 
@@ -61,14 +60,9 @@ describe('ResultsTopBar', () => {
     expect(plEl).toHaveStyle({ color: '#E57373' });
   });
 
-  it('renders accuracy as inline text with bullet separator', () => {
-    render(<ResultsTopBar {...defaultProps} accuracy={45} />);
-    expect(screen.getByText('Accuracy ▪ 45%')).toBeInTheDocument();
-  });
-
-  it('rounds accuracy to whole percent', () => {
-    render(<ResultsTopBar {...defaultProps} accuracy={45.7} />);
-    expect(screen.getByText('Accuracy ▪ 46%')).toBeInTheDocument();
+  it('does not render the legacy accuracy indicator (M2 moved it to RefinementPanel)', () => {
+    render(<ResultsTopBar {...defaultProps} />);
+    expect(screen.queryByText(/Accuracy/i)).not.toBeInTheDocument();
   });
 
   it('renders the "Result looks off?" feedback link', () => {
