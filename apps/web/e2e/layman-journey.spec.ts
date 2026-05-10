@@ -31,10 +31,10 @@ test.describe('Layman journey → Category 2', () => {
     // Wait for reveal screen to complete and navigate to results
     await page.waitForURL(/\/results\?id=/, { timeout: 15000 });
 
-    // Results page assertions — scoped to overview to avoid strict mode violation
-    // (TopBar also renders "Situation N")
-    const overview = page.locator('#overview');
-    await expect(overview.getByText('Situation 2')).toBeVisible({ timeout: 10000 });
+    // Results page assertions — scoped to <main> to avoid strict mode
+    // violation (TopBar in <header> also renders "Situation N").
+    const main = page.locator('main');
+    await expect(main.getByText('Situation 2')).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(/per year from 1 October/)).toBeVisible();
   });
 
@@ -61,7 +61,7 @@ test.describe('Layman journey → Category 2', () => {
     await page.waitForURL(/\/results\?id=/, { timeout: 15000 });
 
     // Wait for results content to load before interacting
-    await expect(page.locator('#overview').getByText(/Situation \d/)).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('main').getByText(/Situation \d/)).toBeVisible({ timeout: 10000 });
 
     // Slider is directly visible in RefineSection (DepthToggle removed in two-column redesign)
     const slider = page.getByRole('slider');
