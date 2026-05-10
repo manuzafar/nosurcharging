@@ -1,12 +1,13 @@
 # Disclaimer Text
 
-**Version:** v1.1
-**Date:** April 2026 (post-legal-review pass)
+**Version:** v1.2
+**Date:** May 2026 (Ruthless Cut M3 — 48h retention disclosure)
 
-Record consent_version alongside every consent record. If text changes, increment version (v1.2) — historical consents reference the version shown at the time of consent.
+Record consent_version alongside every consent record. If text changes, increment version (v1.3) — historical consents reference the version shown at the time of consent.
 
 ## Version history
 
+- **v1.2 — May 2026.** Added the 48-hour retention disclosure to the assessment entry consent and the results page inline disclaimer. Coincides with the migration adding `assessments.expires_at` and the check-on-load deletion mechanism in `getAssessment.ts`. Long-form `/privacy` page updated to spell out the retention promise + the implications: the PDF emailed to the merchant is the only persistent record we keep on their behalf.
 - **v1.1 — April 2026.** Removed "RBA published data" from the consent text and the first commitment-card body (the consent screen no longer cites a single named data source). Replaced "verify any figures with my PSP" with "seek independent advice from a qualified professional". Removed named PSPs (Stripe, Square, Tyro) from the independence statement. Added a Terms & conditions link alongside the Privacy policy link in the consent checkbox text. Long-form legal pages added at `/disclaimer` and `/terms`; `/privacy` rewritten to share their layout.
 - **v1.0 — April 2026.** Initial wording, pre-legal-review.
 
@@ -14,16 +15,16 @@ Record consent_version alongside every consent record. If text changes, incremen
 
 Affirmative checkbox — not a banner, not pre-checked.
 
-consent_type: "disclaimer" | consent_version: "v1.1"
+consent_type: "disclaimer" | consent_version: "v1.2"
 
 Exact text:
-"I understand that this assessment provides illustrative estimates only. It is not financial advice. Figures are based on the information I provide. I should seek independent advice from a qualified professional before making business decisions."
+"I understand that this assessment provides illustrative estimates only. It is not financial advice. Figures are based on the information I provide. I should seek independent advice from a qualified professional before making business decisions. My assessment is deleted from the database within 48 hours; the PDF emailed to me is my own copy to keep."
 
 ## Results page inline disclaimer (FR-22)
 
 No checkbox — informational only.
 
-"Figures are illustrative estimates based on RBA data and the information you provided. Not financial advice. Verify with your PSP before making business decisions. Card mix defaults are based on RBA Statistical Tables C1 and C2 (national averages) and may not reflect your specific business."
+"Figures are illustrative estimates based on RBA data and the information you provided. Not financial advice. Verify with your PSP before making business decisions. Card mix defaults are based on RBA Statistical Tables C1 and C2 (national averages) and may not reflect your specific business. Your assessment is deleted from our database within 48 hours — save the emailed PDF for your records."
 
 ## Email capture consent (FR-25)
 

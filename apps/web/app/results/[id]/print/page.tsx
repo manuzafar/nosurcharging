@@ -36,14 +36,18 @@ export default function PrintResultsPage() {
   const [assessment, setAssessment] = useState<StoredAssessment | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [expired, setExpired] = useState(false);
+
   useEffect(() => {
     if (!id) {
       setLoading(false);
       return;
     }
     getAssessment(id).then((result) => {
-      if (result.success && result.data) {
+      if (result.success) {
         setAssessment(result.data);
+      } else if (result.error === 'expired') {
+        setExpired(true);
       }
       setLoading(false);
     });
@@ -54,6 +58,17 @@ export default function PrintResultsPage() {
       <main className="mx-auto max-w-3xl px-5 pt-6">
         <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)' }}>
           Preparing print view…
+        </p>
+      </main>
+    );
+  }
+
+  if (expired) {
+    return (
+      <main className="mx-auto max-w-3xl px-5 pt-6">
+        <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)' }}>
+          This assessment has expired. We delete every assessment within
+          48 hours of submission. Run a new one at /assessment.
         </p>
       </main>
     );

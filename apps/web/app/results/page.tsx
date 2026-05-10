@@ -72,6 +72,11 @@ function ResultsContent() {
 
   const [assessment, setAssessment] = useState<StoredAssessment | null>(null);
   const [outputs, setOutputs] = useState<AssessmentOutputs | null>(null);
+  // Explicit expired state — Cat 1\u20135 row past its 48h TTL. Shown as a
+  // dedicated view rather than redirecting, so the merchant understands
+  // their data was deleted (the brand promise) and can retake without
+  // a silent reroute.
+  const [expired, setExpired] = useState(false);
   // `actions` is seeded once from the initial DB load and is deliberately
   // separate from `outputs`. The slider recalculates outputs without
   // touching actions — keeping them split prevents the action list from
@@ -89,7 +94,12 @@ function ResultsContent() {
     }
 
     getAssessment(assessmentId).then((result) => {
-      if (!result.success || !result.data) {
+      if (!result.success) {
+        if (result.error === 'expired') {
+          setExpired(true);
+          setLoading(false);
+          return;
+        }
         router.replace('/assessment');
         return;
       }
@@ -159,6 +169,10 @@ function ResultsContent() {
   }, [assessment]);
 
   if (loading) return <SkeletonLoader />;
+
+  if (expired) {
+    return <ExpiredView onRetake={() => router.push('/assessment')} />;
+  }
 
   if (isStrategicExit) {
     return <StrategicRateExitPage onBack={() => router.push('/assessment')} />;
@@ -323,6 +337,78 @@ function ResultsContent() {
         </div>
       </main>
 
+      <Footer />
+    </div>
+  );
+}
+
+// ── Expired view ───────────────────────────────────────────────
+// Renders when getAssessment returns { error: 'expired' } — the
+// assessment row is past its 48h TTL and was deleted on this load.
+// Per the brand promise ("we don't keep your data"), the merchant
+// gets an explicit explanation rather than a silent reroute.
+
+function ExpiredView({ onRetake }: { onRetake: () => void }) {
+  return (
+    <div
+      className="min-h-screen bg-paper flex flex-col"
+      role="status"
+      aria-live="polite"
+    >
+      <main className="mx-auto max-w-xl px-5 pt-20 pb-12 flex-1">
+        <p
+          className="font-bold uppercase"
+          style={{
+            fontSize: '11px',
+            letterSpacing: '0.8px',
+            color: 'var(--color-text-tertiary)',
+            marginBottom: '12px',
+          }}
+        >
+          This assessment has expired
+        </p>
+        <h1
+          className="font-serif"
+          style={{
+            fontSize: '24px',
+            lineHeight: 1.4,
+            color: 'var(--color-text-primary)',
+            fontWeight: 500,
+            marginBottom: '16px',
+          }}
+        >
+          We delete every assessment within 48 hours of submission.
+        </h1>
+        <p
+          style={{
+            fontSize: '14px',
+            color: 'var(--color-text-secondary)',
+            lineHeight: 1.7,
+            marginBottom: '24px',
+          }}
+        >
+          That&apos;s the brand promise — your figures are yours, and we
+          don&apos;t keep them past the window where they could be useful to
+          you. If you saved your PDF when you ran the assessment, that&apos;s
+          your persistent record. Otherwise, the assessment is quick to
+          retake.
+        </p>
+        <button
+          type="button"
+          onClick={onRetake}
+          className="cursor-pointer hover:opacity-90 font-bold"
+          style={{
+            background: 'var(--color-accent)',
+            color: '#FFFFFF',
+            fontSize: '14px',
+            padding: '12px 22px',
+            borderRadius: '100px',
+            border: 'none',
+          }}
+        >
+          Retake the assessment
+        </button>
+      </main>
       <Footer />
     </div>
   );
