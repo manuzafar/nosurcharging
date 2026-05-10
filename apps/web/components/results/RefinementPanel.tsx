@@ -9,8 +9,16 @@
 //
 // Debounced (150ms) so P&L doesn't thrash on every keystroke.
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  ChevronDown,
+  ChevronUp,
+  CreditCard,
+  Hash,
+  Coins,
+  Landmark,
+  Receipt,
+} from 'lucide-react';
 import { calculateMetrics } from '@nosurcharging/calculations/calculations';
 import type {
   AssessmentOutputs,
@@ -136,22 +144,39 @@ function computeFieldDelta(
   return { label, positive: delta > 0 };
 }
 
-// Source → badge text + emerald flag.
+// Source chip variants. Each carries a distinct visual so the merchant
+// can scan a column of values and immediately tell which figures are
+// theirs versus inherited:
+//   your_input       → emerald background + emerald text  (validated)
+//   industry_default → secondary background + secondary text  (current default)
+//   rba_average      → soft amber tint  (regulatory baseline)
+//   not_set          → border-only chip  (placeholder, nothing entered)
+type SourceVariant =
+  | 'your_input'
+  | 'industry_default'
+  | 'rba_average'
+  | 'not_set';
+
+interface SourceBadge {
+  label: string;
+  variant: SourceVariant;
+}
+
 function getBadge(
   traceKey: string,
   userEdited: boolean,
   trace: ResolutionTrace,
-): { label: string; emerald: boolean } {
-  if (userEdited) return { label: 'Your input', emerald: true };
+): SourceBadge {
+  if (userEdited) return { label: 'Your input', variant: 'your_input' };
   const entry = trace[traceKey];
-  if (!entry) return { label: 'RBA average', emerald: false };
+  if (!entry) return { label: 'RBA average', variant: 'rba_average' };
   if (entry.source === 'merchant_input' || entry.source === 'invoice_parsed') {
-    return { label: 'Your input', emerald: true };
+    return { label: 'Your input', variant: 'your_input' };
   }
   if (entry.source === 'industry_default') {
-    return { label: 'Industry default', emerald: false };
+    return { label: 'Industry default', variant: 'industry_default' };
   }
-  return { label: 'RBA average', emerald: false };
+  return { label: 'RBA average', variant: 'rba_average' };
 }
 
 // Hospitality industries get a tighter AVT hint (lower-of kink bites below $50).
@@ -160,15 +185,44 @@ const B2B_INDUSTRIES = new Set(['b2b', 'professional', 'wholesale', 'trade']);
 
 // ── Small presentational helpers ────────────────────────────────
 
-function Badge({ label, emerald }: { label: string; emerald: boolean }) {
+function Badge({ label, variant }: SourceBadge) {
+  const styles = (() => {
+    switch (variant) {
+      case 'your_input':
+        return {
+          background: 'var(--color-background-success)',
+          color: 'var(--color-text-success)',
+          border: '0.5px solid rgba(26, 107, 90, 0.25)',
+        };
+      case 'industry_default':
+        return {
+          background: 'var(--color-background-secondary)',
+          color: 'var(--color-text-secondary)',
+          border: '0.5px solid var(--color-border-secondary)',
+        };
+      case 'rba_average':
+        return {
+          background: 'var(--color-background-warning)',
+          color: 'var(--color-text-warning)',
+          border: '0.5px solid rgba(186, 117, 23, 0.25)',
+        };
+      case 'not_set':
+        return {
+          background: 'transparent',
+          color: 'var(--color-text-tertiary)',
+          border: '0.5px solid var(--color-border-secondary)',
+        };
+    }
+  })();
   return (
     <span
-      className="inline-block rounded-pill text-micro font-medium"
+      className="inline-block rounded-pill font-mono"
       style={{
         padding: '2px 8px',
-        background: emerald ? '#EBF6F3' : 'var(--color-background-secondary)',
-        color: emerald ? '#1A6B5A' : 'var(--color-text-tertiary)',
-        border: emerald ? '0.5px solid #B5DBD0' : '0.5px solid var(--color-border-secondary)',
+        fontSize: '10px',
+        letterSpacing: '0.04em',
+        fontWeight: 500,
+        ...styles,
       }}
     >
       {label}
@@ -298,8 +352,8 @@ export function RefinementPanel({
   const minFeeEdited = edits.minMonthlyFee !== undefined;
   const minFeeValue = edits.minMonthlyFee ?? '';
   const minFeeBadge = minFeeEdited
-    ? { label: 'Your input', emerald: true }
-    : { label: 'Not set', emerald: false };
+    ? ({ label: 'Your input', variant: 'your_input' } as SourceBadge)
+    : ({ label: 'Not set', variant: 'not_set' } as SourceBadge);
 
   // ── Helpers to update edits ───────────────────────────────────
   const updateEdit = <K extends EditKey>(key: K, value: EditState[K]) => {
@@ -334,6 +388,7 @@ export function RefinementPanel({
       {/* ── Field 1: Average transaction value ───────────────── */}
       <FieldCard
         label="Average transaction value"
+        icon={<Receipt size={16} aria-hidden />}
         badge={avtBadge}
         delta={avtDelta}
         hint={avtHint}
@@ -366,6 +421,7 @@ export function RefinementPanel({
       {showCreditField && (
         <FieldCard
           label="Credit interchange rate"
+          icon={<CreditCard size={16} aria-hidden />}
           badge={creditBadge}
           delta={creditDelta}
           hint="Small merchants may pay up to 0.80%; enterprise merchants closer to 0.30%. Find it on the interchange line of your statement."
@@ -398,6 +454,7 @@ export function RefinementPanel({
       {/* ── Field 3: Commercial card share — also a settings-row ── */}
       <FieldCard
         label={`Corporate / business card share${isB2B ? ' (likely relevant)' : ' (optional)'}`}
+        icon={<Landmark size={16} aria-hidden />}
         badge={commercialBadge}
         delta={commercialDelta}
         hint="Corporate card interchange is UNCHANGED by the reform — raising this share lowers your projected saving."
@@ -456,7 +513,12 @@ export function RefinementPanel({
           {/* ── Field 4: Monthly debit transactions ───────────────── */}
           <FieldCard
             label="Monthly debit card transactions"
-            badge={getBadge('__monthlyDebitTxns', monthlyTxnsEdited, resolutionTrace)}
+            icon={<Hash size={16} aria-hidden />}
+            badge={
+              monthlyTxnsEdited
+                ? getBadge('__monthlyDebitTxns', monthlyTxnsEdited, resolutionTrace)
+                : { label: 'Not set', variant: 'not_set' }
+            }
             delta={monthlyTxnsDelta}
             hint="If you'd rather count transactions than guess an average, enter your monthly Visa + Mastercard + eftpos count."
           >
@@ -488,7 +550,12 @@ export function RefinementPanel({
           {showMinFeeField && (
             <FieldCard
               label="Minimum monthly fee"
-              badge={minFeeBadge}
+              icon={<Coins size={16} aria-hidden />}
+              badge={
+                edits.minMonthlyFee !== undefined
+                  ? minFeeBadge
+                  : { label: 'Not set', variant: 'not_set' }
+              }
               delta={{ label: '', positive: true }}
               hint="Many PSP contracts include a minimum monthly charge. Check your last few statements for a line like 'Minimum monthly fee'."
             >
@@ -530,8 +597,15 @@ export function RefinementPanel({
 // ── FieldCard — shared layout for each refinement field ─────────
 
 interface FieldCardProps {
+  // Note: badge now uses the new SourceBadge shape (label + variant).
+  // The legacy `emerald: boolean` was replaced with a 4-variant union
+  // so the chip can express your_input / industry_default / rba_average
+  // / not_set distinctly.
   label: string;
-  badge: { label: string; emerald: boolean };
+  badge: SourceBadge;
+  // Optional 16px leading icon — gives each field a quick visual cue
+  // so the column scans like a settings list.
+  icon?: ReactNode;
   // ImpactChip dropped per editorial M3 polish — one chip per row max.
   // The source chip on the right tells the merchant where the value
   // came from; the impact chip ("Critical", "Tracks IC saving", etc.)
@@ -541,7 +615,14 @@ interface FieldCardProps {
   children: React.ReactNode;
 }
 
-function FieldCard({ label, badge, delta, hint, children }: FieldCardProps) {
+function FieldCard({
+  label,
+  icon,
+  badge,
+  delta,
+  hint,
+  children,
+}: FieldCardProps) {
   // Settings-panel row per editorial M3 polish: one row per field,
   // label + hint subline on the left; source chip + value (input) on
   // the right. ImpactChip dropped — only the source chip survives.
@@ -555,10 +636,12 @@ function FieldCard({ label, badge, delta, hint, children }: FieldCardProps) {
         padding: '16px 0',
       }}
     >
-      {/* Left column — label (14px / weight 500) + hint subline */}
+      {/* Left column — label with optional 16px leading icon, then hint subline */}
       <div className="flex-1" style={{ minWidth: 0 }}>
         <p
+          className="inline-flex items-center"
           style={{
+            gap: '8px',
             fontSize: '14px',
             fontWeight: 500,
             color: 'var(--color-text-primary)',
@@ -566,6 +649,15 @@ function FieldCard({ label, badge, delta, hint, children }: FieldCardProps) {
             lineHeight: 1.4,
           }}
         >
+          {icon && (
+            <span
+              aria-hidden
+              className="shrink-0 inline-flex items-center"
+              style={{ color: 'var(--color-text-tertiary)' }}
+            >
+              {icon}
+            </span>
+          )}
           {label}
         </p>
         <p

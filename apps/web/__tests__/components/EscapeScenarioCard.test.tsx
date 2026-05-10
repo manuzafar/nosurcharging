@@ -180,11 +180,11 @@ describe('EscapeScenarioCard', () => {
       />,
     );
 
-    // Heading uses the PSP name inline
-    expect(
-      screen.getByText(/Switching to Stripe.s itemised plan saves you:/i),
-    ).toBeInTheDocument();
-
+    // Editorial polish reshapes the green box into a "Current vs
+    // Itemised" side-by-side comparison. The conclusion line below
+    // uses the savings amount inline rather than a giant hero number.
+    expect(screen.getByText(/Current — Stripe flat rate/i)).toBeInTheDocument();
+    expect(screen.getByText(/Itemised — flows automatically/i)).toBeInTheDocument();
     // Saving = |28000 - 7676.92| ≈ $20,323
     expect(screen.getByText('$20,323/year')).toBeInTheDocument();
   });
@@ -201,9 +201,12 @@ describe('EscapeScenarioCard', () => {
       />,
     );
 
-    expect(screen.getByText(/Your net cost would be/i)).toBeInTheDocument();
+    // The new comparison treatment renders the two amounts as separate
+    // rows; the conclusion line below references "Switching saves" +
+    // "the full IC saving flows through automatically at 100%".
+    expect(screen.getByText(/Switching saves/i)).toBeInTheDocument();
     expect(
-      screen.getByText(/the full saving flows automatically at 100%/i),
+      screen.getByText(/the full IC saving flows through automatically at 100%/i),
     ).toBeInTheDocument();
   });
 

@@ -11,7 +11,8 @@
 // Banned: "Stripe keeps all of it" / "your PSP" / "your provider".
 // Use: "Not reflected in your rate" / explicit pspName.
 
-import { useRef } from 'react';
+import { useRef, type ReactNode } from 'react';
+import { ArrowDownRight, ArrowUpRight, Calculator } from 'lucide-react';
 import { resolveAssessmentInputs } from '@nosurcharging/calculations/rules/resolver';
 import { calculateMetrics } from '@nosurcharging/calculations/calculations';
 import { Analytics } from '@/lib/analytics';
@@ -92,6 +93,26 @@ export function PassThroughSlider({
         At 100%, it passes through entirely.
       </p>
 
+      {/* Centre marker pill — small emerald pill above the slider so the
+          "centre estimate" reading is always visible while the slider moves. */}
+      <div style={{ marginBottom: '10px' }}>
+        <span
+          className="inline-block font-mono"
+          style={{
+            fontSize: '10px',
+            fontWeight: 500,
+            letterSpacing: '0.04em',
+            padding: '3px 9px',
+            borderRadius: '999px',
+            background: 'var(--color-background-success)',
+            color: 'var(--color-text-success)',
+            border: '0.5px solid rgba(26, 107, 90, 0.25)',
+          }}
+        >
+          Centre · 45%
+        </span>
+      </div>
+
       {/* Slider — controlled input uses onChange so React's controlled-input
           plumbing hooks correctly. Using onInput without onChange made React
           treat the field as read-only and re-sync the DOM value on every
@@ -139,28 +160,30 @@ export function PassThroughSlider({
         <span>Fully reflected (100%)</span>
       </div>
 
-      {/* Three result rows — hairline-divided settings-list pattern.
-          Replaces the previous accent-bordered tinted card so the
-          section flows with the rest of the editorial layout. */}
+      {/* Three result rows — hairline-divided settings list with a
+          1.5px coloured left-accent + leading icon per row so the trio
+          reads as a deliberate result table rather than three flat
+          lines. Icon + accent colour reinforce the row's intent
+          (cost reduction = emerald, net impact = danger / emerald
+          depending on sign, calculated total = neutral). */}
       <div style={{ marginTop: '24px' }}>
         <ResultRow
+          icon={<ArrowDownRight size={16} aria-hidden />}
           label={`Cost reduction in your ${pspName} rate`}
           value={`+${formatDollar(reflectedSaving)}/yr`}
-          valueColor="var(--color-text-success)"
+          accent="success"
         />
         <ResultRow
+          icon={<ArrowUpRight size={16} aria-hidden />}
           label="Your net annual impact"
           value={`${netImpact >= 0 ? '+' : '−'}${formatDollar(netImpact)}/yr`}
-          valueColor={
-            netImpact >= 0
-              ? 'var(--color-text-success)'
-              : 'var(--color-text-danger)'
-          }
+          accent={netImpact >= 0 ? 'success' : 'danger'}
         />
         <ResultRow
+          icon={<Calculator size={16} aria-hidden />}
           label="Net cost from October"
           value={`${formatDollar(netCostFromOct)}/yr`}
-          valueColor="var(--color-text-primary)"
+          accent="neutral"
           isLast
         />
       </div>
@@ -170,22 +193,51 @@ export function PassThroughSlider({
 
 // Single hairline-divided result row used by the slider's three-row
 // readout. Hairline lives on the bottom; the last row suppresses it.
+// Each row carries a 1.5px coloured left border + leading icon
+// matching the row's intent.
+type ResultAccent = 'success' | 'danger' | 'neutral';
+
 function ResultRow({
+  icon,
   label,
   value,
-  valueColor,
+  accent,
   isLast,
 }: {
+  icon: ReactNode;
   label: string;
   value: string;
-  valueColor: string;
+  accent: ResultAccent;
   isLast?: boolean;
 }) {
+  const accentStyles = (() => {
+    switch (accent) {
+      case 'success':
+        return {
+          border: 'var(--color-text-success)',
+          icon: 'var(--color-text-success)',
+          value: 'var(--color-text-success)',
+        };
+      case 'danger':
+        return {
+          border: 'var(--color-text-danger)',
+          icon: 'var(--color-text-danger)',
+          value: 'var(--color-text-danger)',
+        };
+      case 'neutral':
+        return {
+          border: 'var(--color-border-secondary)',
+          icon: 'var(--color-text-tertiary)',
+          value: 'var(--color-text-primary)',
+        };
+    }
+  })();
   return (
     <div
       className="flex items-center justify-between"
       style={{
-        padding: '14px 0',
+        padding: '14px 12px',
+        borderLeft: `1.5px solid ${accentStyles.border}`,
         // Lighter tertiary token per editorial M3 polish so the three
         // result lines read as a deliberate result table, not as
         // section dividers competing with SectionHeader rules.
@@ -195,19 +247,27 @@ function ResultRow({
       }}
     >
       <span
-        style={{
-          fontSize: '13px',
-          color: 'var(--color-text-secondary)',
-        }}
+        className="inline-flex items-center"
+        style={{ gap: '10px' }}
       >
-        {label}
+        <span aria-hidden style={{ color: accentStyles.icon }}>
+          {icon}
+        </span>
+        <span
+          style={{
+            fontSize: '13px',
+            color: 'var(--color-text-secondary)',
+          }}
+        >
+          {label}
+        </span>
       </span>
       <span
         className="font-mono"
         style={{
           fontSize: '14px',
           fontWeight: 500,
-          color: valueColor,
+          color: accentStyles.value,
         }}
       >
         {value}

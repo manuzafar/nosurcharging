@@ -20,7 +20,14 @@
 // different address. The component never throws.
 
 import { useState } from 'react';
-import { Mail, Pencil, ShieldCheck } from 'lucide-react';
+import {
+  CalendarCheck,
+  Download,
+  Lock,
+  Mail,
+  Pencil,
+  ShieldCheck,
+} from 'lucide-react';
 import { sendReportEmail } from '@/actions/sendReportEmail';
 
 interface ArtifactCardProps {
@@ -125,24 +132,39 @@ export function ArtifactCard({
             >
               Send to
             </label>
-            <input
-              id="artifact-email"
-              type="email"
-              autoComplete="email"
-              inputMode="email"
-              spellCheck={false}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@business.com.au"
+            <div
+              className="flex items-center"
               style={{
-                fontSize: '14px',
+                gap: '8px',
                 padding: '8px 10px',
                 border: '0.5px solid var(--color-border-secondary)',
                 borderRadius: '8px',
                 background: '#FFFFFF',
-                color: 'var(--color-text-primary)',
               }}
-            />
+            >
+              <Mail
+                size={16}
+                aria-hidden
+                style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }}
+              />
+              <input
+                id="artifact-email"
+                type="email"
+                autoComplete="email"
+                inputMode="email"
+                spellCheck={false}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@business.com.au"
+                className="flex-1 outline-none"
+                style={{
+                  fontSize: '14px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--color-text-primary)',
+                }}
+              />
+            </div>
           </div>
         ) : (
           <div
@@ -192,8 +214,9 @@ export function ArtifactCard({
           type="button"
           onClick={handleSend}
           aria-disabled={state.kind === 'sending'}
-          className="font-bold cursor-pointer self-start hover:opacity-90"
+          className="font-bold cursor-pointer self-start hover:opacity-90 inline-flex items-center"
           style={{
+            gap: '8px',
             fontSize: '14px',
             padding: '11px 22px',
             background:
@@ -206,6 +229,7 @@ export function ArtifactCard({
             transition: 'opacity 150ms ease',
           }}
         >
+          <Download size={16} aria-hidden />
           {state.kind === 'sending'
             ? 'Sending…'
             : state.kind === 'sent'
@@ -227,29 +251,44 @@ export function ArtifactCard({
         )}
       </div>
 
-      {/* Privacy + 48h retention */}
-      <p
-        className="inline-flex items-start"
-        style={{
-          gap: '6px',
-          fontSize: '11px',
-          color: 'var(--color-text-tertiary)',
-          lineHeight: 1.55,
-          marginTop: '12px',
-          maxWidth: '560px',
-        }}
+      {/* Privacy promises — three inline icon+text pills replacing the
+          prose line. Each pill is the same secondary-bg + tertiary-text
+          treatment so the trio reads as a coherent set rather than
+          three competing claims. */}
+      <div
+        className="flex flex-wrap"
+        style={{ gap: '8px', marginTop: '14px' }}
       >
-        <ShieldCheck
-          size={12}
-          aria-hidden
-          style={{ marginTop: '2px', flexShrink: 0 }}
+        <PrivacyPill icon={<ShieldCheck size={12} aria-hidden />} label="Deleted in 48h" />
+        <PrivacyPill icon={<Lock size={12} aria-hidden />} label="Never shared" />
+        <PrivacyPill
+          icon={<CalendarCheck size={12} aria-hidden />}
+          label="30 Oct benchmark email"
         />
-        <span>
-          Your assessment is deleted from our database within 48 hours. The
-          PDF is your only persistent record. We don&apos;t share your email
-          with any payment provider.
-        </span>
-      </p>
+      </div>
     </section>
+  );
+}
+
+function PrivacyPill({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <span
+      className="inline-flex items-center"
+      style={{
+        gap: '6px',
+        padding: '4px 10px',
+        borderRadius: '999px',
+        background: 'var(--color-background-secondary)',
+        color: 'var(--color-text-tertiary)',
+        fontSize: '11px',
+        fontWeight: 500,
+        border: '0.5px solid var(--color-border-secondary)',
+      }}
+    >
+      <span aria-hidden style={{ display: 'inline-flex' }}>
+        {icon}
+      </span>
+      {label}
+    </span>
   );
 }

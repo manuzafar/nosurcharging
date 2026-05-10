@@ -43,11 +43,14 @@ import { Footer } from '@/components/homepage/Footer';
 
 import { ResultsTopBar } from '@/components/results/shell/ResultsTopBar';
 
+import { Lightbulb, Calculator } from 'lucide-react';
+
 import { VerdictSection } from '@/components/results/VerdictSection';
 import { ContextParagraph } from '@/components/results/ContextParagraph';
 import { MetricCards } from '@/components/results/MetricCards';
 import { ProblemsBlock } from '@/components/results/ProblemsBlock';
 import { SectionHeader } from '@/components/results/SectionHeader';
+import { AccuracyMeter } from '@/components/results/AccuracyMeter';
 import {
   VerticalActionSteps,
   actionCountText,
@@ -224,14 +227,10 @@ function ResultsContent() {
     setOutputs(newOutputs);
   };
 
-  // Accuracy meta colour for the Refine SectionHeader. Three thresholds
-  // per the editorial brief: ≥65% reads as success, 40–64% warning,
-  // below 40% sits as a neutral tertiary stat.
-  const accuracyColor = (pct: number): string => {
-    if (pct >= 65) return 'var(--color-text-success)';
-    if (pct >= 40) return 'var(--color-text-warning)';
-    return 'var(--color-text-tertiary)';
-  };
+  // Accuracy threshold colouring previously lived here as a helper for
+  // the SectionHeader meta. The polish pass replaces the bare percent
+  // with an <AccuracyMeter /> mini progress bar — the threshold rule
+  // is no longer needed at this level.
 
   return (
     <div className="min-h-screen bg-paper">
@@ -301,8 +300,7 @@ function ResultsContent() {
           <>
             <SectionHeader
               eyebrow="Refine your estimate"
-              meta={`${accuracy}%`}
-              metaColor={accuracyColor(accuracy)}
+              meta={<AccuracyMeter pct={accuracy} />}
             />
             <RefinementPanel
               initialResult={outputs}
@@ -331,7 +329,10 @@ function ResultsContent() {
                   />
                 </div>
 
-                <SectionHeader eyebrow="Is there a better option?" />
+                <SectionHeader
+                  eyebrow="Is there a better option?"
+                  eyebrowIcon={<Lightbulb size={14} aria-hidden />}
+                />
                 <div className="px-5 min-[501px]:px-8">
                   <EscapeScenarioCard
                     category={category}
@@ -351,7 +352,10 @@ function ResultsContent() {
             SectionHeader sits above the toggle for visual consistency
             with every other editorial section. The toggle inside the
             panel is now a plain inline link, no top hairline of its own. */}
-        <SectionHeader eyebrow="How we calculated this" />
+        <SectionHeader
+          eyebrow="How we calculated this"
+          eyebrowIcon={<Calculator size={14} aria-hidden />}
+        />
         <div className="px-5 min-[501px]:px-8">
           <AssumptionsPanel
             outputs={outputs}

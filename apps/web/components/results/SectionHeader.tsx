@@ -16,6 +16,10 @@ import type { ReactNode } from 'react';
 
 interface SectionHeaderProps {
   eyebrow: string;
+  // Optional 16px icon rendered before the eyebrow text. Used by
+  // sections like "Is there a better option?" + "How we calculated this"
+  // where a glyph reinforces the section's intent.
+  eyebrowIcon?: ReactNode;
   meta?: ReactNode;
   // Override the meta colour token. Default is --color-text-tertiary.
   // Used by the Refine meta to reflect the live accuracy threshold.
@@ -24,6 +28,7 @@ interface SectionHeaderProps {
 
 export function SectionHeader({
   eyebrow,
+  eyebrowIcon,
   meta,
   metaColor,
 }: SectionHeaderProps) {
@@ -44,8 +49,9 @@ export function SectionHeader({
         className="flex items-baseline justify-between gap-3"
       >
         <p
-          className="uppercase"
+          className="uppercase inline-flex items-center"
           style={{
+            gap: eyebrowIcon ? '6px' : 0,
             fontSize: '11px',
             fontWeight: 500,
             letterSpacing: '0.14em',
@@ -53,6 +59,11 @@ export function SectionHeader({
             margin: 0,
           }}
         >
+          {eyebrowIcon && (
+            <span aria-hidden className="shrink-0 inline-flex items-center">
+              {eyebrowIcon}
+            </span>
+          )}
           {eyebrow}
         </p>
         {meta && (

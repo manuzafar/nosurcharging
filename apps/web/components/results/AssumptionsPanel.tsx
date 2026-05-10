@@ -9,7 +9,7 @@
 // Followed by the existing card-mix breakdown read from resolutionTrace.
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { Calculator, ChevronDown, ChevronUp } from 'lucide-react';
 import { Analytics } from '@/lib/analytics';
 import type { AssessmentOutputs, ResolutionTrace } from '@nosurcharging/calculations/types';
 
@@ -139,8 +139,9 @@ export function AssumptionsPanel({
           }}
         >
           <span className="inline-flex items-center" style={{ gap: '6px' }}>
-            {expanded ? <ChevronUp size={12} aria-hidden /> : <ChevronDown size={12} aria-hidden />}
+            <Calculator size={14} aria-hidden />
             Show me exactly how this is calculated
+            {expanded ? <ChevronUp size={12} aria-hidden /> : <ChevronDown size={12} aria-hidden />}
           </span>
         </button>
 
@@ -157,9 +158,18 @@ export function AssumptionsPanel({
             >
               How the numbers are built
             </p>
-            <div className="mt-2 space-y-3">
+            <div className="mt-2">
               {formulaRows.map((row, i) => (
-                <div key={i} className="flex items-start justify-between gap-3">
+                <div
+                  key={i}
+                  className="flex items-start justify-between gap-3"
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    background:
+                      i % 2 === 1 ? 'var(--color-background-secondary)' : 'transparent',
+                  }}
+                >
                   <div className="flex-1">
                     <p
                       className="text-caption"
@@ -299,8 +309,9 @@ export function AssumptionsPanel({
         }}
       >
         <span className="inline-flex items-center" style={{ gap: '6px' }}>
-          {expanded ? <ChevronUp size={12} aria-hidden /> : <ChevronDown size={12} aria-hidden />}
+          <Calculator size={14} aria-hidden />
           Show me exactly how this is calculated
+          {expanded ? <ChevronUp size={12} aria-hidden /> : <ChevronDown size={12} aria-hidden />}
         </span>
       </button>
 
