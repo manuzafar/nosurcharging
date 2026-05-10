@@ -40,8 +40,8 @@ test.describe('Mobile 375px', () => {
     // Skip the email gate
     await page.getByRole('button', { name: /skip and view now/i }).click();
 
-    // Should navigate to results (scoped to avoid TopBar duplicate)
+    // Should navigate to results (scoped to <main> to avoid TopBar duplicate)
     await page.waitForURL(/\/results\?id=/, { timeout: 15000 });
-    await expect(page.locator('#overview').getByText('Situation 2')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('main').getByText('Situation 2')).toBeVisible({ timeout: 10000 });
   });
 });

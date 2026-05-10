@@ -38,8 +38,9 @@ test.describe('Wizard journey → Category 1', () => {
 
     await page.waitForURL(/\/results\?id=/, { timeout: 15000 });
 
-    // Category 1 — costs fall automatically (scoped to avoid TopBar duplicate)
-    await expect(page.locator('#overview').getByText('Situation 1')).toBeVisible({ timeout: 10000 });
+    // Category 1 — costs fall automatically (scoped to <main> to avoid
+    // strict-mode duplicate from the TopBar pill).
+    await expect(page.locator('main').getByText('Situation 1')).toBeVisible({ timeout: 10000 });
 
     // Slider should NOT be visible (Category 1)
     await expect(page.getByRole('slider')).not.toBeVisible();
