@@ -144,21 +144,11 @@ export function ProblemsBlock({
   const showDepends = category === 2 || category === 4;
   const showZeroCost = category === 5;
 
+  // Eyebrow ("Why this is happening") moved out to page-level
+  // SectionHeader. ProblemsBlock now renders only the card grid.
   return (
     <section>
-      <p
-        className="uppercase font-bold"
-        style={{
-          fontSize: '9px',
-          letterSpacing: '0.8px',
-          color: 'var(--color-text-tertiary)',
-          marginBottom: '10px',
-        }}
-      >
-        Why this is happening
-      </p>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-1 min-[501px]:grid-cols-2 gap-2.5">
         {showCertain && (
           <ProblemCard
             variant="certain"

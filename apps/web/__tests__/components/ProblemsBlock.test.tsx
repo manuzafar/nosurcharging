@@ -78,9 +78,9 @@ describe('ProblemsBlock', () => {
       ).toBeTruthy();
     });
 
-    it('contains the section eyebrow "WHY THIS IS HAPPENING"', () => {
+    it('does not render the legacy in-component eyebrow (moved to page-level SectionHeader)', () => {
       render(<ProblemsBlock category={4} {...COMMON} />);
-      expect(screen.getByText(/Why this is happening/i)).toBeInTheDocument();
+      expect(screen.queryByText(/Why this is happening/i)).not.toBeInTheDocument();
     });
   });
 

@@ -56,18 +56,7 @@ export function EscapeScenarioCard({
       className="py-5"
       style={{ borderBottom: '1px solid var(--color-border-secondary)' }}
     >
-      {/* Section eyebrow */}
-      <p
-        className="font-medium uppercase"
-        style={{
-          fontSize: '11px',
-          letterSpacing: '2.5px',
-          color: 'var(--color-text-tertiary)',
-          marginBottom: '12px',
-        }}
-      >
-        Is there a better option?
-      </p>
+      {/* Eyebrow ("Is there a better option?") moved out to page-level SectionHeader. */}
 
       {/* Intro */}
       <p
@@ -84,51 +73,112 @@ export function EscapeScenarioCard({
         rate review.
       </p>
 
-      {/* Green box — 12px wrapper card tier (it's the main structural card
-          of the section, containing a heading + hero number + body copy). */}
+      {/* Green comparison card — current vs itemised side-by-side, then
+          the saving headline below. The "vs" treatment lets the merchant
+          eyeball the size of the gap before reading the conclusion. */}
       <div
         style={{
           background: '#E8F5EB',
           border: '1px solid rgba(39, 80, 10, 0.25)',
-          padding: '16px 18px',
+          padding: '18px 20px',
           borderRadius: '12px',
         }}
       >
+        <div
+          className="flex items-stretch"
+          style={{
+            gap: '16px',
+            marginBottom: '16px',
+          }}
+        >
+          {/* Current */}
+          <div className="flex-1">
+            <p
+              className="uppercase"
+              style={{
+                fontSize: '9px',
+                fontWeight: 500,
+                letterSpacing: '0.08em',
+                color: 'var(--color-text-tertiary)',
+                marginBottom: '4px',
+              }}
+            >
+              Current — {pspName} flat rate
+            </p>
+            <p
+              className="font-mono font-medium"
+              style={{
+                fontSize: '20px',
+                color: 'var(--color-text-primary)',
+                letterSpacing: '-0.4px',
+              }}
+            >
+              {formatDollar(outputs.octNet)}/yr
+            </p>
+          </div>
+
+          {/* "vs" divider */}
+          <div
+            className="flex items-center"
+            aria-hidden
+            style={{ color: 'var(--color-text-tertiary)' }}
+          >
+            <span
+              style={{
+                fontSize: '11px',
+                fontWeight: 500,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                padding: '4px 8px',
+                borderRadius: '999px',
+                background: 'var(--color-background-primary)',
+                border: '0.5px solid var(--color-border-secondary)',
+              }}
+            >
+              vs
+            </span>
+          </div>
+
+          {/* Itemised */}
+          <div className="flex-1 text-right">
+            <p
+              className="uppercase"
+              style={{
+                fontSize: '9px',
+                fontWeight: 500,
+                letterSpacing: '0.08em',
+                color: 'var(--color-text-success)',
+                marginBottom: '4px',
+              }}
+            >
+              Itemised — flows automatically
+            </p>
+            <p
+              className="font-mono font-medium"
+              style={{
+                fontSize: '20px',
+                color: 'var(--color-text-success)',
+                letterSpacing: '-0.4px',
+              }}
+            >
+              {formatDollar(costPlusOctNet)}/yr
+            </p>
+          </div>
+        </div>
+
         <p
           className="font-medium"
           style={{
-            fontSize: '12px',
+            fontSize: '13px',
             color: 'var(--color-text-success)',
-            marginBottom: '4px',
+            margin: 0,
           }}
         >
-          Switching to {pspName}&apos;s itemised plan saves you:
-        </p>
-
-        <p
-          className="font-mono font-medium"
-          style={{
-            fontSize: '24px',
-            color: 'var(--color-text-success)',
-            letterSpacing: '-1px',
-            marginBottom: '8px',
-          }}
-        >
-          {formatDollar(saving)}/year
-        </p>
-
-        <p
-          style={{
-            fontSize: '12px',
-            color: 'var(--color-text-secondary)',
-            lineHeight: 1.7,
-          }}
-        >
-          Your net cost would be{' '}
-          <span className="font-mono">{formatDollar(costPlusOctNet)}</span>{' '}
-          instead of{' '}
-          <span className="font-mono">{formatDollar(outputs.octNet)}</span> —
-          the full saving flows automatically at 100%.
+          Switching saves{' '}
+          <span className="font-mono" style={{ fontSize: '15px' }}>
+            {formatDollar(saving)}/year
+          </span>{' '}
+          — the full IC saving flows through automatically at 100%.
         </p>
       </div>
     </section>

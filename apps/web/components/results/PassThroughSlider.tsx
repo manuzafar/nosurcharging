@@ -11,7 +11,8 @@
 // Banned: "Stripe keeps all of it" / "your PSP" / "your provider".
 // Use: "Not reflected in your rate" / explicit pspName.
 
-import { useRef } from 'react';
+import { useRef, type ReactNode } from 'react';
+import { ArrowDownRight, ArrowUpRight, Calculator } from 'lucide-react';
 import { resolveAssessmentInputs } from '@nosurcharging/calculations/rules/resolver';
 import { calculateMetrics } from '@nosurcharging/calculations/calculations';
 import { Analytics } from '@/lib/analytics';
@@ -71,22 +72,11 @@ export function PassThroughSlider({
   };
 
   return (
-    <section
-      className="py-5"
-      style={{ borderBottom: '1px solid var(--color-border-secondary)' }}
-    >
-      {/* Section eyebrow */}
-      <p
-        className="font-medium uppercase"
-        style={{
-          fontSize: '11px',
-          letterSpacing: '2.5px',
-          color: 'var(--color-text-tertiary)',
-          marginBottom: '12px',
-        }}
-      >
-        Model your outcome
-      </p>
+    // Editorial M3: no card wrapper. The slider + result rows sit
+    // directly inside the page column. Hairline rows replace the
+    // previous tinted result box.
+    <section>
+      {/* Eyebrow ("Model your outcome") moved out to page-level SectionHeader. */}
 
       {/* Intro */}
       <p
@@ -94,13 +84,34 @@ export function PassThroughSlider({
           fontSize: '13px',
           color: 'var(--color-text-secondary)',
           lineHeight: 1.65,
-          marginBottom: '16px',
+          marginBottom: '18px',
+          maxWidth: '540px',
         }}
       >
         Our central scenario assumes ~45% pass-through — the actual figure depends on {pspName}.
         At 0%, the full {formatDollar(outputs.icSaving)} interchange saving stays with {pspName}.
         At 100%, it passes through entirely.
       </p>
+
+      {/* Centre marker pill — small emerald pill above the slider so the
+          "centre estimate" reading is always visible while the slider moves. */}
+      <div style={{ marginBottom: '10px' }}>
+        <span
+          className="inline-block font-mono"
+          style={{
+            fontSize: '10px',
+            fontWeight: 500,
+            letterSpacing: '0.04em',
+            padding: '3px 9px',
+            borderRadius: '999px',
+            background: 'var(--color-background-success)',
+            color: 'var(--color-text-success)',
+            border: '0.5px solid rgba(26, 107, 90, 0.25)',
+          }}
+        >
+          Centre · 45%
+        </span>
+      </div>
 
       {/* Slider — controlled input uses onChange so React's controlled-input
           plumbing hooks correctly. Using onInput without onChange made React
@@ -149,63 +160,119 @@ export function PassThroughSlider({
         <span>Fully reflected (100%)</span>
       </div>
 
-      {/* Result box — accent-light bg, accent-border, 8px radius
-          (structured content on the 8px tier of the Modern Fintech Hierarchy). */}
-      <div
-        style={{
-          background: '#EBF6F3',
-          border: '1px solid #72C4B0',
-          padding: '12px 14px',
-          marginTop: '14px',
-          borderRadius: '8px',
-        }}
-      >
-        <div className="flex items-center justify-between" style={{ marginBottom: '6px' }}>
-          <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-            Cost reduction in your {pspName} rate
-          </span>
-          <span
-            className="font-mono font-medium"
-            style={{ fontSize: '13px', color: 'var(--color-text-success)' }}
-          >
-            +{formatDollar(reflectedSaving)}/yr
-          </span>
-        </div>
-
-        <div className="flex items-center justify-between" style={{ marginBottom: '6px' }}>
-          <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-            Your net annual impact
-          </span>
-          <span
-            className="font-mono font-medium"
-            style={{
-              fontSize: '13px',
-              color: netImpact >= 0 ? 'var(--color-text-success)' : 'var(--color-text-danger)',
-            }}
-          >
-            {netImpact >= 0 ? '+' : '−'}
-            {formatDollar(netImpact)}/yr
-          </span>
-        </div>
-
-        <div
-          className="flex items-center justify-between"
-          style={{
-            paddingTop: '6px',
-            borderTop: '0.5px solid #72C4B0',
-          }}
-        >
-          <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-            Net cost from October
-          </span>
-          <span
-            className="font-mono font-medium"
-            style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}
-          >
-            {formatDollar(netCostFromOct)}/yr
-          </span>
-        </div>
+      {/* Three result rows — hairline-divided settings list with a
+          1.5px coloured left-accent + leading icon per row so the trio
+          reads as a deliberate result table rather than three flat
+          lines. Icon + accent colour reinforce the row's intent
+          (cost reduction = emerald, net impact = danger / emerald
+          depending on sign, calculated total = neutral). */}
+      <div style={{ marginTop: '24px' }}>
+        <ResultRow
+          icon={<ArrowDownRight size={16} aria-hidden />}
+          label={`Cost reduction in your ${pspName} rate`}
+          value={`+${formatDollar(reflectedSaving)}/yr`}
+          accent="success"
+        />
+        <ResultRow
+          icon={<ArrowUpRight size={16} aria-hidden />}
+          label="Your net annual impact"
+          value={`${netImpact >= 0 ? '+' : '−'}${formatDollar(netImpact)}/yr`}
+          accent={netImpact >= 0 ? 'success' : 'danger'}
+        />
+        <ResultRow
+          icon={<Calculator size={16} aria-hidden />}
+          label="Net cost from October"
+          value={`${formatDollar(netCostFromOct)}/yr`}
+          accent="neutral"
+          isLast
+        />
       </div>
     </section>
   );
 }
+
+// Single hairline-divided result row used by the slider's three-row
+// readout. Hairline lives on the bottom; the last row suppresses it.
+// Each row carries a 1.5px coloured left border + leading icon
+// matching the row's intent.
+type ResultAccent = 'success' | 'danger' | 'neutral';
+
+function ResultRow({
+  icon,
+  label,
+  value,
+  accent,
+  isLast,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  accent: ResultAccent;
+  isLast?: boolean;
+}) {
+  const accentStyles = (() => {
+    switch (accent) {
+      case 'success':
+        return {
+          border: 'var(--color-text-success)',
+          icon: 'var(--color-text-success)',
+          value: 'var(--color-text-success)',
+        };
+      case 'danger':
+        return {
+          border: 'var(--color-text-danger)',
+          icon: 'var(--color-text-danger)',
+          value: 'var(--color-text-danger)',
+        };
+      case 'neutral':
+        return {
+          border: 'var(--color-border-secondary)',
+          icon: 'var(--color-text-tertiary)',
+          value: 'var(--color-text-primary)',
+        };
+    }
+  })();
+  return (
+    <div
+      className="flex items-center justify-between"
+      style={{
+        padding: '14px 12px',
+        borderLeft: `1.5px solid ${accentStyles.border}`,
+        // Lighter tertiary token per editorial M3 polish so the three
+        // result lines read as a deliberate result table, not as
+        // section dividers competing with SectionHeader rules.
+        borderBottom: isLast
+          ? 'none'
+          : '0.5px solid var(--color-border-tertiary)',
+      }}
+    >
+      <span
+        className="inline-flex items-center"
+        style={{ gap: '10px' }}
+      >
+        <span aria-hidden style={{ color: accentStyles.icon }}>
+          {icon}
+        </span>
+        <span
+          style={{
+            fontSize: '13px',
+            color: 'var(--color-text-secondary)',
+          }}
+        >
+          {label}
+        </span>
+      </span>
+      <span
+        className="font-mono"
+        style={{
+          fontSize: '14px',
+          fontWeight: 500,
+          color: accentStyles.value,
+        }}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+

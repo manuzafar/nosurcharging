@@ -9,7 +9,7 @@
 // Followed by the existing card-mix breakdown read from resolutionTrace.
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { Calculator, ChevronDown, ChevronUp } from 'lucide-react';
 import { Analytics } from '@/lib/analytics';
 import type { AssessmentOutputs, ResolutionTrace } from '@nosurcharging/calculations/types';
 
@@ -118,8 +118,9 @@ export function AssumptionsPanel({
           : 'var(--color-text-danger)',
     });
     return (
+      // Editorial M3: cost-plus path — no card wrapper, hairline-topped
+      // toggle, flat expanded content.
       <div>
-        {/* Toggle */}
         <button
           type="button"
           onClick={() => {
@@ -128,38 +129,47 @@ export function AssumptionsPanel({
             }
             setExpanded(!expanded);
           }}
-          className="text-caption cursor-pointer"
+          className="cursor-pointer w-full text-left"
           style={{
-            color: 'var(--color-text-secondary)',
+            color: 'var(--color-text-tertiary)',
             background: 'none',
             border: 'none',
-            padding: 0,
+            padding: '14px 0 0',
+            fontSize: '12px',
           }}
         >
           <span className="inline-flex items-center" style={{ gap: '6px' }}>
-            {expanded ? <ChevronUp size={12} aria-hidden /> : <ChevronDown size={12} aria-hidden />}
+            <Calculator size={14} aria-hidden />
             Show me exactly how this is calculated
+            {expanded ? <ChevronUp size={12} aria-hidden /> : <ChevronDown size={12} aria-hidden />}
           </span>
         </button>
 
         <div
           className={`overflow-hidden transition-all duration-200 ease-out ${
-            expanded ? 'mt-3 max-h-[3000px] opacity-100' : 'max-h-0 opacity-0'
+            expanded ? 'mt-4 max-h-[3000px] opacity-100' : 'max-h-0 opacity-0'
           }`}
         >
-          <div
-            className="p-4"
-            style={{ border: '0.5px solid var(--color-border-secondary)' }}
-          >
+          <div className="pt-2">
+
             <p
               className="text-caption font-medium"
               style={{ color: 'var(--color-text-primary)' }}
             >
               How the numbers are built
             </p>
-            <div className="mt-2 space-y-3">
+            <div className="mt-2">
               {formulaRows.map((row, i) => (
-                <div key={i} className="flex items-start justify-between gap-3">
+                <div
+                  key={i}
+                  className="flex items-start justify-between gap-3"
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    background:
+                      i % 2 === 1 ? 'var(--color-background-secondary)' : 'transparent',
+                  }}
+                >
                   <div className="flex-1">
                     <p
                       className="text-caption"
@@ -278,8 +288,9 @@ export function AssumptionsPanel({
   });
 
   return (
+    // Editorial M3: no card wrapper. Toggle is a hairline-topped text
+    // link; expanded content uses hairline rows with no enclosing box.
     <div>
-      {/* Toggle — new wording per spec §3.9 */}
       <button
         type="button"
         onClick={() => {
@@ -288,30 +299,30 @@ export function AssumptionsPanel({
           }
           setExpanded(!expanded);
         }}
-        className="text-caption cursor-pointer"
+        className="cursor-pointer w-full text-left"
         style={{
-          color: 'var(--color-text-secondary)',
+          color: 'var(--color-text-tertiary)',
           background: 'none',
           border: 'none',
-          padding: 0,
+          padding: '14px 0 0',
+          fontSize: '12px',
         }}
       >
         <span className="inline-flex items-center" style={{ gap: '6px' }}>
-          {expanded ? <ChevronUp size={12} aria-hidden /> : <ChevronDown size={12} aria-hidden />}
+          <Calculator size={14} aria-hidden />
           Show me exactly how this is calculated
+          {expanded ? <ChevronUp size={12} aria-hidden /> : <ChevronDown size={12} aria-hidden />}
         </span>
       </button>
 
       {/* Expanded content */}
       <div
         className={`overflow-hidden transition-all duration-200 ease-out ${
-          expanded ? 'mt-3 max-h-[3000px] opacity-100' : 'max-h-0 opacity-0'
+          expanded ? 'mt-4 max-h-[3000px] opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-        <div
-          className="p-4"
-          style={{ border: '0.5px solid var(--color-border-secondary)' }}
-        >
+        <div className="pt-2">
+
           {/* Formula rows */}
           <p
             className="text-caption font-medium"

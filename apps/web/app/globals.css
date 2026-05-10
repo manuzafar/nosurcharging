@@ -157,6 +157,28 @@ nav.bg-ink button:focus-visible {
           mask-image: linear-gradient(to right, black calc(100% - 24px), transparent 100%);
 }
 
+/* Editorial M3 refinement input — settings-list inline edit. The field
+   value reads as static text by default (transparent border + no
+   background), and shows a visible chrome on hover/focus so the
+   merchant knows it's editable. Per the editorial brief: "click any
+   row to enter edit mode (the value becomes an inline input)". */
+.refine-input {
+  border: 0.5px solid transparent;
+  background: transparent;
+  border-radius: 6px;
+  padding: 4px 8px;
+  transition: border-color 120ms ease, background-color 120ms ease;
+  outline: none;
+}
+.refine-input:hover,
+.refine-input:focus {
+  border-color: var(--color-border-secondary);
+  background: var(--color-background-primary);
+}
+.refine-input:focus {
+  border-color: var(--color-text-secondary);
+}
+
 /* ── Accessibility: reduced motion ────────────────────────────────────
    For users who've set prefers-reduced-motion: reduce, collapse every
    animation and transition to near-instant. We keep final states intact

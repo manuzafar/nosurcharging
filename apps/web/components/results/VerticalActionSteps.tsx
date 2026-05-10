@@ -189,96 +189,122 @@ const RAO_LEVER_ICON: Record<'R' | 'A' | 'O', ReactNode> = {
   O: <Settings2 size={12} aria-hidden />,
 };
 
+// RAO inline mini-grid — 3 tiles side by side per the editorial brief
+// §"RAO framework — inline mini-grid". On ≤500px the 3 tiles wrap to
+// 2 columns; the third spans both columns so the layout still reads as
+// a coherent set rather than an orphan tile. Each tile is a small
+// secondary-bg block carrying letter dot + name + condition; the
+// break-even pill (RECOVER only) sits inside the tile, not below.
 function RaoCard({ framework }: { framework: RaoFramework }) {
   return (
-    <div
-      style={{
-        background: 'var(--color-background-secondary)',
-        borderRadius: '10px',
-        padding: '14px 16px',
-        marginTop: '10px',
-      }}
-    >
+    <div style={{ marginTop: '12px' }}>
       <p
-        className="font-bold"
+        className="uppercase"
         style={{
-          fontSize: '11px',
-          color: 'var(--color-text-primary)',
-          marginBottom: '12px',
+          fontSize: '10px',
+          fontWeight: 500,
+          letterSpacing: '0.08em',
+          color: 'var(--color-text-tertiary)',
+          marginBottom: '10px',
         }}
       >
         {framework.title}
       </p>
 
-      <div className="flex flex-col" style={{ gap: '10px' }}>
-        {framework.levers.map((lever) => {
+      <div
+        // Mobile: 2 columns; the last (third) tile spans both via the
+        // `last:[grid-column:span_2]` arbitrary class. Desktop: 3 cols.
+        className="grid grid-cols-2 min-[501px]:grid-cols-3"
+        style={{ gap: '8px' }}
+      >
+        {framework.levers.map((lever, idx) => {
           const styles = RaoLeverDotStyles(lever.letter);
+          const isLast = idx === framework.levers.length - 1;
           return (
             <div
               key={lever.letter}
-              className="flex items-start"
-              style={{ gap: '10px' }}
+              // Last tile spans both columns on mobile only (501px is the
+              // single project breakpoint). Desktop has its own 3-col
+              // grid so no spanning needed.
+              className={
+                isLast
+                  ? 'col-span-2 min-[501px]:col-span-1'
+                  : 'col-span-1'
+              }
+              style={{
+                background: 'var(--color-background-secondary)',
+                borderRadius: '10px',
+                padding: '12px 14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+              }}
             >
-              <span
-                className="flex items-center justify-center shrink-0 font-bold"
-                aria-hidden
-                style={{
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '50%',
-                  background: styles.bg,
-                  color: styles.color,
-                  border: styles.border ? `0.5px solid ${styles.border}` : 'none',
-                  fontSize: '9px',
-                  marginTop: '1px',
-                }}
+              <div
+                className="flex items-center"
+                style={{ gap: '8px' }}
               >
-                {lever.letter}
-              </span>
-              <div className="flex-1">
-                <p
-                  className="inline-flex items-center font-bold"
+                <span
+                  className="flex items-center justify-center shrink-0"
+                  aria-hidden
                   style={{
-                    gap: '6px',
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '50%',
+                    background: styles.bg,
+                    color: styles.color,
+                    border: styles.border
+                      ? `0.5px solid ${styles.border}`
+                      : 'none',
+                    fontSize: '9px',
+                    fontWeight: 500,
+                  }}
+                >
+                  {lever.letter}
+                </span>
+                <span
+                  className="inline-flex items-center"
+                  style={{
+                    gap: '5px',
                     fontSize: '11px',
+                    fontWeight: 500,
                     color: 'var(--color-text-primary)',
-                    marginBottom: '2px',
                   }}
                 >
                   <span style={{ color: styles.color }}>
                     {RAO_LEVER_ICON[lever.letter]}
                   </span>
                   {lever.name}
-                </p>
-                <p
+                </span>
+              </div>
+              <p
+                style={{
+                  fontSize: '11px',
+                  color: 'var(--color-text-secondary)',
+                  lineHeight: 1.55,
+                  margin: 0,
+                }}
+              >
+                {lever.condition}
+              </p>
+              {lever.pill && (
+                <span
+                  className="inline-flex items-center self-start"
                   style={{
-                    fontSize: '11px',
-                    color: 'var(--color-text-secondary)',
-                    lineHeight: 1.55,
+                    gap: '5px',
+                    background: 'var(--color-background-success)',
+                    border: '0.5px solid var(--color-text-success)',
+                    color: 'var(--color-text-success)',
+                    fontSize: '10px',
+                    fontWeight: 500,
+                    padding: '4px 10px',
+                    borderRadius: '100px',
                   }}
                 >
-                  {lever.condition}
-                </p>
-                {lever.pill && (
-                  <span
-                    className="inline-flex items-center font-medium"
-                    style={{
-                      gap: '5px',
-                      background: 'var(--color-background-success)',
-                      border: '0.5px solid var(--color-text-success)',
-                      color: 'var(--color-text-success)',
-                      fontSize: '10px',
-                      fontWeight: 600,
-                      padding: '4px 10px',
-                      borderRadius: '100px',
-                      marginTop: '8px',
-                    }}
-                  >
-                    <Target size={11} aria-hidden />
-                    {lever.pill.label}: {lever.pill.value}
-                  </span>
-                )}
-              </div>
+                  <Target size={11} aria-hidden />
+                  {lever.pill.value}
+                </span>
+              )}
             </div>
           );
         })}
@@ -317,7 +343,11 @@ function StepRow({
   const hasScript = !!script;
 
   return (
-    <div className="flex relative" style={{ gap: '14px' }}>
+    // Editorial spacing per brief §"Action list overhaul": ~36px content
+    // padding-left, lighter 1px connector (was 1.5px) coloured tertiary
+    // border. Numbered 32×32 dots stay (PB-3) because the digit IS the
+    // sequence cue.
+    <div className="flex relative" style={{ gap: '16px' }}>
       {/* Vertical connector line — drawn behind the dot, anchored to
           the dot column so it never crosses the body content. */}
       {!isLast && (
@@ -328,8 +358,8 @@ function StepRow({
             left: '15px',
             top: '32px',
             bottom: 0,
-            width: '1.5px',
-            background: 'var(--color-border-secondary)',
+            width: '1px',
+            background: 'var(--color-border-tertiary)',
             zIndex: 0,
           }}
         />
@@ -344,7 +374,7 @@ function StepRow({
       </div>
 
       {/* Body */}
-      <div className="flex-1" style={{ paddingBottom: '24px' }}>
+      <div className="flex-1" style={{ paddingBottom: '28px' }}>
         {/* Tier header + date row */}
         <div
           className="flex items-center"
@@ -459,55 +489,29 @@ function StepRow({
   );
 }
 
+// Compute the urgent/plan/monitor count text for the SectionHeader
+// meta in page.tsx. Exported so the page can render the meta without
+// duplicating the priority-counting logic.
+export function actionCountText(actions: ActionItem[]): string {
+  const urgent = actions.filter((a) => a.priority === 'urgent').length;
+  const plan = actions.filter((a) => a.priority === 'plan').length;
+  const monitor = actions.filter((a) => a.priority === 'monitor').length;
+  const parts: string[] = [];
+  if (urgent > 0) parts.push(`${urgent} urgent`);
+  if (plan > 0) parts.push(`${plan} plan`);
+  if (monitor > 0) parts.push(`${monitor} monitor`);
+  return parts.join(' · ');
+}
+
 // ── Public component ────────────────────────────────────────────
 
 export function VerticalActionSteps({ actions }: VerticalActionStepsProps) {
   const sorted = sortByTier(actions);
-  const urgentCount = actions.filter((a) => a.priority === 'urgent').length;
-  const planCount = actions.filter((a) => a.priority === 'plan').length;
-  const monitorCount = actions.filter((a) => a.priority === 'monitor').length;
 
-  const eyebrowId = 'action-list-eyebrow';
-
-  const countParts: string[] = [];
-  if (urgentCount > 0) countParts.push(`${urgentCount} urgent`);
-  if (planCount > 0) countParts.push(`${planCount} plan`);
-  if (monitorCount > 0) countParts.push(`${monitorCount} monitor`);
-  const countText = countParts.join(' · ');
-
+  // Eyebrow + count pill moved out to the page-level SectionHeader.
+  // The `actionCountText()` helper above feeds the SectionHeader meta.
   return (
-    <section aria-labelledby={eyebrowId} className="px-5 md:px-8">
-      <div
-        className="flex items-center justify-between flex-wrap"
-        style={{ gap: '10px', marginBottom: '20px' }}
-      >
-        <p
-          id={eyebrowId}
-          className="font-bold uppercase"
-          style={{
-            fontSize: '12px',
-            letterSpacing: '0.8px',
-            color: 'var(--color-text-primary)',
-          }}
-        >
-          What to do, in order
-        </p>
-        {countText && (
-          <span
-            className="font-medium"
-            style={{
-              fontSize: '10px',
-              fontWeight: 600,
-              color: 'var(--color-text-danger)',
-              background: 'var(--color-background-danger)',
-              padding: '3px 10px',
-              borderRadius: '100px',
-            }}
-          >
-            {countText}
-          </span>
-        )}
-      </div>
+    <section aria-label="Action plan steps" className="px-5 min-[501px]:px-8">
 
       <div style={{ position: 'relative' }}>
         {sorted.map((action, i) => (

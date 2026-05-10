@@ -20,7 +20,14 @@
 // different address. The component never throws.
 
 import { useState } from 'react';
-import { Mail, Pencil, ShieldCheck } from 'lucide-react';
+import {
+  CalendarCheck,
+  Download,
+  Lock,
+  Mail,
+  Pencil,
+  ShieldCheck,
+} from 'lucide-react';
 import { sendReportEmail } from '@/actions/sendReportEmail';
 
 interface ArtifactCardProps {
@@ -50,7 +57,20 @@ export function ArtifactCard({
   const valid = EMAIL_PATTERN.test(trimmed);
 
   const handleSend = async () => {
-    if (!valid) return;
+    // The button stays visually active even when the email is empty
+    // / invalid; validation surfaces inline below so the merchant sees
+    // why nothing happened. If we just `return` silently the click
+    // looks broken.
+    if (!valid) {
+      setEditing(true);
+      setState({
+        kind: 'error',
+        message: trimmed
+          ? 'That email address looks off. Check for typos.'
+          : 'Add your email so we know where to send it.',
+      });
+      return;
+    }
     setState({ kind: 'sending' });
     const result = await sendReportEmail({
       assessmentId,
@@ -70,21 +90,9 @@ export function ArtifactCard({
     }
   };
 
+  // Eyebrow ("Save the full report") moved out to page-level SectionHeader.
   return (
-    <section className="px-5 md:px-8" aria-labelledby="artifact-card-eyebrow">
-      <p
-        id="artifact-card-eyebrow"
-        className="font-bold uppercase"
-        style={{
-          fontSize: '12px',
-          letterSpacing: '0.8px',
-          color: 'var(--color-text-primary)',
-          marginBottom: '8px',
-        }}
-      >
-        Save the full report
-      </p>
-
+    <section className="px-5 min-[501px]:px-8" aria-label="Save the full report">
       <p
         style={{
           fontSize: '13px',
@@ -100,13 +108,14 @@ export function ArtifactCard({
 
       <div
         className="flex flex-col"
+        // Width parity with other editorial sections — the card now
+        // spans the full content column instead of capping at 480px.
         style={{
-          gap: '10px',
+          gap: '12px',
           background: 'var(--color-background-primary)',
           border: '0.5px solid var(--color-border-secondary)',
           borderRadius: '12px',
-          padding: '14px 16px',
-          maxWidth: '480px',
+          padding: '16px 18px',
         }}
       >
         {/* Email row */}
@@ -123,24 +132,39 @@ export function ArtifactCard({
             >
               Send to
             </label>
-            <input
-              id="artifact-email"
-              type="email"
-              autoComplete="email"
-              inputMode="email"
-              spellCheck={false}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@business.com.au"
+            <div
+              className="flex items-center"
               style={{
-                fontSize: '14px',
+                gap: '8px',
                 padding: '8px 10px',
                 border: '0.5px solid var(--color-border-secondary)',
                 borderRadius: '8px',
                 background: '#FFFFFF',
-                color: 'var(--color-text-primary)',
               }}
-            />
+            >
+              <Mail
+                size={16}
+                aria-hidden
+                style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }}
+              />
+              <input
+                id="artifact-email"
+                type="email"
+                autoComplete="email"
+                inputMode="email"
+                spellCheck={false}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@business.com.au"
+                className="flex-1 outline-none"
+                style={{
+                  fontSize: '14px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--color-text-primary)',
+                }}
+              />
+            </div>
           </div>
         ) : (
           <div
@@ -180,15 +204,21 @@ export function ArtifactCard({
           </div>
         )}
 
-        {/* Send button */}
+        {/* Send button — always renders at full accent. Validation
+            still gates the actual send (handleSend exits early if the
+            email is invalid + the error row surfaces a message), but
+            the button visual stays confidently clickable so the
+            section reads as a primary action even when the prefill is
+            empty. */}
         <button
           type="button"
           onClick={handleSend}
-          disabled={!valid || state.kind === 'sending'}
-          className="font-bold cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 hover:opacity-90"
+          aria-disabled={state.kind === 'sending'}
+          className="font-bold cursor-pointer self-start hover:opacity-90 inline-flex items-center"
           style={{
-            fontSize: '13px',
-            padding: '10px 16px',
+            gap: '8px',
+            fontSize: '14px',
+            padding: '11px 22px',
             background:
               state.kind === 'sent'
                 ? 'var(--color-text-success)'
@@ -199,6 +229,7 @@ export function ArtifactCard({
             transition: 'opacity 150ms ease',
           }}
         >
+          <Download size={16} aria-hidden />
           {state.kind === 'sending'
             ? 'Sending…'
             : state.kind === 'sent'
@@ -220,29 +251,44 @@ export function ArtifactCard({
         )}
       </div>
 
-      {/* Privacy + 48h retention */}
-      <p
-        className="inline-flex items-start"
-        style={{
-          gap: '6px',
-          fontSize: '11px',
-          color: 'var(--color-text-tertiary)',
-          lineHeight: 1.55,
-          marginTop: '12px',
-          maxWidth: '560px',
-        }}
+      {/* Privacy promises — three inline icon+text pills replacing the
+          prose line. Each pill is the same secondary-bg + tertiary-text
+          treatment so the trio reads as a coherent set rather than
+          three competing claims. */}
+      <div
+        className="flex flex-wrap"
+        style={{ gap: '8px', marginTop: '14px' }}
       >
-        <ShieldCheck
-          size={12}
-          aria-hidden
-          style={{ marginTop: '2px', flexShrink: 0 }}
+        <PrivacyPill icon={<ShieldCheck size={12} aria-hidden />} label="Deleted in 48h" />
+        <PrivacyPill icon={<Lock size={12} aria-hidden />} label="Never shared" />
+        <PrivacyPill
+          icon={<CalendarCheck size={12} aria-hidden />}
+          label="30 Oct benchmark email"
         />
-        <span>
-          Your assessment is deleted from our database within 48 hours. The
-          PDF is your only persistent record. We don&apos;t share your email
-          with any payment provider.
-        </span>
-      </p>
+      </div>
     </section>
+  );
+}
+
+function PrivacyPill({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <span
+      className="inline-flex items-center"
+      style={{
+        gap: '6px',
+        padding: '4px 10px',
+        borderRadius: '999px',
+        background: 'var(--color-background-secondary)',
+        color: 'var(--color-text-tertiary)',
+        fontSize: '11px',
+        fontWeight: 500,
+        border: '0.5px solid var(--color-border-secondary)',
+      }}
+    >
+      <span aria-hidden style={{ display: 'inline-flex' }}>
+        {icon}
+      </span>
+      {label}
+    </span>
   );
 }
