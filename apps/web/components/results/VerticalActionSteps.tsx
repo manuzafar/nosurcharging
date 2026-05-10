@@ -459,55 +459,29 @@ function StepRow({
   );
 }
 
+// Compute the urgent/plan/monitor count text for the SectionHeader
+// meta in page.tsx. Exported so the page can render the meta without
+// duplicating the priority-counting logic.
+export function actionCountText(actions: ActionItem[]): string {
+  const urgent = actions.filter((a) => a.priority === 'urgent').length;
+  const plan = actions.filter((a) => a.priority === 'plan').length;
+  const monitor = actions.filter((a) => a.priority === 'monitor').length;
+  const parts: string[] = [];
+  if (urgent > 0) parts.push(`${urgent} urgent`);
+  if (plan > 0) parts.push(`${plan} plan`);
+  if (monitor > 0) parts.push(`${monitor} monitor`);
+  return parts.join(' · ');
+}
+
 // ── Public component ────────────────────────────────────────────
 
 export function VerticalActionSteps({ actions }: VerticalActionStepsProps) {
   const sorted = sortByTier(actions);
-  const urgentCount = actions.filter((a) => a.priority === 'urgent').length;
-  const planCount = actions.filter((a) => a.priority === 'plan').length;
-  const monitorCount = actions.filter((a) => a.priority === 'monitor').length;
 
-  const eyebrowId = 'action-list-eyebrow';
-
-  const countParts: string[] = [];
-  if (urgentCount > 0) countParts.push(`${urgentCount} urgent`);
-  if (planCount > 0) countParts.push(`${planCount} plan`);
-  if (monitorCount > 0) countParts.push(`${monitorCount} monitor`);
-  const countText = countParts.join(' · ');
-
+  // Eyebrow + count pill moved out to the page-level SectionHeader.
+  // The `actionCountText()` helper above feeds the SectionHeader meta.
   return (
-    <section aria-labelledby={eyebrowId} className="px-5 md:px-8">
-      <div
-        className="flex items-center justify-between flex-wrap"
-        style={{ gap: '10px', marginBottom: '20px' }}
-      >
-        <p
-          id={eyebrowId}
-          className="font-bold uppercase"
-          style={{
-            fontSize: '12px',
-            letterSpacing: '0.8px',
-            color: 'var(--color-text-primary)',
-          }}
-        >
-          What to do, in order
-        </p>
-        {countText && (
-          <span
-            className="font-medium"
-            style={{
-              fontSize: '10px',
-              fontWeight: 600,
-              color: 'var(--color-text-danger)',
-              background: 'var(--color-background-danger)',
-              padding: '3px 10px',
-              borderRadius: '100px',
-            }}
-          >
-            {countText}
-          </span>
-        )}
-      </div>
+    <section aria-label="Action plan steps" className="px-5 min-[501px]:px-8">
 
       <div style={{ position: 'relative' }}>
         {sorted.map((action, i) => (

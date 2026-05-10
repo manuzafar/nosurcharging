@@ -56,18 +56,7 @@ export function EscapeScenarioCard({
       className="py-5"
       style={{ borderBottom: '1px solid var(--color-border-secondary)' }}
     >
-      {/* Section eyebrow */}
-      <p
-        className="font-medium uppercase"
-        style={{
-          fontSize: '11px',
-          letterSpacing: '2.5px',
-          color: 'var(--color-text-tertiary)',
-          marginBottom: '12px',
-        }}
-      >
-        Is there a better option?
-      </p>
+      {/* Eyebrow ("Is there a better option?") moved out to page-level SectionHeader. */}
 
       {/* Intro */}
       <p

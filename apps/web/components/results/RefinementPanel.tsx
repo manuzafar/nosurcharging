@@ -308,51 +308,13 @@ export function RefinementPanel({
     });
   };
 
+  // Eyebrow + accuracy meta moved out to page-level SectionHeader.
+  // The intro line below stays — it's body copy, not a header.
   return (
     <section
-      className="px-5 md:px-8"
+      className="px-5 min-[501px]:px-8"
       aria-label="Refine your estimate"
     >
-      {/* Header — eyebrow + inline accuracy. The previous progress bar
-          is gone; accuracy lives as a small mono stat at top-right per
-          the M2 brief. */}
-      <div className="flex items-baseline justify-between gap-3" style={{ marginBottom: '8px' }}>
-        <p
-          className="font-bold uppercase"
-          style={{
-            fontSize: '12px',
-            letterSpacing: '0.8px',
-            color: 'var(--color-text-primary)',
-          }}
-        >
-          Refine your estimate
-        </p>
-        <span
-          className="inline-flex items-baseline shrink-0"
-          style={{ gap: '6px' }}
-        >
-          <span
-            className="font-mono"
-            style={{
-              fontSize: '14px',
-              fontWeight: 600,
-              color: 'var(--color-text-success)',
-            }}
-          >
-            {accuracy}%
-          </span>
-          <span
-            className="uppercase"
-            style={{
-              fontSize: '9px',
-              letterSpacing: '0.5px',
-              color: 'var(--color-text-tertiary)',
-            }}
-          >
-            Accuracy
-          </span>
-        </span>
-      </div>
       <p
         style={{
           fontSize: '13px',

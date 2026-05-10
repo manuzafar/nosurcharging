@@ -107,7 +107,11 @@ describe('EscapeScenarioCard', () => {
         pspName="Stripe"
       />,
     );
-    expect(screen.getByText(/Is there a better option\?/i)).toBeInTheDocument();
+    // Eyebrow ("Is there a better option?") moved to page-level
+    // SectionHeader in editorial M1 — confirm an interior body
+    // element renders instead so the "is the section visible" intent
+    // of this test is preserved.
+    expect(screen.getAllByText(/itemised plan/i).length).toBeGreaterThan(0);
   });
 
   it('visible for category 4', () => {
@@ -121,7 +125,11 @@ describe('EscapeScenarioCard', () => {
         pspName="Tyro"
       />,
     );
-    expect(screen.getByText(/Is there a better option\?/i)).toBeInTheDocument();
+    // Eyebrow ("Is there a better option?") moved to page-level
+    // SectionHeader in editorial M1 — confirm an interior body
+    // element renders instead so the "is the section visible" intent
+    // of this test is preserved.
+    expect(screen.getAllByText(/itemised plan/i).length).toBeGreaterThan(0);
   });
 
   it('costPlusOctNet calculated on mount (calculateMetrics called once)', () => {

@@ -14,15 +14,18 @@ const CTX: ActionContext = {
 };
 
 describe('VerticalActionSteps', () => {
-  it('renders the section eyebrow "What to do, in order"', () => {
-    render(<VerticalActionSteps actions={buildActions(2, 'Stripe', 'retail', CTX)} />);
-    expect(screen.getByText(/What to do, in order/i)).toBeInTheDocument();
-  });
-
-  it('renders the count pill summarising urgent/plan/monitor', () => {
-    render(<VerticalActionSteps actions={buildActions(4, 'Stripe', 'cafe', CTX)} />);
-    // Cat 4: 2 urgent · 1 plan · 1 monitor
-    expect(screen.getByText('2 urgent · 1 plan · 1 monitor')).toBeInTheDocument();
+  // The "What to do, in order" eyebrow + count pill moved out to the
+  // page-level SectionHeader in the editorial M1 overhaul. The
+  // `actionCountText()` helper exported alongside the component is
+  // unit-tested below.
+  it('actionCountText() summarises urgent/plan/monitor counts', async () => {
+    const { actionCountText } = await import(
+      '@/components/results/VerticalActionSteps'
+    );
+    const cat4 = buildActions(4, 'Stripe', 'cafe', CTX);
+    expect(actionCountText(cat4)).toBe('2 urgent · 1 plan · 1 monitor');
+    const cat1 = buildActions(1, 'Stripe', 'cafe', CTX);
+    expect(actionCountText(cat1)).toMatch(/plan|monitor/);
   });
 
   it('Cat 4 RAO action renders structured framework, not script text', () => {

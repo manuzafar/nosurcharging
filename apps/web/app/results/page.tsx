@@ -47,7 +47,11 @@ import { VerdictSection } from '@/components/results/VerdictSection';
 import { ContextParagraph } from '@/components/results/ContextParagraph';
 import { MetricCards } from '@/components/results/MetricCards';
 import { ProblemsBlock } from '@/components/results/ProblemsBlock';
-import { VerticalActionSteps } from '@/components/results/VerticalActionSteps';
+import { SectionHeader } from '@/components/results/SectionHeader';
+import {
+  VerticalActionSteps,
+  actionCountText,
+} from '@/components/results/VerticalActionSteps';
 import { ReformTimelineCompact } from '@/components/results/sections/ReformTimelineCompact';
 import { RefinementPanel } from '@/components/results/RefinementPanel';
 import { PassThroughSlider } from '@/components/results/PassThroughSlider';
@@ -220,6 +224,15 @@ function ResultsContent() {
     setOutputs(newOutputs);
   };
 
+  // Accuracy meta colour for the Refine SectionHeader. Three thresholds
+  // per the editorial brief: ≥65% reads as success, 40–64% warning,
+  // below 40% sits as a neutral tertiary stat.
+  const accuracyColor = (pct: number): string => {
+    if (pct >= 65) return 'var(--color-text-success)';
+    if (pct >= 40) return 'var(--color-text-warning)';
+    return 'var(--color-text-tertiary)';
+  };
+
   return (
     <div className="min-h-screen bg-paper">
       <ResultsTopBar
@@ -229,16 +242,17 @@ function ResultsContent() {
         assessmentId={assessmentId ?? undefined}
       />
 
-      <main className="mx-auto max-w-3xl pb-20 md:pb-12 pt-6 space-y-8">
+      <main className="mx-auto max-w-3xl pb-20 min-[501px]:pb-12 pt-6">
         {/* Hero — situation pill, eyebrow, P&L hero number, one-sentence
-            verdict. Nothing else competes (per brief §2). */}
+            verdict. Nothing else competes (per Ruthless Cut brief §2). */}
         <VerdictSection outputs={outputs} />
 
         {/* Context paragraph — 2–3 sentences in plain English. */}
         <ContextParagraph category={category} pspName={pspName} />
 
         {/* Numbers — 3-mode metric cards. */}
-        <div className="px-5 md:px-8">
+        <SectionHeader eyebrow="The numbers" />
+        <div className="px-5 min-[501px]:px-8">
           <MetricCards
             outputs={outputs}
             planType={planType}
@@ -246,22 +260,38 @@ function ResultsContent() {
           />
         </div>
 
-        {/* Why this is happening — Cat-conditional problem cards. */}
-        <div className="px-5 md:px-8">
-          <ProblemsBlock
-            category={category}
-            pspName={pspName}
-            surchargeRevenue={outputs.surchargeRevenue}
-            icSaving={outputs.icSaving}
-            octNet={outputs.octNet}
-            estimatedMSFRate={outputs.estimatedMSFRate}
-          />
-        </div>
+        {/* Why this is happening — Cat-conditional problem cards.
+            ProblemsBlock returns null for Cat 1 (nothing to flag); the
+            SectionHeader is suppressed so we don't leave a stub eyebrow
+            sitting above empty space. */}
+        {category !== 1 && (
+          <>
+            <SectionHeader eyebrow="Why this is happening" />
+            <div className="px-5 min-[501px]:px-8">
+              <ProblemsBlock
+                category={category}
+                pspName={pspName}
+                surchargeRevenue={outputs.surchargeRevenue}
+                icSaving={outputs.icSaving}
+                octNet={outputs.octNet}
+                estimatedMSFRate={outputs.estimatedMSFRate}
+              />
+            </div>
+          </>
+        )}
 
-        {/* Action plan — vertical numbered timeline. */}
+        {/* Action plan — vertical numbered timeline. The count meta
+            ("X urgent · Y plan · Z monitor") is computed by the helper
+            that VerticalActionSteps exports so the page doesn't
+            duplicate the priority-counting logic. */}
+        <SectionHeader
+          eyebrow="What to do, in order"
+          meta={actionCountText(actions) || undefined}
+        />
         <VerticalActionSteps actions={actions} />
 
         {/* Reform timeline — compact 5-row calendar. */}
+        <SectionHeader eyebrow="Reform timeline" />
         <ReformTimelineCompact />
 
         {/* Refine — only renders when resolvedInputs exist (skips
@@ -269,6 +299,11 @@ function ResultsContent() {
             EscapeScenarioCard internally gate to Cat 2 / 4. */}
         {resolvedInputs && (
           <>
+            <SectionHeader
+              eyebrow="Refine your estimate"
+              meta={`${accuracy}%`}
+              metaColor={accuracyColor(accuracy)}
+            />
             <RefinementPanel
               initialResult={outputs}
               resolutionTrace={resolutionTrace}
@@ -278,33 +313,44 @@ function ResultsContent() {
               onAccuracyChange={setAccuracy}
             />
 
-            <div className="px-5 md:px-8">
-              <PassThroughSlider
-                category={category}
-                passThrough={passThrough}
-                outputs={outputs}
-                originalRaw={originalRaw}
-                resolutionContext={resolutionContext}
-                pspName={pspName}
-                onOutputsChange={handleOutputsChange}
-              />
-            </div>
+            {(category === 2 || category === 4) && (
+              <>
+                <SectionHeader
+                  eyebrow="Model your outcome"
+                  meta={`~${Math.round(passThrough * 100)}% pass-through · centre estimate`}
+                />
+                <div className="px-5 min-[501px]:px-8">
+                  <PassThroughSlider
+                    category={category}
+                    passThrough={passThrough}
+                    outputs={outputs}
+                    originalRaw={originalRaw}
+                    resolutionContext={resolutionContext}
+                    pspName={pspName}
+                    onOutputsChange={handleOutputsChange}
+                  />
+                </div>
 
-            <div className="px-5 md:px-8">
-              <EscapeScenarioCard
-                category={category}
-                outputs={outputs}
-                passThrough={passThrough}
-                originalRaw={originalRaw}
-                resolutionContext={resolutionContext}
-                pspName={pspName}
-              />
-            </div>
+                <SectionHeader eyebrow="Is there a better option?" />
+                <div className="px-5 min-[501px]:px-8">
+                  <EscapeScenarioCard
+                    category={category}
+                    outputs={outputs}
+                    passThrough={passThrough}
+                    originalRaw={originalRaw}
+                    resolutionContext={resolutionContext}
+                    pspName={pspName}
+                  />
+                </div>
+              </>
+            )}
           </>
         )}
 
-        {/* Assumptions — expand-on-demand. */}
-        <div className="px-5 md:px-8">
+        {/* Assumptions — expand-on-demand. The toggle is its own header
+            (different semantics from a static eyebrow); intentionally
+            no SectionHeader wrapper. M3 of the editorial brief revisits. */}
+        <div className="px-5 min-[501px]:px-8 pt-9">
           <AssumptionsPanel
             outputs={outputs}
             passThrough={passThrough}
@@ -319,20 +365,23 @@ function ResultsContent() {
         </div>
 
         {/* Save the full report — pre-fills email captured at EmailGate. */}
+        <SectionHeader eyebrow="Save the full report" />
         <ArtifactCard
           assessmentId={assessmentId ?? ''}
           initialEmail={assessment.email}
         />
 
         {/* Quiet upsell — single-line $149 link replaces the dark card. */}
-        <QuietUpsell
-          category={category}
-          pspName={pspName}
-          plSwing={outputs.plSwing}
-          volumeTier={getVolumeTier(volume)}
-        />
+        <div className="pt-7">
+          <QuietUpsell
+            category={category}
+            pspName={pspName}
+            plSwing={outputs.plSwing}
+            volumeTier={getVolumeTier(volume)}
+          />
+        </div>
 
-        <div className="px-5 md:px-8">
+        <div className="px-5 min-[501px]:px-8 pt-9">
           <ResultsDisclaimer />
         </div>
       </main>

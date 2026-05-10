@@ -125,7 +125,8 @@ describe('PassThroughSlider', () => {
       />,
     );
     expect(screen.getByRole('slider')).toBeInTheDocument();
-    expect(screen.getByText(/Model your outcome/i)).toBeInTheDocument();
+    // Eyebrow ("Model your outcome") moved to page-level SectionHeader
+    // in editorial M1 — no longer rendered by this component.
   });
 
   it('visible for category 4', () => {

@@ -70,21 +70,9 @@ export function ArtifactCard({
     }
   };
 
+  // Eyebrow ("Save the full report") moved out to page-level SectionHeader.
   return (
-    <section className="px-5 md:px-8" aria-labelledby="artifact-card-eyebrow">
-      <p
-        id="artifact-card-eyebrow"
-        className="font-bold uppercase"
-        style={{
-          fontSize: '12px',
-          letterSpacing: '0.8px',
-          color: 'var(--color-text-primary)',
-          marginBottom: '8px',
-        }}
-      >
-        Save the full report
-      </p>
-
+    <section className="px-5 min-[501px]:px-8" aria-label="Save the full report">
       <p
         style={{
           fontSize: '13px',

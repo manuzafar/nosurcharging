@@ -94,23 +94,12 @@ function dotStyles(emphasis: TimelineRow['emphasis']): {
 export function ReformTimelineCompact() {
   const rows = buildRows(new Date());
 
+  // Eyebrow ("Reform timeline") moved out to page-level SectionHeader.
+  // Breakpoints follow CLAUDE.md's 500px convention.
   return (
-    <section className="px-5 md:px-8" aria-labelledby="reform-timeline-eyebrow">
-      <p
-        id="reform-timeline-eyebrow"
-        className="font-bold uppercase"
-        style={{
-          fontSize: '12px',
-          letterSpacing: '0.8px',
-          color: 'var(--color-text-primary)',
-          marginBottom: '16px',
-        }}
-      >
-        Reform timeline
-      </p>
-
+    <section className="px-5 min-[501px]:px-8" aria-label="Reform timeline">
       {/* Mobile / narrow — vertical stack of date rows */}
-      <ol className="md:hidden flex flex-col list-none p-0" style={{ gap: '14px' }}>
+      <ol className="min-[501px]:hidden flex flex-col list-none p-0" style={{ gap: '14px' }}>
         {rows.map((row, i) => {
           const styles = dotStyles(row.emphasis);
           return (
@@ -178,7 +167,7 @@ export function ReformTimelineCompact() {
 
       {/* Desktop — horizontal nodes connected by a hairline */}
       <ol
-        className="hidden md:flex list-none p-0 relative"
+        className="hidden min-[501px]:flex list-none p-0 relative"
         style={{ gap: '12px' }}
       >
         {/* Hairline connecting all dots */}
