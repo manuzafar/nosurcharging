@@ -186,9 +186,12 @@ function ResultRow({
       className="flex items-center justify-between"
       style={{
         padding: '14px 0',
+        // Lighter tertiary token per editorial M3 polish so the three
+        // result lines read as a deliberate result table, not as
+        // section dividers competing with SectionHeader rules.
         borderBottom: isLast
           ? 'none'
-          : '0.5px solid var(--color-border-secondary)',
+          : '0.5px solid var(--color-border-tertiary)',
       }}
     >
       <span
@@ -212,3 +215,4 @@ function ResultRow({
     </div>
   );
 }
+

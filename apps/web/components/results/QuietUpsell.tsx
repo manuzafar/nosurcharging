@@ -1,12 +1,12 @@
 'use client';
 
-// QuietUpsell — Section 9 of the new linear results page.
+// QuietUpsell — final-line invitation at the bottom of the results page.
 //
-// Per docs/design/RESULTS_RUTHLESS_CUT_BRIEF.md §9: a single-line link
-// to the Reform Ready Report at $149. Replaces the dark $149 card from
-// PR #38 — the brief calls out that the centre-page upsell has done its
-// work in the TensionSection / ProblemsBlock framing already, and this
-// final-line mention is the appropriate close.
+// Per editorial M3 polish: the $149 Reform Ready Report mention is gone
+// (the brand isn't ready to sell that SKU yet, and centre-page wedge
+// upsells are handled in the ProblemsBlock framing already). What stays
+// is a single quiet line offering a 30-minute call. The merchant has
+// already absorbed the page; this is the soft close.
 
 import { Analytics } from '@/lib/analytics';
 
@@ -27,7 +27,7 @@ export function QuietUpsell({
 
   const handleClick = () => {
     Analytics.ctaClicked({
-      cta_type: 'reform_ready_report',
+      cta_type: 'consulting_call',
       cta_location: 'quiet_upsell',
       category,
       pl_swing: plSwing,
@@ -38,34 +38,29 @@ export function QuietUpsell({
 
   return (
     <p
-      className="px-5 md:px-8"
+      className="px-5 min-[501px]:px-8"
       style={{
-        fontSize: '12px',
+        fontSize: '13px',
         color: 'var(--color-text-tertiary)',
         lineHeight: 1.7,
       }}
     >
-      Want your real numbers, not market averages? The{' '}
+      Want a second opinion on your specific numbers?{' '}
       <a
         href={ctaUrl}
         target="_blank"
         rel="noopener noreferrer"
         onClick={handleClick}
-        className="hover:opacity-80 underline"
+        className="hover:opacity-80"
         style={{
           color: 'var(--color-accent)',
-          fontWeight: 600,
-          textUnderlineOffset: '2px',
+          fontWeight: 500,
+          textDecoration: 'underline',
+          textUnderlineOffset: '3px',
         }}
       >
-        Reform Ready Report
-      </a>{' '}
-      analyses your statements and builds the negotiation script with your
-      figures —{' '}
-      <span className="font-mono" style={{ fontWeight: 600 }}>
-        $149
-      </span>
-      .
+        Book a 30-min call →
+      </a>
     </p>
   );
 }

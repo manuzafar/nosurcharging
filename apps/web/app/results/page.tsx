@@ -347,10 +347,12 @@ function ResultsContent() {
           </>
         )}
 
-        {/* Assumptions — expand-on-demand. The toggle is its own header
-            (different semantics from a static eyebrow); intentionally
-            no SectionHeader wrapper. M3 of the editorial brief revisits. */}
-        <div className="px-5 min-[501px]:px-8 pt-9">
+        {/* Assumptions — expand-on-demand. M3 polish: a real
+            SectionHeader sits above the toggle for visual consistency
+            with every other editorial section. The toggle inside the
+            panel is now a plain inline link, no top hairline of its own. */}
+        <SectionHeader eyebrow="How we calculated this" />
+        <div className="px-5 min-[501px]:px-8">
           <AssumptionsPanel
             outputs={outputs}
             passThrough={passThrough}

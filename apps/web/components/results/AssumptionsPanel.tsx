@@ -135,7 +135,6 @@ export function AssumptionsPanel({
             background: 'none',
             border: 'none',
             padding: '14px 0 0',
-            borderTop: '0.5px solid var(--color-border-secondary)',
             fontSize: '12px',
           }}
         >
@@ -296,7 +295,6 @@ export function AssumptionsPanel({
           background: 'none',
           border: 'none',
           padding: '14px 0 0',
-          borderTop: '0.5px solid var(--color-border-secondary)',
           fontSize: '12px',
         }}
       >

@@ -335,7 +335,6 @@ export function RefinementPanel({
       <FieldCard
         label="Average transaction value"
         badge={avtBadge}
-        chip={avtChip}
         delta={avtDelta}
         hint={avtHint}
       >
@@ -368,7 +367,6 @@ export function RefinementPanel({
         <FieldCard
           label="Credit interchange rate"
           badge={creditBadge}
-          chip={creditChip}
           delta={creditDelta}
           hint="Small merchants may pay up to 0.80%; enterprise merchants closer to 0.30%. Find it on the interchange line of your statement."
         >
@@ -401,7 +399,6 @@ export function RefinementPanel({
       <FieldCard
         label={`Corporate / business card share${isB2B ? ' (likely relevant)' : ' (optional)'}`}
         badge={commercialBadge}
-        chip={<ImpactChip label="Corporate IC unchanged" tone="neutral" />}
         delta={commercialDelta}
         hint="Corporate card interchange is UNCHANGED by the reform — raising this share lowers your projected saving."
       >
@@ -460,7 +457,6 @@ export function RefinementPanel({
           <FieldCard
             label="Monthly debit card transactions"
             badge={getBadge('__monthlyDebitTxns', monthlyTxnsEdited, resolutionTrace)}
-            chip={<ImpactChip label="Alternative to AVT" tone="neutral" />}
             delta={monthlyTxnsDelta}
             hint="If you'd rather count transactions than guess an average, enter your monthly Visa + Mastercard + eftpos count."
           >
@@ -493,7 +489,6 @@ export function RefinementPanel({
             <FieldCard
               label="Minimum monthly fee"
               badge={minFeeBadge}
-              chip={<ImpactChip label="Floors your annual MSF" tone="neutral" />}
               delta={{ label: '', positive: true }}
               hint="Many PSP contracts include a minimum monthly charge. Check your last few statements for a line like 'Minimum monthly fee'."
             >
@@ -537,46 +532,78 @@ export function RefinementPanel({
 interface FieldCardProps {
   label: string;
   badge: { label: string; emerald: boolean };
-  chip: React.ReactNode;
+  // ImpactChip dropped per editorial M3 polish — one chip per row max.
+  // The source chip on the right tells the merchant where the value
+  // came from; the impact chip ("Critical", "Tracks IC saving", etc.)
+  // was redundant with the field's hint copy.
   delta: { label: string; positive: boolean };
   hint: string;
   children: React.ReactNode;
 }
 
-function FieldCard({ label, badge, chip, delta, hint, children }: FieldCardProps) {
-  // Settings-list row: hairline above, generous padding, no enclosing
-  // box. The chip + delta sit on the input row to keep vertical density
-  // tight on mobile.
+function FieldCard({ label, badge, delta, hint, children }: FieldCardProps) {
+  // Settings-panel row per editorial M3 polish: one row per field,
+  // label + hint subline on the left; source chip + value (input) on
+  // the right. ImpactChip dropped — only the source chip survives.
+  // Delta sits as a small mono note next to the value when present.
   return (
     <div
+      className="flex items-start justify-between"
       style={{
-        borderTop: '0.5px solid var(--color-border-secondary)',
-        padding: '14px 0',
+        gap: '16px',
+        borderTop: '0.5px solid var(--color-border-tertiary)',
+        padding: '16px 0',
       }}
     >
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-caption font-medium" style={{ color: 'var(--color-text-primary)' }}>
+      {/* Left column — label (14px / weight 500) + hint subline */}
+      <div className="flex-1" style={{ minWidth: 0 }}>
+        <p
+          style={{
+            fontSize: '14px',
+            fontWeight: 500,
+            color: 'var(--color-text-primary)',
+            margin: 0,
+            lineHeight: 1.4,
+          }}
+        >
           {label}
         </p>
-        <Badge {...badge} />
+        <p
+          style={{
+            fontSize: '12px',
+            color: 'var(--color-text-tertiary)',
+            marginTop: '3px',
+            marginBottom: 0,
+            lineHeight: 1.5,
+          }}
+        >
+          {hint}
+        </p>
       </div>
-      <div className="mt-1">{chip}</div>
-      <div className="mt-2 flex flex-wrap items-center gap-3">
-        {children}
+
+      {/* Right column — source chip + value (input) + delta beneath */}
+      <div
+        className="shrink-0 flex flex-col items-end"
+        style={{ gap: '6px' }}
+      >
+        <div className="flex items-center" style={{ gap: '8px' }}>
+          <Badge {...badge} />
+          {children}
+        </div>
         {delta.label && (
           <span
-            className="font-mono text-caption"
+            className="font-mono"
             style={{
-              color: delta.positive ? 'var(--color-text-success)' : 'var(--color-text-danger)',
+              fontSize: '11px',
+              color: delta.positive
+                ? 'var(--color-text-success)'
+                : 'var(--color-text-danger)',
             }}
           >
             {delta.label}
           </span>
         )}
       </div>
-      <p className="mt-2 text-micro" style={{ color: 'var(--color-text-tertiary)' }}>
-        {hint}
-      </p>
     </div>
   );
 }

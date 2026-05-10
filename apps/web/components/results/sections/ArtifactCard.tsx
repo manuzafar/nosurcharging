@@ -50,7 +50,20 @@ export function ArtifactCard({
   const valid = EMAIL_PATTERN.test(trimmed);
 
   const handleSend = async () => {
-    if (!valid) return;
+    // The button stays visually active even when the email is empty
+    // / invalid; validation surfaces inline below so the merchant sees
+    // why nothing happened. If we just `return` silently the click
+    // looks broken.
+    if (!valid) {
+      setEditing(true);
+      setState({
+        kind: 'error',
+        message: trimmed
+          ? 'That email address looks off. Check for typos.'
+          : 'Add your email so we know where to send it.',
+      });
+      return;
+    }
     setState({ kind: 'sending' });
     const result = await sendReportEmail({
       assessmentId,
@@ -88,13 +101,14 @@ export function ArtifactCard({
 
       <div
         className="flex flex-col"
+        // Width parity with other editorial sections — the card now
+        // spans the full content column instead of capping at 480px.
         style={{
-          gap: '10px',
+          gap: '12px',
           background: 'var(--color-background-primary)',
           border: '0.5px solid var(--color-border-secondary)',
           borderRadius: '12px',
-          padding: '14px 16px',
-          maxWidth: '480px',
+          padding: '16px 18px',
         }}
       >
         {/* Email row */}
@@ -168,15 +182,20 @@ export function ArtifactCard({
           </div>
         )}
 
-        {/* Send button */}
+        {/* Send button — always renders at full accent. Validation
+            still gates the actual send (handleSend exits early if the
+            email is invalid + the error row surfaces a message), but
+            the button visual stays confidently clickable so the
+            section reads as a primary action even when the prefill is
+            empty. */}
         <button
           type="button"
           onClick={handleSend}
-          disabled={!valid || state.kind === 'sending'}
-          className="font-bold cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 hover:opacity-90"
+          aria-disabled={state.kind === 'sending'}
+          className="font-bold cursor-pointer self-start hover:opacity-90"
           style={{
-            fontSize: '13px',
-            padding: '10px 16px',
+            fontSize: '14px',
+            padding: '11px 22px',
             background:
               state.kind === 'sent'
                 ? 'var(--color-text-success)'
