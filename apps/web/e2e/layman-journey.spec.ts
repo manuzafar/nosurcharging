@@ -33,9 +33,13 @@ test.describe('Layman journey → Category 2', () => {
 
     // Results page assertions — scoped to <main> to avoid strict mode
     // violation (TopBar in <header> also renders "Situation N").
+    // The hero eyebrow is the new stable second assertion (the legacy
+    // "per year from 1 October" subtext was trimmed in the M2 cut).
     const main = page.locator('main');
     await expect(main.getByText('Situation 2')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText(/per year from 1 October/)).toBeVisible();
+    await expect(
+      main.getByText(/Estimated annual P&L impact from October 2026/i),
+    ).toBeVisible();
   });
 
   test('slider updates P&L in real time', async ({ page }) => {
