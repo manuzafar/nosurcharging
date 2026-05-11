@@ -190,11 +190,12 @@ export function ProblemsBlock({
               <>
                 From 1 October, the surcharge mechanism that covers your card
                 costs becomes illegal on Visa, Mastercard, and eftpos.{' '}
-                {pspName} will move you to a standard flat-rate plan and
-                you&apos;ll pay for card acceptance from your own margin for
-                the first time — approximately {formatCurrency(octNet ?? 0)}
-                /year at the {((estimatedMSFRate ?? 0.014) * 100).toFixed(1)}%
-                market estimate.
+                {pspName} will likely need to move you to a standard
+                flat-rate plan, and you&apos;ll pay for card acceptance from
+                your own margin for the first time — approximately{' '}
+                {formatCurrency(octNet ?? 0)}/year at the{' '}
+                {((estimatedMSFRate ?? 0.014) * 100).toFixed(1)}% market
+                estimate. Confirm the transfer plan with {pspName} this week.
               </>
             }
           />

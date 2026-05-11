@@ -243,6 +243,79 @@ describe('buildActions', () => {
     });
   });
 
+  // ── PSP-aware behaviour (M2 — credibility brief) ────────────────
+  // Existing fixtures use Stripe at $500K and Square at the test
+  // context — both pass their respective itemised gates, so the action
+  // counts above remain stable. The cases below cover the flips.
+
+  describe('Cat 2 — PSP-aware itemised gating', () => {
+    it('Square (offersItemisedPlan: no) replaces the quote ask with a "consider switching" action', () => {
+      const actions = buildActions(2, 'Square', 'retail', CTX);
+      const planActions = actions.filter((a) => a.priority === 'plan');
+      // Should contain exactly one plan action — the switching variant.
+      expect(planActions).toHaveLength(1);
+      expect(planActions[0]!.text).toContain('does not offer itemised pricing');
+      // The "ask Square for a quote" copy must NOT appear.
+      const flat = actions.flatMap((a) => [a.text, a.script ?? '']).join(' ');
+      expect(flat).not.toMatch(/Ask Square for a quote on their itemised/i);
+    });
+
+    it('eWAY (offersItemisedPlan: gateway_only) replaces the quote ask with the "ask which acquirer" action', () => {
+      const actions = buildActions(2, 'eWAY', 'retail', CTX);
+      const planActions = actions.filter((a) => a.priority === 'plan');
+      expect(planActions).toHaveLength(1);
+      expect(planActions[0]!.text).toContain('which acquirer settles');
+    });
+
+    it('Stripe below the volume threshold suppresses the itemised quote ask entirely', () => {
+      // Stripe's monthly floor is $20,833 → $250K annual. $100K annual is below.
+      const lowVolumeCtx: ActionContext = { ...CTX, volume: 100_000 };
+      const actions = buildActions(2, 'Stripe', 'retail', lowVolumeCtx);
+      // Cat 2 normally returns 3 actions (urgent, plan, monitor). With the
+      // itemised quote suppressed there is no plan-tier action left.
+      expect(actions.filter((a) => a.priority === 'plan')).toHaveLength(0);
+      expect(actions).toHaveLength(2);
+    });
+
+    it('Stripe at $400K (above threshold) keeps the itemised quote ask verbatim', () => {
+      const aboveVolumeCtx: ActionContext = { ...CTX, volume: 400_000 };
+      const actions = buildActions(2, 'Stripe', 'retail', aboveVolumeCtx);
+      const planActions = actions.filter((a) => a.priority === 'plan');
+      expect(planActions).toHaveLength(1);
+      expect(planActions[0]!.text).toMatch(/Ask Stripe for a quote on their itemised pricing/i);
+    });
+  });
+
+  describe('Cat 1/2/4 — MSF publication action gates on RBA $10B threshold', () => {
+    it('non-publishing PSPs (Square) get the RBA-published-acquirer-benchmarks variant', () => {
+      const actions = buildActions(2, 'Square', 'retail', CTX);
+      const monitor = actions.find((a) => a.priority === 'monitor');
+      expect(monitor).toBeDefined();
+      expect(monitor!.text).toMatch(/RBA-published acquirer rate benchmarks/i);
+      expect(monitor!.script).toContain('$10 billion');
+    });
+
+    it('publishing PSPs (CommBank) keep the direct "published rate benchmarks" copy', () => {
+      const actions = buildActions(2, 'CommBank', 'retail', CTX);
+      const monitor = actions.find((a) => a.priority === 'monitor');
+      expect(monitor).toBeDefined();
+      expect(monitor!.text).toMatch(/Check the published rate benchmarks on 30 October/i);
+      expect(monitor!.script).toContain('CommBank');
+    });
+  });
+
+  describe('Cat 3 — softened ACCC penalty language', () => {
+    it('"why" frames enforcement as scheme rules + acquirer agreement + consumer law (not direct ACCC penalty)', () => {
+      const actions = buildActions(3, 'Tyro', 'cafe', CTX);
+      const verify = actions.find((a) => a.text.match(/Verify surcharging has stopped/i));
+      expect(verify).toBeDefined();
+      expect(verify!.why).toMatch(/scheme rules and your acquirer agreement/i);
+      expect(verify!.why).toMatch(/potential ACCC action under existing consumer law/i);
+      // The bare-ACCC-penalty phrasing must not reappear.
+      expect(verify!.why).not.toMatch(/exposes you to ACCC penalties\./);
+    });
+  });
+
   describe('banned phrases', () => {
     it('no action across any category contains "your PSP"', () => {
       for (const cat of [1, 2, 3, 4, 5] as const) {
