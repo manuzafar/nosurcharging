@@ -298,13 +298,19 @@ export default function AssessmentPage() {
           Step 3 = 600px (Yes/No + conditional fields). */}
       {phase !== 'reveal' && phase !== 'error' && phase !== 'disclaimer' && phase !== 'email_gate' && (
         <div
+          // Centring band: full svh on mobile (iOS keyboard handling),
+          // capped at 720px on desktop (md+) so short-content steps
+          // (Step 1 idle, Step 3 idle, Step 4) sit in the upper portion
+          // of the viewport rather than dead-centre with large gaps
+          // above and below. Content taller than 720px (Step 2 full, or
+          // Step 3 with Yes expanded) naturally pushes past the cap.
           className={
             phase === 'step1' || phase === 'step4'
-              ? 'mx-auto max-w-assessment px-5 flex min-h-[calc(100svh-52px)] flex-col py-12'
+              ? 'mx-auto max-w-assessment px-5 flex min-h-[calc(100svh-52px)] md:min-h-[720px] flex-col py-12'
               : phase === 'step2'
-                ? 'mx-auto max-w-[720px] px-5 flex min-h-[calc(100svh-52px)] flex-col py-12'
+                ? 'mx-auto max-w-[720px] px-5 flex min-h-[calc(100svh-52px)] md:min-h-[720px] flex-col py-12'
                 : phase === 'step3'
-                  ? 'mx-auto max-w-[600px] px-5 flex min-h-[calc(100svh-52px)] flex-col py-12'
+                  ? 'mx-auto max-w-[600px] px-5 flex min-h-[calc(100svh-52px)] md:min-h-[720px] flex-col py-12'
                   : 'mx-auto max-w-assessment px-5 py-8'
           }
           // `safe center` falls back to flex-start when the content
