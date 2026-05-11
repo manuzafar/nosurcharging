@@ -9,7 +9,8 @@ test.describe('Amex carve-out', () => {
     await page.getByRole('button', { name: /start my assessment/i }).click();
 
     // Step 1
-    await page.getByRole('textbox').fill('1000000');
+    // Step 1's input is click-to-edit; use the $1M preset chip.
+    await page.getByRole('button', { name: '$1M', exact: true }).click();
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 2

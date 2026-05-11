@@ -261,11 +261,15 @@ export default function AssessmentPage() {
       )}
 
       {/* Disclaimer phase — wrapped in the centred-shell pattern per
-          the editorial rollout. DisclaimerConsent's own padding stays,
-          but the outer flex centres the whole block within the
-          viewport on tall screens. dvh handles mobile keyboard. */}
+          the editorial rollout. `safe center` keeps the centring on
+          tall viewports but top-anchors when content is taller than
+          the available height — without this the progress bar /
+          eyebrow scroll above the top edge on short mobile screens. */}
       {phase === 'disclaimer' && (
-        <div className="flex min-h-[calc(100dvh-56px)] flex-col justify-center transition-opacity duration-200 ease-out">
+        <div
+          className="flex min-h-[calc(100dvh-56px)] flex-col transition-opacity duration-200 ease-out"
+          style={{ justifyContent: 'safe center' }}
+        >
           <DisclaimerConsent
             onAccept={() => {
               Analytics.assessmentStarted();
@@ -285,8 +289,17 @@ export default function AssessmentPage() {
         <div
           className={
             phase === 'step1' || phase === 'step4'
-              ? 'mx-auto max-w-assessment px-5 flex min-h-[calc(100dvh-56px)] flex-col justify-center py-12'
+              ? 'mx-auto max-w-assessment px-5 flex min-h-[calc(100dvh-56px)] flex-col py-12'
               : 'mx-auto max-w-assessment px-5 py-8'
+          }
+          // `safe center` falls back to flex-start when the content
+          // is taller than the container so the progress bar stays
+          // reachable on short mobile viewports. Plain `center` would
+          // push the top of the content above the viewport edge.
+          style={
+            phase === 'step1' || phase === 'step4'
+              ? { justifyContent: 'safe center' }
+              : undefined
           }
         >
           {/* Progress bar + step counter */}

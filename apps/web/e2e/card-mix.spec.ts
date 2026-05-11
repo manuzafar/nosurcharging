@@ -9,7 +9,8 @@ test.describe('Card mix → confidence badge', () => {
     await page.getByRole('button', { name: /start my assessment/i }).click();
 
     // Step 1
-    await page.getByRole('textbox').fill('2000000');
+    // Step 1's input is click-to-edit; use the $2M preset chip.
+    await page.getByRole('button', { name: '$2M', exact: true }).click();
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 2 — open card mix panel
