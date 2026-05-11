@@ -23,7 +23,9 @@ describe('VerticalActionSteps', () => {
       '@/components/results/VerticalActionSteps'
     );
     const cat4 = buildActions(4, 'Stripe', 'cafe', CTX);
-    expect(actionCountText(cat4)).toBe('2 urgent · 1 plan · 1 monitor');
+    // Cat 4 + cafe: 2 urgent base + 1 plan (itemised) + 2 plan NPP
+    // (Bucket 2 + Bucket 3) + 1 monitor = 2 / 3 / 1.
+    expect(actionCountText(cat4)).toBe('2 urgent · 3 plan · 1 monitor');
     const cat1 = buildActions(1, 'Stripe', 'cafe', CTX);
     expect(actionCountText(cat1)).toMatch(/plan|monitor/);
   });
