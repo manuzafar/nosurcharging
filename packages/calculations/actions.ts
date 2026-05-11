@@ -24,6 +24,7 @@
 
 import type { ActionContext, ActionItem, RaoFramework } from './types';
 import { PSP_PUBLISHED_RATES, type PspPublishedRate } from './constants/psp-rates';
+import { AU_PAYTO_SUITABLE_INDUSTRIES } from './constants/au';
 
 // ── Formatting helpers ───────────────────────────────────────────
 // Calc layer is i18n-naive — AU formatting only in Phase 1.
@@ -188,6 +189,33 @@ function buildRaoFramework(args: {
   };
 }
 
+// PayID/PayTo action (May 2026 credibility brief Section 4). Only
+// injected for Cat 1-4 where the industry matches
+// AU_PAYTO_SUITABLE_INDUSTRIES — Cat 5 has higher-priority problems.
+// Positioned after the "ask PSP" actions but before the "monitor"
+// tier so it visually sits in the `plan` block.
+function buildPayToAction(industry: string): ActionItem | null {
+  if (!AU_PAYTO_SUITABLE_INDUSTRIES.has(industry)) return null;
+  return {
+    priority: 'plan',
+    timeAnchor: 'BEFORE 1 OCTOBER',
+    text: `Evaluate PayID/PayTo for your repeat customers`,
+    script: `PayTo is the New Payments Platform's account-to-account rail — customers approve a recurring payment from their bank account, and you collect with a flat cents-per-transaction fee rather than a percentage of value. For repeat customers (subscriptions, regulars, recurring bookings), it can structurally remove card scheme costs on that revenue stream. Live providers in May 2026 include Azupay, Monoova, Volt, Zai, pay.com.au, and Stripe AU. Per-transaction pricing is volume-tiered — request a quote from one or two providers.`,
+    why: `For your industry, a meaningful share of revenue likely comes from repeat customers. PayTo doesn't replace cards — it sits alongside them, and the cost structure (fixed cents instead of percentage) makes it the cheapest rail for higher-value or recurring transactions.`,
+  };
+}
+
+// Splices an action into the existing list immediately before the
+// first `monitor`-priority action — keeps the visual ordering as
+// urgent → plan → plan (PayTo) → monitor without depending on
+// downstream sort logic.
+function injectBeforeMonitor(actions: ActionItem[], item: ActionItem | null): ActionItem[] {
+  if (!item) return actions;
+  const firstMonitor = actions.findIndex((a) => a.priority === 'monitor');
+  if (firstMonitor === -1) return [...actions, item];
+  return [...actions.slice(0, firstMonitor), item, ...actions.slice(firstMonitor)];
+}
+
 // ── Public entry point ───────────────────────────────────────────
 
 export function buildActions(
@@ -197,20 +225,18 @@ export function buildActions(
   ctx: ActionContext,
   planType?: 'flat' | 'costplus' | 'blended' | 'zero_cost',
 ): ActionItem[] {
-  // industry reserved for Phase 2 industry-specific copy
-  void industry;
-
   const isBlended = planType === 'blended';
+  const payToAction = category === 5 ? null : buildPayToAction(industry);
 
   switch (category) {
     case 1:
-      return buildCat1Actions(psp);
+      return injectBeforeMonitor(buildCat1Actions(psp), payToAction);
     case 2:
-      return buildCat2Actions(psp, ctx, isBlended);
+      return injectBeforeMonitor(buildCat2Actions(psp, ctx, isBlended), payToAction);
     case 3:
-      return buildCat3Actions(psp, ctx);
+      return injectBeforeMonitor(buildCat3Actions(psp, ctx), payToAction);
     case 4:
-      return buildCat4Actions(psp, ctx, isBlended);
+      return injectBeforeMonitor(buildCat4Actions(psp, ctx, isBlended), payToAction);
     case 5:
       return buildCat5Actions(psp);
   }

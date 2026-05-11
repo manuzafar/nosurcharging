@@ -138,7 +138,10 @@ describe('buildActions', () => {
   });
 
   describe('Category 4 (flat rate, surcharging)', () => {
-    const actions = buildActions(4, 'Stripe', 'hospitality', CTX);
+    // 'retail' chosen so PayTo injection (introduced M3) doesn't expand
+    // the action list. PayTo's industry-conditional injection is
+    // covered by its own dedicated test block below.
+    const actions = buildActions(4, 'Stripe', 'retail', CTX);
 
     it('returns 4 actions per ux-spec §3.4', () => {
       expect(actions).toHaveLength(4);
@@ -301,6 +304,41 @@ describe('buildActions', () => {
       expect(monitor).toBeDefined();
       expect(monitor!.text).toMatch(/Check the published rate benchmarks on 30 October/i);
       expect(monitor!.script).toContain('CommBank');
+    });
+  });
+
+  describe('PayID/PayTo action injection (M3 — credibility brief Section 4)', () => {
+    it('Cat 2 + hospitality industry gets the PayTo action in the plan tier', () => {
+      const actions = buildActions(2, 'Stripe', 'hospitality', CTX);
+      const payTo = actions.find((a) => a.text.includes('PayID/PayTo'));
+      expect(payTo).toBeDefined();
+      expect(payTo!.priority).toBe('plan');
+      expect(payTo!.script).toContain('Azupay');
+    });
+
+    it('Cat 2 + retail does NOT get the PayTo action (walk-in heavy)', () => {
+      const actions = buildActions(2, 'Stripe', 'retail', CTX);
+      expect(actions.find((a) => a.text.includes('PayID/PayTo'))).toBeUndefined();
+    });
+
+    it('Cat 4 + online retail gets the PayTo action', () => {
+      const actions = buildActions(4, 'Stripe', 'online', CTX);
+      const payTo = actions.find((a) => a.text.includes('PayID/PayTo'));
+      expect(payTo).toBeDefined();
+      expect(payTo!.priority).toBe('plan');
+    });
+
+    it('Cat 5 never gets the PayTo action (higher-priority problems)', () => {
+      const actions = buildActions(5, 'Square', 'hospitality', CTX, 'zero_cost');
+      expect(actions.find((a) => a.text.includes('PayID/PayTo'))).toBeUndefined();
+    });
+
+    it('PayTo action lands BEFORE the monitor tier (so it sits in the plan block)', () => {
+      const actions = buildActions(2, 'Stripe', 'hospitality', CTX);
+      const payToIdx = actions.findIndex((a) => a.text.includes('PayID/PayTo'));
+      const firstMonitorIdx = actions.findIndex((a) => a.priority === 'monitor');
+      expect(payToIdx).toBeGreaterThanOrEqual(0);
+      expect(payToIdx).toBeLessThan(firstMonitorIdx);
     });
   });
 
