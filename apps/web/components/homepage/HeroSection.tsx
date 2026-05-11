@@ -56,12 +56,17 @@ export function HeroSection() {
     // Editorial polish: hero block centres within ~70vh of the first
     // viewport so it reads as a deliberate page composition rather
     // than a header that slips above the fold. TrustBar stays visible
-    // below on tall viewports; on short viewports the natural padding
-    // keeps the hero from squeezing into nothing.
+    // below on tall viewports.
+    //
+    // `justify-content: safe center` keeps the centring on tall
+    // screens but top-anchors when the hero is taller than the
+    // available height — otherwise the eyebrow + headline get clipped
+    // above the viewport on short mobile screens.
     <section
-      className="flex flex-col items-center justify-center border-b border-rule bg-paper px-5 text-center"
+      className="flex flex-col items-center border-b border-rule bg-paper px-5 text-center"
       style={{
         minHeight: '70vh',
+        justifyContent: 'safe center',
         paddingTop: '72px',
         paddingBottom: '60px',
       }}
