@@ -48,6 +48,9 @@ const BASE_OUTPUTS: AssessmentOutputs = {
   rangeNote: '',
   todayScheme: 2100.0,
   oct2026Scheme: 2100.0,
+  merchantEffectiveRate: 0.014,
+  postReformIcRate: 0.005,
+  weightedSchemeRate: 0.00105,
   confidence: 'low',
   period: 'pre_reform',
 };

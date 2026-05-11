@@ -152,6 +152,39 @@ export interface AssessmentOutputs {
   // Echoed from ResolvedAssessmentInputs.estimatedMSFRate so MetricCards
   // can render it without re-reading the trace. Optional for Cat 1-4.
   estimatedMSFRate?: number;
+  // ── Additive fields for the May 2026 benchmark sentence ────────
+  // Optional only so existing test fixtures don't need to backfill
+  // them; the production engine always sets all three. These are
+  // pure intermediate values the engine already derives; exposing
+  // them lets buildBenchmarkComparison() consume them without
+  // re-deriving from constants. No math changes.
+  // Merchant's effective MSF as a proportion of volume — for flat /
+  // blended this is annualMSF/volume (== effectiveMSFRate); for
+  // cost-plus this is grossCOA/volume; Cat 5 falls back to the
+  // resolved post-reform estimatedMSFRate.
+  merchantEffectiveRate?: number;
+  // Post-reform wholesale interchange weighted by the merchant's
+  // card mix — debit cents/txn × txns + credit % × credit share — as
+  // a proportion of volume.
+  postReformIcRate?: number;
+  // Scheme fees as a proportion of volume (constant pre/post — the
+  // RBA reform doesn't touch scheme fees).
+  weightedSchemeRate?: number;
+}
+
+// ── Benchmark comparison (May 2026 credibility brief) ────────────
+
+export interface BenchmarkComparison {
+  /** Merchant's reported (or default-resolved) MSF rate as a proportion. */
+  merchantRate: number;
+  /** PSP's published list rate as a proportion. `null` when standardMsfIsListRate === false. */
+  pspListRate: number | null;
+  /** Post-reform wholesale floor for this merchant's card mix (proportion). */
+  postReformFloor: number;
+  /** Comparison classification — drives copy. */
+  comparison: 'above_list' | 'at_list' | 'below_list' | 'no_list_anchor';
+  /** Potential annual saving (AUD) closing the relevant gap. */
+  potentialAnnualSaving: number;
 }
 
 // ── Strategic rate detection ─────────────────────────────────────

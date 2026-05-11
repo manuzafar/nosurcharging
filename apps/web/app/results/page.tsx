@@ -59,6 +59,8 @@ import { ReformTimelineCompact } from '@/components/results/sections/ReformTimel
 import { RefinementPanel } from '@/components/results/RefinementPanel';
 import { PassThroughSlider } from '@/components/results/PassThroughSlider';
 import { EscapeScenarioCard } from '@/components/results/EscapeScenarioCard';
+import { MarketBenchmarkSentence } from '@/components/results/MarketBenchmarkSentence';
+import { buildBenchmarkComparison } from '@nosurcharging/calculations/benchmark';
 import { AssumptionsPanel } from '@/components/results/AssumptionsPanel';
 import { ArtifactCard } from '@/components/results/sections/ArtifactCard';
 import { QuietUpsell } from '@/components/results/QuietUpsell';
@@ -276,6 +278,21 @@ function ResultsContent() {
                 estimatedMSFRate={outputs.estimatedMSFRate}
               />
             </div>
+          </>
+        )}
+
+        {/* Market benchmark sentence — pins merchant rate, PSP list
+            rate, and the post-reform wholesale floor together. Cat 5
+            (zero-cost) suppressed — they don't have a meaningful
+            current rate to benchmark. Requires resolvedInputs for the
+            merchant's reported figures. */}
+        {category !== 5 && resolvedInputs && (
+          <>
+            <SectionHeader eyebrow="Market reference" />
+            <MarketBenchmarkSentence
+              comparison={buildBenchmarkComparison(resolvedInputs, outputs, pspName)}
+              pspName={pspName}
+            />
           </>
         )}
 

@@ -98,6 +98,19 @@ export const AU_AVG_TXN_BY_INDUSTRY: Record<string, number> = {
   other: 65,
 };
 
+// ── PayID/PayTo industry suitability (May 2026 credibility brief) ─
+// Industries where PayTo (NPP account-to-account) offers a meaningful
+// per-transaction cents pricing alternative to card schemes —
+// subscription / recurring / repeat-customer flows. cafe + retail +
+// other are excluded because they're predominantly walk-in, one-off
+// transactions where PayTo's recurring-authorisation value is weaker.
+export const AU_PAYTO_SUITABLE_INDUSTRIES = new Set<string>([
+  'hospitality',
+  'online',
+  'ticketing',
+  'travel',
+]);
+
 // ── Debit percentage rates (for "lower of" formula) ──────────────
 // Source: RBA Conclusions Paper, March 2026, Policy 4
 export const AU_DEBIT_PCT_RATES = {

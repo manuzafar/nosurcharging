@@ -206,6 +206,36 @@ export function calculateMetrics(
     rangeNote   = 'Range reflects ±20% card mix accuracy. Enter your actual card mix to narrow it.';
   }
 
+  // ── Benchmark intermediates (May 2026 credibility brief) ───────
+  // Three rate-as-proportion values exposed for the new market-
+  // benchmark sentence. The engine already derives every component;
+  // these just package them so buildBenchmarkComparison() doesn't
+  // have to re-derive from raw constants.
+  //
+  // merchantEffectiveRate: flat/blended = annualMSF/volume; cost-plus
+  // = grossCOA/volume; zero-cost = the resolved post-reform rate.
+  // postReformIcRate: weighted IC at projected (Oct 2026) rates —
+  // debit cents/txn × allDebitTxns/volume + credit % × consumer
+  // credit share. Foreign / commercial slivers excluded to stay
+  // aligned with the engine's main debitSaving / creditSaving math.
+  // weightedSchemeRate: scheme fees as a proportion (already
+  // `domesticPct`; invariant across periods).
+  const merchantEffectiveRate =
+    volume > 0
+      ? isZeroCost
+        ? zeroCostMSF
+        : planType === 'costplus'
+          ? grossCOA / volume
+          : annualMSF / volume
+      : 0;
+  const projectedDebit = projectedDebitCentsPerTxn !== null ? projectedDebitCentsPerTxn : currentDebitCentsPerTxn;
+  const projectedCredit = projectedCreditPct !== null ? projectedCreditPct : currentCreditPct;
+  const postReformIcRate =
+    volume > 0
+      ? (projectedDebit * allDebitTxns) / volume + projectedCredit * cardMix.consumerCreditShare
+      : 0;
+  const weightedSchemeRate = AU_SCHEME_FEES.domesticPct;
+
   return {
     category,
     icSaving,
@@ -228,6 +258,9 @@ export function calculateMetrics(
     confidence: inputs.confidence,
     period,
     estimatedMSFRate: isZeroCost ? zeroCostMSF : undefined,
+    merchantEffectiveRate,
+    postReformIcRate,
+    weightedSchemeRate,
   };
 }
 
