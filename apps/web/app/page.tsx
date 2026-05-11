@@ -17,6 +17,7 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import { HeroSection } from '@/components/homepage/HeroSection';
 import { TrustBar } from '@/components/homepage/TrustBar';
+import { SampleResultsSection } from '@/components/homepage/SampleResultsSection';
 import { PreviewSection } from '@/components/homepage/PreviewSection';
 import { FeaturesSection } from '@/components/homepage/FeaturesSection';
 import { Footer } from '@/components/homepage/Footer';
@@ -76,10 +77,15 @@ export default function HomePage() {
         <TrustBar />
       </Suspense>
 
-      {/* Section 4 — "What you'll receive" scrollytelling report mock */}
-      <Suspense fallback={<div className="h-[600px] bg-[#0F0D09]" />}>
-        <PreviewSection />
-      </Suspense>
+      {/* Section 4 — "See what merchants get" sample bento. The hero's
+          secondary CTA ("See sample report ↓") scrolls to this section
+          via the #samples anchor. */}
+      <SampleResultsSection />
+
+      {/* Section 5 — "What you'll receive" dark 2-column block with
+          static product UI mini-preview. SSR-only now that the
+          scrollytelling auto-cycle was retired in M2. */}
+      <PreviewSection />
 
       {/* Section 6 — How it works (four questions) */}
       <FeaturesSection />
