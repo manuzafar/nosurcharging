@@ -84,6 +84,17 @@ export default function AssessmentPage() {
     currentStepRef.current = stepMap[phase] ?? 0;
   }, [phase]);
 
+  // Reset scroll to the top of the document on every phase transition.
+  // Without this, a merchant who scrolled to the bottom of the
+  // disclaimer to click "Start my assessment" lands on Step 1
+  // already-scrolled — the progress bar + "Step 1" eyebrow sit above
+  // the visible viewport. Same applies to Back/Next transitions where
+  // the previous phase rendered taller than the viewport.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [phase]);
+
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (currentStepRef.current > 0) {
