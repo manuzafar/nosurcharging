@@ -21,7 +21,8 @@ test.describe('Mobile 375px', () => {
     await page.getByRole('button', { name: /start my assessment/i }).click();
 
     // Step 1
-    await page.getByRole('textbox').fill('500000');
+    // Step 1's input is click-to-edit; use the $500K preset chip.
+    await page.getByRole('button', { name: '$500K', exact: true }).click();
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 2 — plan cards should be single column

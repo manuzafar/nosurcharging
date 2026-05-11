@@ -9,7 +9,8 @@ test.describe('Layman journey → Category 2', () => {
     await page.getByRole('button', { name: /start my assessment/i }).click();
 
     // Step 1 — enter volume
-    await page.getByRole('textbox').fill('2000000');
+    // Step 1's input is click-to-edit; use the $2M preset chip.
+    await page.getByRole('button', { name: '$2M', exact: true }).click();
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 2 — select flat rate + PSP
@@ -49,7 +50,8 @@ test.describe('Layman journey → Category 2', () => {
     // Quick flow through
     await page.getByRole('checkbox').check();
     await page.getByRole('button', { name: /start my assessment/i }).click();
-    await page.getByRole('textbox').fill('2000000');
+    // Step 1's input is click-to-edit; use the $2M preset chip.
+    await page.getByRole('button', { name: '$2M', exact: true }).click();
     await page.getByRole('button', { name: /next/i }).click();
     await page.getByRole('radio', { name: /a single rate on every transaction/i }).click();
     await page.getByRole('radio', { name: 'Square' }).click();

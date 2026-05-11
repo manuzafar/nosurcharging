@@ -9,7 +9,9 @@ test.describe('Wizard journey → Category 1', () => {
     await page.getByRole('button', { name: /start my assessment/i }).click();
 
     // Step 1 — $5M volume
-    await page.getByRole('textbox').fill('5000000');
+    // Step 1's input is click-to-edit; the closest preset chip is the
+    // cleanest path for a Playwright flow. $5M chip = exact match.
+    await page.getByRole('button', { name: '$5M', exact: true }).click();
     await page.getByRole('button', { name: /next/i }).click();
 
     // Step 2 — cost-plus + expert rates
