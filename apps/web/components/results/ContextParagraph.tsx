@@ -26,7 +26,11 @@ function getBody(category: 1 | 2 | 3 | 4 | 5, psp: string): string {
     case 4:
       return `You face two challenges simultaneously: your surcharge revenue disappears, and your flat rate may not pass the interchange saving through to you. Before deciding how to respond, confirm with ${psp} what your actual rate will look like after October — the answer changes your real exposure.`;
     case 5:
-      return `You currently pay $0 for card acceptance — your customers cover it through the surcharge ${psp} adds at the terminal. From 1 October, that surcharge cannot apply to Visa, Mastercard, or eftpos. ${psp} will move you to a standard flat-rate plan, and you'll pay for card acceptance from your own margin for the first time.`;
+      // Softened May 2026: zero-cost providers vary in how they handle
+      // the transition (some move to flat, some to cost-plus, some
+      // require a re-quote). Conditional language + an explicit
+      // confirmation step keeps the report honest.
+      return `You currently pay $0 for card acceptance — your customers cover it through the surcharge ${psp} adds at the terminal. From 1 October, that surcharge cannot apply to Visa, Mastercard, or eftpos. Most zero-cost providers will need to move you to a standard flat-rate plan — confirm with ${psp} which plan you'll be transferred to. You'll pay for card acceptance from your own margin for the first time.`;
   }
 }
 
