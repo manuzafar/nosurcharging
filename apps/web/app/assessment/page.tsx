@@ -31,8 +31,12 @@ export default function AssessmentPage() {
   const [phase, setPhase] = useState<Phase>('disclaimer');
   const [error, setError] = useState<string | null>(null);
 
-  // Form state — persists across steps
-  const [volume, setVolume] = useState(0);
+  // Form state — persists across steps.
+  // Volume defaults to the slider minimum ($50K) so the merchant
+  // lands on Step 1 with a sensible figure already populated and the
+  // hero value never reads as "$0". They can immediately drag, click
+  // a chip, or type to override.
+  const [volume, setVolume] = useState(50_000);
   const [planType, setPlanType] = useState<'flat' | 'costplus' | 'blended' | 'zero_cost' | 'strategic_rate' | null>(null);
   const [psp, setPsp] = useState<string | null>(null);
   const [merchantInput, setMerchantInput] = useState<MerchantInputOverrides>({});
@@ -256,10 +260,12 @@ export default function AssessmentPage() {
         </div>
       )}
 
-      {/* Disclaimer phase — DisclaimerConsent owns its own width and padding
-          (paper canvas, max-w 420). No outer wrapper needed. */}
+      {/* Disclaimer phase — wrapped in the centred-shell pattern per
+          the editorial rollout. DisclaimerConsent's own padding stays,
+          but the outer flex centres the whole block within the
+          viewport on tall screens. dvh handles mobile keyboard. */}
       {phase === 'disclaimer' && (
-        <div className="transition-opacity duration-200 ease-out">
+        <div className="flex min-h-[calc(100dvh-56px)] flex-col justify-center transition-opacity duration-200 ease-out">
           <DisclaimerConsent
             onAccept={() => {
               Analytics.assessmentStarted();
@@ -269,9 +275,20 @@ export default function AssessmentPage() {
         </div>
       )}
 
-      {/* Assessment steps 1-4 */}
+      {/* Assessment steps 1-4.
+          Step 1 + Step 4 adopt the editorial pattern — vertically
+          centred within the viewport, progress + content as one
+          composed block. Steps 2 + 3 keep the existing top-anchored
+          layout (their conditional sub-panels + collapse animations
+          conflict with vertical centering; they get their own brief). */}
       {phase !== 'reveal' && phase !== 'error' && phase !== 'disclaimer' && phase !== 'email_gate' && (
-        <div className="mx-auto max-w-assessment px-5 py-8">
+        <div
+          className={
+            phase === 'step1' || phase === 'step4'
+              ? 'mx-auto max-w-assessment px-5 flex min-h-[calc(100dvh-56px)] flex-col justify-center py-12'
+              : 'mx-auto max-w-assessment px-5 py-8'
+          }
+        >
           {/* Progress bar + step counter */}
           <div className="mb-8 flex items-center gap-4">
             <div className="flex-1">
