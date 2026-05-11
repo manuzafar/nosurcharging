@@ -64,8 +64,12 @@ export function HeroSection() {
     // above the viewport on short mobile screens.
     <section
       className="flex flex-col items-center border-b border-rule bg-paper px-5 text-center"
+      // `svh` (small viewport height) instead of plain `vh` so the
+      // hero doesn't grow into the iOS Chrome URL bar area on first
+      // paint. dvh has known stale-value behaviour on iOS WebKit;
+      // svh is the safest baseline for above-the-fold composition.
       style={{
-        minHeight: '70vh',
+        minHeight: '70svh',
         justifyContent: 'safe center',
         paddingTop: '72px',
         paddingBottom: '60px',
