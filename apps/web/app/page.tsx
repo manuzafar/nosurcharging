@@ -70,8 +70,9 @@ export default function HomePage() {
       {/* Section 3 — Hero */}
       <HeroSection />
 
-      {/* Section 3 — Live countdown to 1 October 2026 (TrustBar) */}
-      <Suspense fallback={<div className="h-[49px] border-y border-rule bg-paper-white" />}>
+      {/* Section 3 — Dark countdown band (TrustBar). Fallback height
+          matches the post-hydration band so the hero doesn't shift. */}
+      <Suspense fallback={<div className="h-[52px]" style={{ background: '#1A1409' }} />}>
         <TrustBar />
       </Suspense>
 
