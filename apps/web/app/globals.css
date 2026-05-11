@@ -14,6 +14,19 @@
   50%      { opacity: 0.65; }
 }
 
+/* Homepage hero + countdown pulse — applied to the eyebrow pill dot
+   and the "Live" badge dot on the hero calculator. Subtle, CSS-only,
+   no JS animation. */
+@keyframes pulseSoft {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.45; transform: scale(1.25); }
+}
+
+.pulse-soft {
+  animation: pulseSoft 1.6s ease-in-out infinite;
+  transform-origin: center;
+}
+
 :root {
   /* Animation delays for staggered results reveal */
   --delay-block-1: 0ms;

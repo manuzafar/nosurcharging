@@ -1,12 +1,11 @@
 'use client';
 
-// Homepage TrustBar — replaces the legacy three-column trust strip
-// (deleted April 2026). A compact single-line live countdown to
-// 1 October 2026 00:00 AEST, the moment the RBA surcharge ban begins.
-//
-// Sits between the hero and the scrollytelling preview. Hydrates with
-// zeros (matches the SSR shell), then ticks every second on the client.
-// Wrapped in Suspense in page.tsx because it is a client component.
+// Homepage countdown band — per HOMEPAGE_REDESIGN_BRIEF.md Section 3.
+// Dark `#1A1409` band immediately below the hero, with a pulse-red dot
+// pill, mono 18px white-95% countdown numbers, and a "remaining to act"
+// meta label. Hydrates with zeros (matches the SSR shell), then ticks
+// every second on the client. Wrapped in Suspense in page.tsx because
+// it is a client component.
 
 import { useEffect, useState } from 'react';
 
@@ -38,60 +37,76 @@ export function TrustBar() {
 
   return (
     <section
-      className="flex items-center justify-center gap-3 border-y border-rule bg-paper-white"
-      style={{ padding: '14px 32px' }}
+      className="flex flex-wrap items-center justify-center"
+      style={{
+        padding: '14px 28px',
+        gap: '18px',
+        background: '#1A1409',
+      }}
       aria-label="Time until the surcharge ban"
     >
-      {/* Eyebrow pill — same pattern as the hero badge */}
+      {/* Pill — rgba white bg with pulsing red dot */}
       <span
-        className="inline-flex items-center gap-1.5 rounded-full border bg-accent-light"
+        className="inline-flex items-center"
         style={{
-          borderColor: '#72C4B0',
-          borderWidth: '0.5px',
+          gap: '8px',
           padding: '4px 12px',
+          borderRadius: '999px',
+          background: 'rgba(255,255,255,0.08)',
         }}
       >
         <span
           aria-hidden
+          className="pulse-soft"
           style={{
             width: '6px',
             height: '6px',
             borderRadius: '50%',
-            background: '#1A6B5A',
+            background: '#E26A5C',
           }}
         />
         <span
-          className="uppercase"
+          className="font-mono uppercase"
           style={{
-            fontSize: '10px',
-            fontWeight: 600,
-            letterSpacing: '1px',
-            color: '#1A6B5A',
+            fontSize: '11px',
+            fontWeight: 500,
+            letterSpacing: '1.2px',
+            color: 'rgba(255,255,255,0.85)',
           }}
         >
-          Surcharge ban · 1 Oct 2026
+          Surcharge ban
         </span>
       </span>
 
-      {/* Countdown — JetBrains Mono, 15px, ink primary; days slightly
-          larger and emerald; separators in rule colour at 300 weight. */}
+      {/* Number row — mono 18px white-95% */}
       <span
         className="font-mono"
-        style={{ fontSize: '15px', fontWeight: 700, color: '#1A1409' }}
+        style={{
+          fontSize: '18px',
+          fontWeight: 500,
+          letterSpacing: '0.4px',
+          color: 'rgba(255,255,255,0.95)',
+        }}
         aria-live="off"
       >
-        <span style={{ fontSize: '18px', color: '#1A6B5A' }}>{days}</span>
-        <span>d</span>
-        <span style={{ color: '#DDD5C8', fontWeight: 300 }}> · </span>
+        {days}d
+        <span style={{ color: 'rgba(255,255,255,0.25)' }}> · </span>
         {pad(hours)}h
-        <span style={{ color: '#DDD5C8', fontWeight: 300 }}> · </span>
+        <span style={{ color: 'rgba(255,255,255,0.25)' }}> · </span>
         {pad(minutes)}m
-        <span style={{ color: '#DDD5C8', fontWeight: 300 }}> · </span>
+        <span style={{ color: 'rgba(255,255,255,0.25)' }}> · </span>
         {pad(seconds)}s
       </span>
 
-      {/* Trailing label */}
-      <span style={{ fontSize: '12px', color: '#9A8C78' }}>
+      {/* Meta */}
+      <span
+        className="font-mono"
+        style={{
+          fontSize: '11px',
+          letterSpacing: '0.4px',
+          color: 'rgba(255,255,255,0.55)',
+        }}
+      >
         remaining to act
       </span>
     </section>

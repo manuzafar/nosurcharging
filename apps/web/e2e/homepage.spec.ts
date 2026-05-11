@@ -4,11 +4,17 @@ test.describe('Homepage', () => {
   test('hero section renders with CTA', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page.getByText(/RBA Surcharge Ban/)).toBeVisible();
-    await expect(page.getByRole('link', { name: /get my free report/i }).first()).toBeVisible();
-    // Proof row items (post-Apr 2026 redesign — chip-style claims)
+    // Post-May 2026 hero rework: eyebrow drops the "RBA " prefix and
+    // matches the dark countdown band's terminology.
+    await expect(page.getByText(/Surcharge ban · 1 October 2026/i)).toBeVisible();
+    // Primary hero CTA copy: "Start my free report →". Nav CTA still
+    // uses the older "Get my free report →" wording, so scope to the
+    // hero copy explicitly.
+    await expect(page.getByRole('link', { name: /start my free report/i }).first()).toBeVisible();
+    // Trust row — shortened "Independent" label (was "Independent —
+    // no PSP affiliation"), plus "No account required" still present.
     await expect(page.getByText('No account required').first()).toBeVisible();
-    await expect(page.getByText('Independent — no PSP affiliation').first()).toBeVisible();
+    await expect(page.getByText('Independent').first()).toBeVisible();
   });
 
   test('preview scrollytelling section renders', async ({ page }) => {
