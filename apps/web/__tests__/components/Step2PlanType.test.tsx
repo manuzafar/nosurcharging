@@ -133,8 +133,8 @@ describe('Step2PlanType', () => {
     // Flat rate tile — structure labels, no percentages
     expect(screen.getByText(/merchant service fee/i)).toBeInTheDocument();
     expect(screen.getAllByText(/total charged/i).length).toBeGreaterThanOrEqual(1);
-    // Cost-plus tile — structure labels
-    expect(screen.getByText(/payment processing costs/i)).toBeInTheDocument();
+    // Cost-plus tile (tier 2, abbreviated) — structure labels
+    expect(screen.getByText(/processing costs/i)).toBeInTheDocument();
     expect(screen.getByText(/provider margin/i)).toBeInTheDocument();
     // No specific rate figures anywhere
     const allText = document.body.textContent ?? '';
@@ -144,5 +144,44 @@ describe('Step2PlanType', () => {
     expect(allText).not.toContain('$280');
     expect(allText).not.toContain('$88');
     expect(allText).not.toContain('$95');
+  });
+
+  it('tier 1 chip badges render — "Most common" + "Smart defaults"', () => {
+    render(<Step2PlanType {...defaultProps} />);
+    // Exact match — "most common" also appears in the "I'm not sure" body
+    // ("most common assumptions") so an unscoped regex matches twice.
+    expect(screen.getByText('Most common')).toBeInTheDocument();
+    expect(screen.getByText('Smart defaults')).toBeInTheDocument();
+  });
+
+  it('selecting "I\'m not sure" hides optional refinements but keeps PSP selector visible', async () => {
+    const { rerender } = render(<Step2PlanType {...defaultProps} />);
+
+    // Refinements visible by default
+    expect(screen.getByRole('button', { name: /payment wizard/i })).toBeInTheDocument();
+
+    // Click "I'm not sure"
+    await user.click(screen.getByRole('radio', { name: /not sure how I pay/i }));
+    expect(onPlanTypeChange).toHaveBeenCalledWith('flat', true);
+
+    // Rerender with planType='flat' (parent stores it that way for the unknown cohort)
+    rerender(<Step2PlanType {...defaultProps} planType="flat" />);
+
+    // PSP selector still visible
+    expect(screen.getByRole('radio', { name: 'Stripe' })).toBeInTheDocument();
+    // Refinements (Payment wizard toggle inside ExpertPanel) gone
+    expect(screen.queryByRole('button', { name: /payment wizard/i })).not.toBeInTheDocument();
+  });
+
+  it('strategic-rate tile fires onStrategicRateSelected on Next', async () => {
+    const onStrategicRateSelected = vi.fn();
+    render(<Step2PlanType {...defaultProps} onStrategicRateSelected={onStrategicRateSelected} />);
+
+    await user.click(screen.getByRole('radio', { name: /custom rate I negotiated/i }));
+    // Strategic selection enables Next without requiring a PSP
+    const nextBtn = screen.getByRole('button', { name: /next/i });
+    expect(nextBtn).toBeEnabled();
+    await user.click(nextBtn);
+    expect(onStrategicRateSelected).toHaveBeenCalled();
   });
 });

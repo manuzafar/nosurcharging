@@ -291,24 +291,27 @@ export default function AssessmentPage() {
       )}
 
       {/* Assessment steps 1-4.
-          Step 1 + Step 4 adopt the editorial pattern — vertically
+          Steps 1, 2, 4 adopt the editorial pattern — vertically
           centred within the viewport, progress + content as one
-          composed block. Steps 2 + 3 keep the existing top-anchored
-          layout (their conditional sub-panels + collapse animations
-          conflict with vertical centering; they get their own brief). */}
+          composed block. Step 2 uses a wider inner column (720px)
+          to host the tiered plan hierarchy + PSP grid. Step 3 keeps
+          the top-anchored layout (its max-h collapse animation on
+          the network panel conflicts with vertical centering). */}
       {phase !== 'reveal' && phase !== 'error' && phase !== 'disclaimer' && phase !== 'email_gate' && (
         <div
           className={
             phase === 'step1' || phase === 'step4'
               ? 'mx-auto max-w-assessment px-5 flex min-h-[calc(100svh-52px)] flex-col py-12'
-              : 'mx-auto max-w-assessment px-5 py-8'
+              : phase === 'step2'
+                ? 'mx-auto max-w-[720px] px-5 flex min-h-[calc(100svh-52px)] flex-col py-12'
+                : 'mx-auto max-w-assessment px-5 py-8'
           }
           // `safe center` falls back to flex-start when the content
           // is taller than the container so the progress bar stays
           // reachable on short mobile viewports. Plain `center` would
           // push the top of the content above the viewport edge.
           style={
-            phase === 'step1' || phase === 'step4'
+            phase === 'step1' || phase === 'step4' || phase === 'step2'
               ? { justifyContent: 'safe center' }
               : undefined
           }
