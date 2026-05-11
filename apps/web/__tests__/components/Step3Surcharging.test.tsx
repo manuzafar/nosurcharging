@@ -86,8 +86,11 @@ describe('Step3Surcharging', () => {
     expect(screen.getByRole('button', { name: /next/i })).toBeEnabled();
   });
 
-  it('Amex carve-out note appears when ONLY Amex checked', () => {
-    render(
+  it('regulatory info note appears whenever Yes is selected (any network mix)', () => {
+    // Per the Step 3 brief, the always-on info note replaces the previous
+    // conditional Amex-only carve-out note. It surfaces the reform context
+    // regardless of which networks the merchant has checked.
+    const { rerender } = render(
       <Step3Surcharging
         {...defaultProps}
         surcharging={true}
@@ -95,43 +98,34 @@ describe('Step3Surcharging', () => {
       />,
     );
     expect(
-      screen.getByText(/october ban doesn.*cover amex/i),
+      screen.getByText(/surcharging Visa, Mastercard, and eftpos becomes illegal/i),
     ).toBeInTheDocument();
-  });
 
-  it('Amex carve-out note disappears when Visa also checked', () => {
-    render(
+    // Same note with Visa also checked
+    rerender(
       <Step3Surcharging
         {...defaultProps}
         surcharging={true}
         surchargeNetworks={['amex', 'visa']}
       />,
     );
-    expect(screen.queryByText(/october ban doesn.*cover amex/i)).not.toBeInTheDocument();
-  });
-
-  it('carve-out note does NOT appear when only Visa is checked', () => {
-    render(
-      <Step3Surcharging
-        {...defaultProps}
-        surcharging={true}
-        surchargeNetworks={['visa']}
-      />,
-    );
-    expect(screen.queryByText(/october ban doesn.*cover amex/i)).not.toBeInTheDocument();
-  });
-
-  it('carve-out note appears for BNPL-only too', () => {
-    render(
-      <Step3Surcharging
-        {...defaultProps}
-        surcharging={true}
-        surchargeNetworks={['bnpl']}
-      />,
-    );
     expect(
-      screen.getByText(/october ban doesn.*cover amex/i),
+      screen.getByText(/surcharging Visa, Mastercard, and eftpos becomes illegal/i),
     ).toBeInTheDocument();
+  });
+
+  it('regulatory note hidden when No is selected', () => {
+    render(<Step3Surcharging {...defaultProps} surcharging={false} />);
+    expect(
+      screen.queryByText(/surcharging Visa, Mastercard, and eftpos becomes illegal/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it('rate quick-pick chip click sets the rate value', async () => {
+    render(<Step3Surcharging {...defaultProps} surcharging={true} surchargeRate={0.02} />);
+    // Chip 1.5% click
+    await user.click(screen.getByRole('button', { name: '1.5%' }));
+    expect(onSurchargeRateChange).toHaveBeenCalledWith(0.015);
   });
 
   it('checkbox toggle calls onNetworksChange', async () => {
