@@ -62,7 +62,7 @@ describe('Step4Industry', () => {
     await user.click(screen.getByText('Online store'));
     expect(onIndustryChange).toHaveBeenCalledWith('online');
 
-    // Rerender with new selection — only one tile should have selected styling
+    // Rerender with new selection — only the online tile should be checked.
     rerender(
       <Step4Industry
         industry="online"
@@ -72,13 +72,14 @@ describe('Step4Industry', () => {
       />,
     );
 
-    // The online store button should have accent border class
-    const onlineBtn = screen.getByText('Online store').closest('button')!;
-    expect(onlineBtn.className).toContain('accent');
-
-    // The retail button should not
-    const retailBtn = screen.getByText('Retail').closest('button')!;
-    expect(retailBtn.className).not.toContain('accent');
+    expect(screen.getByRole('radio', { name: /online store/i })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    expect(screen.getByRole('radio', { name: /^retail/i })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    );
   });
 
   it('only one tile can be selected at a time', () => {
@@ -91,14 +92,66 @@ describe('Step4Industry', () => {
       />,
     );
 
-    // Count tiles with accent in className (should be exactly 1)
-    const allButtons = screen.getAllByRole('button').filter(
-      (btn) => btn.textContent !== 'Back' && btn.textContent !== 'See my results →',
+    const checkedRadios = screen
+      .getAllByRole('radio')
+      .filter((btn) => btn.getAttribute('aria-checked') === 'true');
+    expect(checkedRadios).toHaveLength(1);
+  });
+
+  it('renders the AVT signal on every tile from AU_AVG_TXN_BY_INDUSTRY', () => {
+    render(
+      <Step4Industry
+        industry={null}
+        onIndustryChange={onIndustryChange}
+        onNext={onNext}
+        onBack={onBack}
+      />,
     );
-    const selectedButtons = allButtons.filter((btn) =>
-      btn.className.includes('accent'),
+    // Defaults sourced from packages/calculations/constants/au.ts so the
+    // displayed assumption can't drift from the calculation engine.
+    expect(screen.getByText('~$35 avg')).toBeInTheDocument(); // cafe
+    expect(screen.getByText('~$80 avg')).toBeInTheDocument(); // hospitality
+    expect(screen.getByText('~$95 avg')).toBeInTheDocument(); // online
+    expect(screen.getByText('~$120 avg')).toBeInTheDocument(); // ticketing
+    // retail + other both default to 65 — there should be two of them
+    expect(screen.getAllByText('~$65 avg').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('inline info note hidden until a tile is selected', () => {
+    render(
+      <Step4Industry
+        industry={null}
+        onIndustryChange={onIndustryChange}
+        onNext={onNext}
+        onBack={onBack}
+      />,
     );
-    expect(selectedButtons).toHaveLength(1);
+    expect(screen.queryByText(/as your average transaction value/i)).not.toBeInTheDocument();
+  });
+
+  it('inline info note appears with AVT + industry phrase on selection', () => {
+    const { rerender } = render(
+      <Step4Industry
+        industry="cafe"
+        onIndustryChange={onIndustryChange}
+        onNext={onNext}
+        onBack={onBack}
+      />,
+    );
+    expect(screen.getByText(/cafés and restaurants/i)).toBeInTheDocument();
+    expect(screen.getByText(/as your average transaction value/i)).toBeInTheDocument();
+
+    // Switching selection updates the note (no stale state).
+    rerender(
+      <Step4Industry
+        industry="ticketing"
+        onIndustryChange={onIndustryChange}
+        onNext={onNext}
+        onBack={onBack}
+      />,
+    );
+    expect(screen.getByText(/ticketing and events/i)).toBeInTheDocument();
+    expect(screen.queryByText(/cafés and restaurants/i)).not.toBeInTheDocument();
   });
 
   it('See my results button disabled when no industry selected', () => {
