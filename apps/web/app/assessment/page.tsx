@@ -271,15 +271,14 @@ export default function AssessmentPage() {
         </div>
       )}
 
-      {/* Disclaimer phase — wrapped in the centred-shell pattern per
-          the editorial rollout. `safe center` keeps the centring on
-          tall viewports but top-anchors when content is taller than
-          the available height — without this the progress bar /
-          eyebrow scroll above the top edge on short mobile screens. */}
+      {/* Disclaimer phase — editorial layout per CONSENT_SCREEN_REDESIGN_BRIEF.
+          Upper-portion positioning via padding-top clamp instead of
+          safe-center, so the wide commitments grid sits in the natural
+          reading flow rather than the dead centre of tall desktops. */}
       {phase === 'disclaimer' && (
         <div
-          className="flex min-h-[calc(100svh-52px)] flex-col transition-opacity duration-200 ease-out"
-          style={{ justifyContent: 'safe center' }}
+          className="flex min-h-[calc(100svh-52px)] flex-col pb-12 transition-opacity duration-200 ease-out"
+          style={{ paddingTop: 'clamp(48px, 12vh, 120px)' }}
         >
           <DisclaimerConsent
             onAccept={() => {

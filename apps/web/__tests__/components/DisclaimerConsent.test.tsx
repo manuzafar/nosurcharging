@@ -101,7 +101,7 @@ describe('DisclaimerConsent', () => {
     render(<DisclaimerConsent onAccept={onAccept} />);
     expect(screen.getByText('Before we start')).toBeInTheDocument();
     expect(
-      screen.getByText('A few things to know about this report'),
+      screen.getByText('A few things to know about how we work.'),
     ).toBeInTheDocument();
   });
 
