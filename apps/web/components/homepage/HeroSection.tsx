@@ -53,9 +53,18 @@ function ProofIcon({ name }: { name: ProofIcon }) {
 
 export function HeroSection() {
   return (
+    // Editorial polish: hero block centres within ~70vh of the first
+    // viewport so it reads as a deliberate page composition rather
+    // than a header that slips above the fold. TrustBar stays visible
+    // below on tall viewports; on short viewports the natural padding
+    // keeps the hero from squeezing into nothing.
     <section
-      className="flex flex-col items-center border-b border-rule bg-paper px-5 text-center"
-      style={{ paddingTop: '72px', paddingBottom: '60px' }}
+      className="flex flex-col items-center justify-center border-b border-rule bg-paper px-5 text-center"
+      style={{
+        minHeight: '70vh',
+        paddingTop: '72px',
+        paddingBottom: '60px',
+      }}
     >
       {/* Eyebrow badge */}
       <span className="inline-flex items-center gap-2 rounded-full border border-accent-border bg-accent-light px-3 py-1">
@@ -86,7 +95,7 @@ export function HeroSection() {
 
       {/* Subheadline */}
       <p
-        className="mt-5 max-w-[420px] text-left text-ink-secondary"
+        className="mt-5 max-w-[480px] text-left text-ink-secondary"
         style={{ fontSize: '15px', lineHeight: '1.6' }}
       >
         Find out what the October ban costs your business, with your payment

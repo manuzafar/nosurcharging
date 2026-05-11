@@ -256,10 +256,12 @@ export default function AssessmentPage() {
         </div>
       )}
 
-      {/* Disclaimer phase — DisclaimerConsent owns its own width and padding
-          (paper canvas, max-w 420). No outer wrapper needed. */}
+      {/* Disclaimer phase — wrapped in the centred-shell pattern per
+          the editorial rollout. DisclaimerConsent's own padding stays,
+          but the outer flex centres the whole block within the
+          viewport on tall screens. dvh handles mobile keyboard. */}
       {phase === 'disclaimer' && (
-        <div className="transition-opacity duration-200 ease-out">
+        <div className="flex min-h-[calc(100dvh-56px)] flex-col justify-center transition-opacity duration-200 ease-out">
           <DisclaimerConsent
             onAccept={() => {
               Analytics.assessmentStarted();
@@ -269,9 +271,20 @@ export default function AssessmentPage() {
         </div>
       )}
 
-      {/* Assessment steps 1-4 */}
+      {/* Assessment steps 1-4.
+          Step 1 + Step 4 adopt the editorial pattern — vertically
+          centred within the viewport, progress + content as one
+          composed block. Steps 2 + 3 keep the existing top-anchored
+          layout (their conditional sub-panels + collapse animations
+          conflict with vertical centering; they get their own brief). */}
       {phase !== 'reveal' && phase !== 'error' && phase !== 'disclaimer' && phase !== 'email_gate' && (
-        <div className="mx-auto max-w-assessment px-5 py-8">
+        <div
+          className={
+            phase === 'step1' || phase === 'step4'
+              ? 'mx-auto max-w-assessment px-5 flex min-h-[calc(100dvh-56px)] flex-col justify-center py-12'
+              : 'mx-auto max-w-assessment px-5 py-8'
+          }
+        >
           {/* Progress bar + step counter */}
           <div className="mb-8 flex items-center gap-4">
             <div className="flex-1">
