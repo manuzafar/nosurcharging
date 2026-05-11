@@ -38,8 +38,9 @@ test.describe('Mobile 375px', () => {
     await page.getByText('Online store').click();
     await page.getByRole('button', { name: /see my results/i }).click();
 
-    // Skip the email gate
-    await page.getByRole('button', { name: /skip and view now/i }).click();
+    // Skip the email gate — paper-aesthetic redesign relabelled the skip
+    // link to "View my results without insights →" (May 2026).
+    await page.getByRole('button', { name: /view my results without insights/i }).click();
 
     // Should navigate to results (scoped to <main> to avoid TopBar duplicate)
     await page.waitForURL(/\/results\?id=/, { timeout: 15000 });

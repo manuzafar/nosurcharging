@@ -27,7 +27,7 @@ test.describe('Layman journey → Category 2', () => {
     await page.getByRole('button', { name: /see my results/i }).click();
 
     // Email gate appears between Step 4 and reveal — skip past it
-    await page.getByRole('button', { name: /skip and view now/i }).click();
+    await page.getByRole('button', { name: /view my results without insights/i }).click();
 
     // Wait for reveal screen to complete and navigate to results
     await page.waitForURL(/\/results\?id=/, { timeout: 15000 });
@@ -62,7 +62,7 @@ test.describe('Layman journey → Category 2', () => {
     await page.getByRole('button', { name: /see my results/i }).click();
 
     // Skip the email gate
-    await page.getByRole('button', { name: /skip and view now/i }).click();
+    await page.getByRole('button', { name: /view my results without insights/i }).click();
 
     await page.waitForURL(/\/results\?id=/, { timeout: 15000 });
 
