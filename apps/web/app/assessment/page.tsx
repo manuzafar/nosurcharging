@@ -278,7 +278,7 @@ export default function AssessmentPage() {
           eyebrow scroll above the top edge on short mobile screens. */}
       {phase === 'disclaimer' && (
         <div
-          className="flex min-h-[calc(100dvh-56px)] flex-col transition-opacity duration-200 ease-out"
+          className="flex min-h-[calc(100svh-52px)] flex-col transition-opacity duration-200 ease-out"
           style={{ justifyContent: 'safe center' }}
         >
           <DisclaimerConsent
@@ -300,7 +300,7 @@ export default function AssessmentPage() {
         <div
           className={
             phase === 'step1' || phase === 'step4'
-              ? 'mx-auto max-w-assessment px-5 flex min-h-[calc(100dvh-56px)] flex-col py-12'
+              ? 'mx-auto max-w-assessment px-5 flex min-h-[calc(100svh-52px)] flex-col py-12'
               : 'mx-auto max-w-assessment px-5 py-8'
           }
           // `safe center` falls back to flex-start when the content
