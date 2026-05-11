@@ -3,9 +3,32 @@ import { render, screen } from '@testing-library/react';
 import { FeaturesSection } from '@/components/homepage/FeaturesSection';
 
 describe('FeaturesSection', () => {
-  it('renders the eyebrow label', () => {
+  it('renders the eyebrow label in the refreshed copy', () => {
     render(<FeaturesSection />);
-    expect(screen.getByText('Four questions. Your report.')).toBeInTheDocument();
+    // Post-May 2026 homepage redesign: eyebrow shifts from
+    // "Four questions. Your report." to mono dot-separated form.
+    expect(screen.getByText('Four questions · your report')).toBeInTheDocument();
+  });
+
+  it('renders the new section headline with italic emerald accent', () => {
+    render(<FeaturesSection />);
+    // The headline is split across an <em>; assert each fragment.
+    expect(
+      screen.getByText(/No statement in front of you\?/),
+    ).toBeInTheDocument();
+    const accent = screen.getByText('No problem.');
+    expect(accent.tagName).toBe('EM');
+    expect(accent.className).toContain('italic');
+    expect(accent.className).toContain('text-accent');
+  });
+
+  it('renders the supporting sub copy', () => {
+    render(<FeaturesSection />);
+    expect(
+      screen.getByText(
+        'Plain-English questions a layperson can answer. We do the math.',
+      ),
+    ).toBeInTheDocument();
   });
 
   it('renders all four step numbers', () => {
@@ -37,9 +60,7 @@ describe('FeaturesSection', () => {
         'We calculate your actual dollar impact — not a percentage, a number.',
       ),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(/the biggest variable/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/the biggest variable/)).toBeInTheDocument();
   });
 
   it('uses paper background and rule bottom border', () => {
