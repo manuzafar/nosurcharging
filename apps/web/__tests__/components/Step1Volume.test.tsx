@@ -106,13 +106,23 @@ describe('Step1Volume', () => {
   });
 
   it('slider drives the volume state', () => {
-    render(
-      <Step1Volume value={500000} onChange={onChange} onNext={onNext} onBack={onBack} />,
-    );
+    const spy = vi.fn();
+    render(<Harness initial={500_000} onChangeSpy={spy} />);
     const slider = screen.getByRole('slider');
-    fireEvent.change(slider, { target: { value: '2000000' } });
-    const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1]!;
-    expect(lastCall[0]).toBe(2_000_000);
+    // Slider is logarithmic across 0–1000 positions ($50K → $3B).
+    // Position 500 sits at the geometric mean (~$12M); just assert
+    // that moving the slider fires onChange with a positive number
+    // greater than the starting value.
+    fireEvent.change(slider, { target: { value: '500' } });
+    expect(spy).toHaveBeenCalled();
+    const lastCall = spy.mock.calls[spy.mock.calls.length - 1]!;
+    expect(lastCall[0]).toBeGreaterThan(500_000);
+  });
+
+  it('slider min ($50K) and max ($3B) labels render', () => {
+    render(<Harness initial={50_000} />);
+    expect(screen.getByText('$50K')).toBeInTheDocument();
+    expect(screen.getByText('$3B')).toBeInTheDocument();
   });
 
   it('clicking a quick-pick chip sets the exact value', async () => {

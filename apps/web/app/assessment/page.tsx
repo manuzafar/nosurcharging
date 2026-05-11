@@ -31,8 +31,12 @@ export default function AssessmentPage() {
   const [phase, setPhase] = useState<Phase>('disclaimer');
   const [error, setError] = useState<string | null>(null);
 
-  // Form state — persists across steps
-  const [volume, setVolume] = useState(0);
+  // Form state — persists across steps.
+  // Volume defaults to the slider minimum ($50K) so the merchant
+  // lands on Step 1 with a sensible figure already populated and the
+  // hero value never reads as "$0". They can immediately drag, click
+  // a chip, or type to override.
+  const [volume, setVolume] = useState(50_000);
   const [planType, setPlanType] = useState<'flat' | 'costplus' | 'blended' | 'zero_cost' | 'strategic_rate' | null>(null);
   const [psp, setPsp] = useState<string | null>(null);
   const [merchantInput, setMerchantInput] = useState<MerchantInputOverrides>({});

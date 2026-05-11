@@ -32,9 +32,19 @@ interface Step1VolumeProps {
   onBack: () => void;
 }
 
-const SLIDER_MIN = 100_000;
-const SLIDER_MAX = 25_000_000;
-const SLIDER_STEP = 50_000;
+// Slider range — $50K → $3B. The bottom anchors small-business
+// merchants (sub-$30K warning still applies if they type lower) and
+// the top reaches conglomerate-scale volume.
+//
+// Linear-scaled, the meaningful SMB range ($50K → $25M) would occupy
+// less than 1% of the slider track. We map slider position to value
+// LOGARITHMICALLY so $50K, $1M, $25M, and $3B all sit at sensible
+// positions and the thumb moves usefully across the whole range.
+const SLIDER_MIN = 50_000;
+const SLIDER_MAX = 3_000_000_000;
+const SLIDER_POSITIONS = 1000; // 0–1000 positions on the underlying input
+const LOG_MIN = Math.log(SLIDER_MIN);
+const LOG_MAX = Math.log(SLIDER_MAX);
 
 const QUICK_PICKS: { label: string; value: number }[] = [
   { label: '$500K', value: 500_000 },
@@ -47,6 +57,35 @@ const QUICK_PICKS: { label: string; value: number }[] = [
 
 function formatDollar(v: number): string {
   return `$${Math.round(v).toLocaleString('en-AU')}`;
+}
+
+// Round a raw value to a magnitude-appropriate increment so the
+// displayed value reads cleanly as the slider moves:
+//   <$100K     → $1K
+//   <$1M       → $10K
+//   <$10M      → $100K
+//   <$100M     → $1M
+//   <$1B       → $10M
+//   ≥$1B       → $100M
+function roundToNiceStep(v: number): number {
+  if (v < 100_000) return Math.round(v / 1_000) * 1_000;
+  if (v < 1_000_000) return Math.round(v / 10_000) * 10_000;
+  if (v < 10_000_000) return Math.round(v / 100_000) * 100_000;
+  if (v < 100_000_000) return Math.round(v / 1_000_000) * 1_000_000;
+  if (v < 1_000_000_000) return Math.round(v / 10_000_000) * 10_000_000;
+  return Math.round(v / 100_000_000) * 100_000_000;
+}
+
+function positionToValue(pos: number): number {
+  const clamped = Math.max(0, Math.min(SLIDER_POSITIONS, pos));
+  const logValue = LOG_MIN + (clamped / SLIDER_POSITIONS) * (LOG_MAX - LOG_MIN);
+  return roundToNiceStep(Math.exp(logValue));
+}
+
+function valueToPosition(value: number): number {
+  const clamped = Math.max(SLIDER_MIN, Math.min(SLIDER_MAX, value));
+  const logValue = Math.log(clamped);
+  return Math.round(((logValue - LOG_MIN) / (LOG_MAX - LOG_MIN)) * SLIDER_POSITIONS);
 }
 
 export function Step1Volume({ value, onChange, onNext, onBack }: Step1VolumeProps) {
@@ -91,13 +130,16 @@ export function Step1Volume({ value, onChange, onNext, onBack }: Step1VolumeProp
     handleDisplayValueChange(num);
   };
 
-  const sliderValue = Math.min(SLIDER_MAX, Math.max(SLIDER_MIN, displayValue || SLIDER_MIN));
-  const sliderPct =
-    ((sliderValue - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN)) * 100;
+  // Slider operates on a logarithmic position (0–1000). The current
+  // displayValue maps back to a position so the thumb stays in sync
+  // when the merchant clicks a chip or types a value.
+  const sliderPosition = valueToPosition(displayValue || SLIDER_MIN);
+  const sliderPct = (sliderPosition / SLIDER_POSITIONS) * 100;
+  const sliderValue = positionToValue(sliderPosition);
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const next = parseInt(e.target.value, 10) || SLIDER_MIN;
-    handleDisplayValueChange(next);
+    const pos = parseInt(e.target.value, 10) || 0;
+    handleDisplayValueChange(positionToValue(pos));
   };
 
   const handleChip = (chipValue: number) => {
@@ -236,12 +278,13 @@ export function Step1Volume({ value, onChange, onNext, onBack }: Step1VolumeProp
       <div className="mt-6">
         <input
           type="range"
-          min={SLIDER_MIN}
-          max={SLIDER_MAX}
-          step={SLIDER_STEP}
-          value={sliderValue}
+          min={0}
+          max={SLIDER_POSITIONS}
+          step={1}
+          value={sliderPosition}
           onChange={handleSliderChange}
           aria-label={`Card turnover slider, current value ${formatDollar(sliderValue)}`}
+          aria-valuetext={formatDollar(sliderValue)}
           className="step1-slider w-full"
           style={
             {
@@ -253,8 +296,8 @@ export function Step1Volume({ value, onChange, onNext, onBack }: Step1VolumeProp
           className="mt-2 flex items-center justify-between font-mono"
           style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}
         >
-          <span>$100K</span>
-          <span>$25M</span>
+          <span>$50K</span>
+          <span>$3B</span>
         </div>
       </div>
 
