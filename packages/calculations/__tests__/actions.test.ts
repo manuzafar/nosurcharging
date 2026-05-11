@@ -25,8 +25,11 @@ describe('buildActions', () => {
   describe('Category 1 (cost-plus, not surcharging)', () => {
     const actions = buildActions(1, 'Square', 'retail', CTX);
 
-    it('returns 3 actions', () => {
-      expect(actions).toHaveLength(3);
+    // 3 base Cat 1 actions + 1 NPP rail action (retail → Bucket 3
+    // only). NPP buckets per industry are covered in the dedicated
+    // matrix block further down.
+    it('returns 4 actions (3 base + 1 NPP rail for retail)', () => {
+      expect(actions).toHaveLength(4);
     });
 
     it('every action has non-empty text + script + why', () => {
@@ -46,8 +49,11 @@ describe('buildActions', () => {
   describe('Category 2 (flat rate, not surcharging)', () => {
     const actions = buildActions(2, 'Stripe', 'retail', CTX);
 
-    it('returns 3 actions', () => {
-      expect(actions).toHaveLength(3);
+    // 3 base Cat 2 actions + 1 NPP rail action (retail → Bucket 3
+    // only) = 4 total. The plan tier now carries 2 items (PSP
+    // itemised quote + NPP provider-in-person).
+    it('returns 4 actions (3 base + 1 NPP rail for retail)', () => {
+      expect(actions).toHaveLength(4);
     });
 
     it('every action has non-empty text + script + why', () => {
@@ -63,10 +69,10 @@ describe('buildActions', () => {
       expect(actions[0]!.text).toMatch(/Ask Stripe/);
     });
 
-    it('contains exactly one action of each priority', () => {
+    it('priority distribution: 1 urgent + 2 plan + 1 monitor', () => {
       const priorities = actions.map((a) => a.priority);
       expect(priorities.filter((p) => p === 'urgent')).toHaveLength(1);
-      expect(priorities.filter((p) => p === 'plan')).toHaveLength(1);
+      expect(priorities.filter((p) => p === 'plan')).toHaveLength(2);
       expect(priorities.filter((p) => p === 'monitor')).toHaveLength(1);
     });
   });
@@ -138,13 +144,14 @@ describe('buildActions', () => {
   });
 
   describe('Category 4 (flat rate, surcharging)', () => {
-    // 'retail' chosen so PayTo injection (introduced M3) doesn't expand
-    // the action list. PayTo's industry-conditional injection is
-    // covered by its own dedicated test block below.
+    // 'retail' picks up only Bucket 3 (provider-in-person), giving
+    // 4 base Cat 4 actions + 1 NPP injection = 5 total. The original
+    // 4-action shape from ux-spec §3.4 is preserved among the base
+    // actions; NPP injection only adds.
     const actions = buildActions(4, 'Stripe', 'retail', CTX);
 
-    it('returns 4 actions per ux-spec §3.4', () => {
-      expect(actions).toHaveLength(4);
+    it('returns 5 actions (4 base + 1 NPP rail for retail)', () => {
+      expect(actions).toHaveLength(5);
     });
 
     it('every action has non-empty text + why', () => {
@@ -157,17 +164,20 @@ describe('buildActions', () => {
     it('action 2 carries a framework instead of a script; others have scripts', () => {
       expect(actions[1]!.framework).toBeTruthy();
       expect(actions[1]!.script).toBeFalsy();
-      // Actions 0, 2, 3 should still have scripts
+      // Actions 0, 2, 3, 4 should still have scripts (the NPP rail
+      // action at [3] has its own script too).
       expect(actions[0]!.script).toBeTruthy();
       expect(actions[2]!.script).toBeTruthy();
       expect(actions[3]!.script).toBeTruthy();
+      expect(actions[4]!.script).toBeTruthy();
     });
 
-    it('first two actions are URGENT, third is PLAN, fourth is MONITOR', () => {
+    it('priority order: urgent, urgent, plan (itemised), plan (NPP), monitor', () => {
       expect(actions[0]!.priority).toBe('urgent');
       expect(actions[1]!.priority).toBe('urgent');
       expect(actions[2]!.priority).toBe('plan');
-      expect(actions[3]!.priority).toBe('monitor');
+      expect(actions[3]!.priority).toBe('plan');
+      expect(actions[4]!.priority).toBe('monitor');
     });
 
     it('action 2 title says "respond to" with the shortfall amount', () => {
@@ -199,8 +209,13 @@ describe('buildActions', () => {
       expect(actions[2]!.script).toContain('$500,000');
     });
 
-    it('PSP name is interpolated into every action', () => {
-      for (const action of actions) {
+    it('PSP name is interpolated into every base action (NPP actions are rail-specific, not PSP-specific)', () => {
+      // NPP rail actions (May 2026 brief) talk about PayID/PayTo
+      // providers like Azupay + Volt — they intentionally do NOT
+      // reference the merchant's primary PSP. Scope the assertion to
+      // actions that aren't NPP rail items.
+      const baseActions = actions.filter((a) => !a.action_id);
+      for (const action of baseActions) {
         const fw = action.framework;
         const fwFlat = fw
           ? `${fw.intro} ${fw.levers.map((l) => `${l.condition} ${l.pill?.value ?? ''}`).join(' ')}`
@@ -252,12 +267,16 @@ describe('buildActions', () => {
   // counts above remain stable. The cases below cover the flips.
 
   describe('Cat 2 — PSP-aware itemised gating', () => {
+    // Helper: filter out NPP rail actions so the PSP-itemised
+    // assertions stay focused on the base Cat 2 plan slot.
+    const psPlan = (actions: { priority: string; action_id?: string }[]) =>
+      actions.filter((a) => a.priority === 'plan' && !a.action_id);
+
     it('Square (offersItemisedPlan: no) replaces the quote ask with a "consider switching" action', () => {
       const actions = buildActions(2, 'Square', 'retail', CTX);
-      const planActions = actions.filter((a) => a.priority === 'plan');
-      // Should contain exactly one plan action — the switching variant.
-      expect(planActions).toHaveLength(1);
-      expect(planActions[0]!.text).toContain('does not offer itemised pricing');
+      // Exactly one base-plan action — the switching variant.
+      expect(psPlan(actions)).toHaveLength(1);
+      expect(psPlan(actions)[0]!.text).toContain('does not offer itemised pricing');
       // The "ask Square for a quote" copy must NOT appear.
       const flat = actions.flatMap((a) => [a.text, a.script ?? '']).join(' ');
       expect(flat).not.toMatch(/Ask Square for a quote on their itemised/i);
@@ -265,27 +284,26 @@ describe('buildActions', () => {
 
     it('eWAY (offersItemisedPlan: gateway_only) replaces the quote ask with the "ask which acquirer" action', () => {
       const actions = buildActions(2, 'eWAY', 'retail', CTX);
-      const planActions = actions.filter((a) => a.priority === 'plan');
-      expect(planActions).toHaveLength(1);
-      expect(planActions[0]!.text).toContain('which acquirer settles');
+      expect(psPlan(actions)).toHaveLength(1);
+      expect(psPlan(actions)[0]!.text).toContain('which acquirer settles');
     });
 
     it('Stripe below the volume threshold suppresses the itemised quote ask entirely', () => {
       // Stripe's monthly floor is $20,833 → $250K annual. $100K annual is below.
       const lowVolumeCtx: ActionContext = { ...CTX, volume: 100_000 };
       const actions = buildActions(2, 'Stripe', 'retail', lowVolumeCtx);
-      // Cat 2 normally returns 3 actions (urgent, plan, monitor). With the
-      // itemised quote suppressed there is no plan-tier action left.
-      expect(actions.filter((a) => a.priority === 'plan')).toHaveLength(0);
-      expect(actions).toHaveLength(2);
+      // No base-plan action — the itemised quote was suppressed and
+      // there is no alternative for `volume_gated` below threshold.
+      // The NPP rail action for retail (Bucket 3) is the only plan
+      // item left.
+      expect(psPlan(actions)).toHaveLength(0);
     });
 
     it('Stripe at $400K (above threshold) keeps the itemised quote ask verbatim', () => {
       const aboveVolumeCtx: ActionContext = { ...CTX, volume: 400_000 };
       const actions = buildActions(2, 'Stripe', 'retail', aboveVolumeCtx);
-      const planActions = actions.filter((a) => a.priority === 'plan');
-      expect(planActions).toHaveLength(1);
-      expect(planActions[0]!.text).toMatch(/Ask Stripe for a quote on their itemised pricing/i);
+      expect(psPlan(actions)).toHaveLength(1);
+      expect(psPlan(actions)[0]!.text).toMatch(/Ask Stripe for a quote on their itemised pricing/i);
     });
   });
 
@@ -307,38 +325,124 @@ describe('buildActions', () => {
     });
   });
 
-  describe('PayID/PayTo action injection (M3 — credibility brief Section 4)', () => {
-    it('Cat 2 + hospitality industry gets the PayTo action in the plan tier', () => {
+  // ── NPP-rail action injection (NPP_RAIL_ACTIONS_BRIEF.md May 2026) ─
+  // SUPERSEDES the M3 single-PayTo block. Three buckets gated per
+  // industry × category. Bucket mapping:
+  //   PayID-async       hospitality, online, ticketing, travel, other
+  //   PayTo-recurring   cafe, hospitality, online, ticketing, travel, other
+  //   Provider-in-person cafe, hospitality, retail
+
+  describe('NPP-rail action injection (per industry buckets)', () => {
+    function actionIds(actions: { action_id?: string }[]): string[] {
+      return actions.map((a) => a.action_id ?? '').filter(Boolean);
+    }
+
+    it('cafe → payto_recurring + provider_in_person (no payid_async)', () => {
+      const ids = actionIds(buildActions(2, 'Stripe', 'cafe', CTX));
+      expect(ids).toContain('payto_recurring');
+      expect(ids).toContain('provider_in_person');
+      expect(ids).not.toContain('payid_async');
+    });
+
+    it('hospitality → all three NPP buckets', () => {
+      const ids = actionIds(buildActions(2, 'Stripe', 'hospitality', CTX));
+      expect(ids).toEqual(
+        expect.arrayContaining(['payid_async', 'payto_recurring', 'provider_in_person']),
+      );
+    });
+
+    it('retail → provider_in_person only', () => {
+      const ids = actionIds(buildActions(2, 'Stripe', 'retail', CTX));
+      expect(ids).toEqual(['provider_in_person']);
+    });
+
+    it('online → payid_async + payto_recurring (no in-person)', () => {
+      const ids = actionIds(buildActions(2, 'Stripe', 'online', CTX));
+      expect(ids).toContain('payid_async');
+      expect(ids).toContain('payto_recurring');
+      expect(ids).not.toContain('provider_in_person');
+    });
+
+    it('ticketing → payid_async + payto_recurring (no in-person)', () => {
+      const ids = actionIds(buildActions(2, 'Stripe', 'ticketing', CTX));
+      expect(ids).toContain('payid_async');
+      expect(ids).toContain('payto_recurring');
+      expect(ids).not.toContain('provider_in_person');
+    });
+
+    it('travel → payid_async + payto_recurring (no in-person)', () => {
+      const ids = actionIds(buildActions(2, 'Stripe', 'travel', CTX));
+      expect(ids).toContain('payid_async');
+      expect(ids).toContain('payto_recurring');
+      expect(ids).not.toContain('provider_in_person');
+    });
+
+    it('other → payid_async + payto_recurring (B2B / service businesses)', () => {
+      const ids = actionIds(buildActions(2, 'Stripe', 'other', CTX));
+      expect(ids).toContain('payid_async');
+      expect(ids).toContain('payto_recurring');
+      expect(ids).not.toContain('provider_in_person');
+    });
+
+    it('Cat 5 receives NO NPP rail actions regardless of industry', () => {
+      for (const industry of ['cafe', 'hospitality', 'retail', 'online', 'ticketing', 'travel', 'other']) {
+        const ids = actionIds(buildActions(5, 'Square', industry, CTX, 'zero_cost'));
+        expect(ids).toEqual([]);
+      }
+    });
+
+    it('every NPP action lands BEFORE the first monitor-priority action', () => {
       const actions = buildActions(2, 'Stripe', 'hospitality', CTX);
-      const payTo = actions.find((a) => a.text.includes('PayID/PayTo'));
-      expect(payTo).toBeDefined();
-      expect(payTo!.priority).toBe('plan');
-      expect(payTo!.script).toContain('Azupay');
+      const firstMonitor = actions.findIndex((a) => a.priority === 'monitor');
+      // Negative findIndex would mean no monitor action exists — guard
+      // accordingly so the assertion is meaningful in that case.
+      const nppIndices = actions
+        .map((a, i) => (a.action_id ? i : -1))
+        .filter((i) => i >= 0);
+      expect(nppIndices.length).toBeGreaterThan(0);
+      for (const idx of nppIndices) {
+        if (firstMonitor !== -1) expect(idx).toBeLessThan(firstMonitor);
+      }
     });
 
-    it('Cat 2 + retail does NOT get the PayTo action (walk-in heavy)', () => {
-      const actions = buildActions(2, 'Stripe', 'retail', CTX);
-      expect(actions.find((a) => a.text.includes('PayID/PayTo'))).toBeUndefined();
+    it('Bucket 1 copy acknowledges the in-person queue-verification friction', () => {
+      const actions = buildActions(2, 'Stripe', 'online', CTX);
+      const payIdAsync = actions.find((a) => a.action_id === 'payid_async');
+      expect(payIdAsync).toBeDefined();
+      // Per brief: verification friction MUST be acknowledged honestly.
+      expect(payIdAsync!.script).toContain('does NOT close the loop for in-person queue scenarios');
     });
 
-    it('Cat 4 + online retail gets the PayTo action', () => {
-      const actions = buildActions(4, 'Stripe', 'online', CTX);
-      const payTo = actions.find((a) => a.text.includes('PayID/PayTo'));
-      expect(payTo).toBeDefined();
-      expect(payTo!.priority).toBe('plan');
-    });
-
-    it('Cat 5 never gets the PayTo action (higher-priority problems)', () => {
-      const actions = buildActions(5, 'Square', 'hospitality', CTX, 'zero_cost');
-      expect(actions.find((a) => a.text.includes('PayID/PayTo'))).toBeUndefined();
-    });
-
-    it('PayTo action lands BEFORE the monitor tier (so it sits in the plan block)', () => {
+    it('no provider is named alone (independence preserved)', () => {
       const actions = buildActions(2, 'Stripe', 'hospitality', CTX);
-      const payToIdx = actions.findIndex((a) => a.text.includes('PayID/PayTo'));
-      const firstMonitorIdx = actions.findIndex((a) => a.priority === 'monitor');
-      expect(payToIdx).toBeGreaterThanOrEqual(0);
-      expect(payToIdx).toBeLessThan(firstMonitorIdx);
+      const nppActions = actions.filter((a) => a.action_id);
+      for (const action of nppActions) {
+        const flat = `${action.text} ${action.script ?? ''} ${action.why ?? ''}`;
+        // Bucket 2 + Bucket 3 actions must list multiple providers.
+        if (action.action_id === 'payto_recurring') {
+          // Bucket 2 names six providers.
+          expect(flat).toMatch(/Azupay/);
+          expect(flat).toMatch(/Volt/);
+          expect(flat).toMatch(/Monoova/);
+        }
+        if (action.action_id === 'provider_in_person') {
+          // Bucket 3 names two providers — never just one.
+          expect(flat).toMatch(/Azupay/);
+          expect(flat).toMatch(/Volt/);
+        }
+      }
+    });
+
+    it('no specific cents-per-transaction figure appears in any NPP action', () => {
+      const actions = buildActions(2, 'Stripe', 'hospitality', CTX);
+      const nppActions = actions.filter((a) => a.action_id);
+      for (const action of nppActions) {
+        const flat = `${action.text} ${action.script ?? ''} ${action.why ?? ''}`;
+        // Pricing is volume-tiered; specific cents figures are banned.
+        // Match a dollar / cent unit immediately following a number.
+        expect(flat).not.toMatch(/\$0?\.\d+\s*(per|cents)/i);
+        expect(flat).not.toMatch(/\b\d+\s*c\b/);
+      }
     });
   });
 

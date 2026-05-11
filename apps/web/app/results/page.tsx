@@ -304,7 +304,7 @@ function ResultsContent() {
           eyebrow="What to do, in order"
           meta={actionCountText(actions) || undefined}
         />
-        <VerticalActionSteps actions={actions} />
+        <VerticalActionSteps actions={actions} category={category} />
 
         {/* Reform timeline — compact 5-row calendar. */}
         <SectionHeader eyebrow="Reform timeline" />

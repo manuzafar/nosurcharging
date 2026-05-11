@@ -212,6 +212,12 @@ export interface ActionItem {
   // step to render the RAO (Recover / Absorb / Optimise) options as a card,
   // not as embedded script text. Source of truth for the lever copy.
   framework?: RaoFramework;
+  // Optional analytics identifier — set on actions where we care which
+  // specific recommendation the merchant engaged with. The funnel uses
+  // it on the existing `cta_clicked` event to differentiate, e.g., the
+  // three NPP-rail buckets (`payid_async`, `payto_recurring`,
+  // `provider_in_person`) introduced in NPP_RAIL_ACTIONS_BRIEF.md.
+  action_id?: string;
 }
 
 // Recover / Absorb / Optimise — option-presenting framework attached to the

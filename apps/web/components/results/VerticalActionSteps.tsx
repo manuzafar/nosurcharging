@@ -31,9 +31,15 @@ import type {
   ActionPriority,
   RaoFramework,
 } from '@nosurcharging/calculations/types';
+import { Analytics } from '@/lib/analytics';
 
 interface VerticalActionStepsProps {
   actions: ActionItem[];
+  // Threaded through so the per-action `cta_clicked` event fired when
+  // a merchant expands a script carries the merchant's category. Made
+  // optional so test fixtures don't have to backfill — the analytics
+  // call no-ops if category is missing.
+  category?: 1 | 2 | 3 | 4 | 5;
 }
 
 const TIER_ORDER: ActionPriority[] = ['urgent', 'plan', 'monitor'];
@@ -324,6 +330,9 @@ interface StepRowProps {
   why?: string;
   framework?: RaoFramework;
   isLast?: boolean;
+  /** Analytics discriminator. Fires once on first script expansion. */
+  actionId?: string;
+  category?: 1 | 2 | 3 | 4 | 5;
 }
 
 function StepRow({
@@ -335,6 +344,8 @@ function StepRow({
   why,
   framework,
   isLast,
+  actionId,
+  category,
 }: StepRowProps) {
   // Scripts collapse by default (per Manu's M2 decision). The chevron
   // toggle reveals the "Exact script" block below. Why + framework stay
@@ -429,7 +440,24 @@ function StepRow({
           <div style={{ marginTop: '10px' }}>
             <button
               type="button"
-              onClick={() => setScriptOpen((v) => !v)}
+              onClick={() => {
+                setScriptOpen((v) => {
+                  const next = !v;
+                  // Fire once on expand only — collapsing isn't an
+                  // engagement signal. Optional fields are dropped
+                  // when undefined so the schema stays clean for
+                  // legacy actions that don't carry an action_id.
+                  if (next && category) {
+                    Analytics.ctaClicked({
+                      cta_type: 'action_script',
+                      cta_location: 'action_list',
+                      category,
+                      ...(actionId ? { action_id: actionId } : {}),
+                    });
+                  }
+                  return next;
+                });
+              }}
               className="inline-flex items-center font-bold uppercase cursor-pointer"
               aria-expanded={scriptOpen}
               style={{
@@ -505,7 +533,10 @@ export function actionCountText(actions: ActionItem[]): string {
 
 // ── Public component ────────────────────────────────────────────
 
-export function VerticalActionSteps({ actions }: VerticalActionStepsProps) {
+export function VerticalActionSteps({
+  actions,
+  category,
+}: VerticalActionStepsProps) {
   const sorted = sortByTier(actions);
 
   // Eyebrow + count pill moved out to the page-level SectionHeader.
@@ -524,6 +555,8 @@ export function VerticalActionSteps({ actions }: VerticalActionStepsProps) {
             script={action.script}
             why={action.why}
             framework={action.framework}
+            actionId={action.action_id}
+            category={category}
           />
         ))}
 

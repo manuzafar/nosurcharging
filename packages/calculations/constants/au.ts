@@ -98,18 +98,35 @@ export const AU_AVG_TXN_BY_INDUSTRY: Record<string, number> = {
   other: 65,
 };
 
-// ── PayID/PayTo industry suitability (May 2026 credibility brief) ─
-// Industries where PayTo (NPP account-to-account) offers a meaningful
-// per-transaction cents pricing alternative to card schemes —
-// subscription / recurring / repeat-customer flows. cafe + retail +
-// other are excluded because they're predominantly walk-in, one-off
-// transactions where PayTo's recurring-authorisation value is weaker.
-export const AU_PAYTO_SUITABLE_INDUSTRIES = new Set<string>([
-  'hospitality',
-  'online',
-  'ticketing',
-  'travel',
-]);
+// ── NPP-rail action buckets per industry (May 2026) ───────────────
+// SUPERSEDES AU_PAYTO_SUITABLE_INDUSTRIES. Per NPP_RAIL_ACTIONS_BRIEF
+// the action list emits ZERO-to-THREE NPP-rail actions per industry,
+// drawn from these three buckets:
+//   1. PayID-async — no provider, async verification (invoicing,
+//      online checkout, bookings).
+//   2. PayTo-recurring — provider required, standing authorisation
+//      (subscriptions, memberships, recurring B2B).
+//   3. Provider-integrated in-person — provider + terminal, closes
+//      the queue-verification gap for walk-in flows.
+// Cat 5 receives no NPP actions regardless of industry.
+//
+// Verified May 2026. Source of truth for actions.ts injection logic.
+
+export interface NppRailBuckets {
+  payIdAsync: boolean;
+  payToRecurring: boolean;
+  providerInPerson: boolean;
+}
+
+export const AU_NPP_RAIL_BUCKETS: Record<string, NppRailBuckets> = {
+  cafe:        { payIdAsync: false, payToRecurring: true,  providerInPerson: true  },
+  hospitality: { payIdAsync: true,  payToRecurring: true,  providerInPerson: true  },
+  retail:      { payIdAsync: false, payToRecurring: false, providerInPerson: true  },
+  online:      { payIdAsync: true,  payToRecurring: true,  providerInPerson: false },
+  ticketing:   { payIdAsync: true,  payToRecurring: true,  providerInPerson: false },
+  travel:      { payIdAsync: true,  payToRecurring: true,  providerInPerson: false },
+  other:       { payIdAsync: true,  payToRecurring: true,  providerInPerson: false },
+};
 
 // ── Debit percentage rates (for "lower of" formula) ──────────────
 // Source: RBA Conclusions Paper, March 2026, Policy 4

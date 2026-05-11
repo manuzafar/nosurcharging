@@ -24,7 +24,7 @@
 
 import type { ActionContext, ActionItem, RaoFramework } from './types';
 import { PSP_PUBLISHED_RATES, type PspPublishedRate } from './constants/psp-rates';
-import { AU_PAYTO_SUITABLE_INDUSTRIES } from './constants/au';
+import { AU_NPP_RAIL_BUCKETS } from './constants/au';
 
 // ── Formatting helpers ───────────────────────────────────────────
 // Calc layer is i18n-naive — AU formatting only in Phase 1.
@@ -189,31 +189,68 @@ function buildRaoFramework(args: {
   };
 }
 
-// PayID/PayTo action (May 2026 credibility brief Section 4). Only
-// injected for Cat 1-4 where the industry matches
-// AU_PAYTO_SUITABLE_INDUSTRIES — Cat 5 has higher-priority problems.
-// Positioned after the "ask PSP" actions but before the "monitor"
-// tier so it visually sits in the `plan` block.
-function buildPayToAction(industry: string): ActionItem | null {
-  if (!AU_PAYTO_SUITABLE_INDUSTRIES.has(industry)) return null;
+// ── NPP-rail action builders ──────────────────────────────────────
+// NPP_RAIL_ACTIONS_BRIEF.md (May 2026). Three buckets, copy
+// verbatim. Independence preserved — Azupay is only ever named as
+// one provider among several, never recommended alone. Verification
+// friction acknowledged honestly in Bucket 1. No specific
+// cents-per-transaction figures (volume-tiered, provider-specific).
+
+function buildPayIdAsyncAction(): ActionItem {
   return {
     priority: 'plan',
     timeAnchor: 'BEFORE 1 OCTOBER',
-    text: `Evaluate PayID/PayTo for your repeat customers`,
-    script: `PayTo is the New Payments Platform's account-to-account rail — customers approve a recurring payment from their bank account, and you collect with a flat cents-per-transaction fee rather than a percentage of value. For repeat customers (subscriptions, regulars, recurring bookings), it can structurally remove card scheme costs on that revenue stream. Live providers in May 2026 include Azupay, Monoova, Volt, Zai, pay.com.au, and Stripe AU. Per-transaction pricing is volume-tiered — request a quote from one or two providers.`,
-    why: `For your industry, a meaningful share of revenue likely comes from repeat customers. PayTo doesn't replace cards — it sits alongside them, and the cost structure (fixed cents instead of percentage) makes it the cheapest rail for higher-value or recurring transactions.`,
+    text: `Add PayID as a payment option on invoices and online checkout`,
+    script: `Publish your business PayID (ABN, phone, or email tied to your business bank account) on invoices, booking confirmations, and online checkout. Customers paying via PayID send the payment directly from their bank account through the New Payments Platform — settlement is instant and there is no card scheme cost on those transactions. Your business bank account fee for receiving PayID payments is typically zero or a few cents. Verification happens via banking app notification, which works for invoiced or pre-ordered flows where you confirm payment before fulfilment — it does NOT close the loop for in-person queue scenarios (for that, see the merchant-initiated PayTo option below).`,
+    why: `For the portion of customers willing to pay via PayID, your card scheme cost on that revenue drops to zero. No provider integration needed — your business bank account already supports it.`,
+    action_id: 'payid_async',
   };
 }
 
-// Splices an action into the existing list immediately before the
-// first `monitor`-priority action — keeps the visual ordering as
-// urgent → plan → plan (PayTo) → monitor without depending on
-// downstream sort logic.
-function injectBeforeMonitor(actions: ActionItem[], item: ActionItem | null): ActionItem[] {
-  if (!item) return actions;
+function buildPayToRecurringAction(): ActionItem {
+  return {
+    priority: 'plan',
+    timeAnchor: 'BEFORE 1 OCTOBER',
+    text: `Evaluate PayTo for your recurring or subscription customers`,
+    script: `PayTo is the New Payments Platform's authorisation framework for ongoing payments — the customer pre-authorises you to pull payments from their bank account on a schedule. For subscriptions, memberships, recurring B2B billing, or appointment-based businesses with rebooks, this replaces card-on-file billing entirely. Per-transaction pricing is volume-tiered cents rather than percentage of value, which is materially cheaper for higher-value recurring transactions. Providers known to offer merchant-facing PayTo acceptance in Australia include Azupay, Volt, Monoova, Zai, pay.com.au, and Stripe AU — request a quote from one or two to benchmark.`,
+    why: `Recurring card-on-file billing carries the full percentage-of-value cost every time it runs. PayTo's per-transaction structure puts a cap on that cost — particularly valuable as transaction values rise.`,
+    action_id: 'payto_recurring',
+  };
+}
+
+function buildProviderInPersonAction(): ActionItem {
+  return {
+    priority: 'plan',
+    timeAnchor: 'BEFORE 1 OCTOBER',
+    text: `Evaluate merchant-initiated PayTo for in-person transactions`,
+    script: `For walk-in or queue-based flows, raw PayID has a verification friction problem — you need to confirm inbound payment via your banking app while the next customer waits. Merchant-initiated PayTo solves this: your terminal or POS shows the amount, the customer approves a push notification in their banking app, the terminal confirms settlement. The customer-facing UX is essentially the same as a card transaction, but with per-transaction cents pricing instead of a percentage of value. Providers known to offer this product in Australia as of May 2026 include Azupay and Volt — coverage and POS integration vary, so evaluate against your specific terminal setup.`,
+    why: `For high-volume in-person merchants, this is the NPP-rail offering that actually fits the operational shape of your service. The verification gap that limits raw PayID is closed at the terminal.`,
+    action_id: 'provider_in_person',
+  };
+}
+
+// Returns 0-3 NPP rail actions based on the industry's bucket
+// mapping. Defaults to the `other` bucket configuration when the
+// industry isn't recognised, so the action list never silently drops
+// recommendations for new industries added later.
+function buildNppRailActions(industry: string): ActionItem[] {
+  const buckets = AU_NPP_RAIL_BUCKETS[industry] ?? AU_NPP_RAIL_BUCKETS.other!;
+  const actions: ActionItem[] = [];
+  if (buckets.payIdAsync) actions.push(buildPayIdAsyncAction());
+  if (buckets.payToRecurring) actions.push(buildPayToRecurringAction());
+  if (buckets.providerInPerson) actions.push(buildProviderInPersonAction());
+  return actions;
+}
+
+// Splices an array of items into the existing list immediately
+// before the first `monitor`-priority action — keeps the visual
+// ordering as urgent → plan (existing) → plan (NPP) → monitor
+// without a downstream sort.
+function injectBeforeMonitor(actions: ActionItem[], items: ActionItem[]): ActionItem[] {
+  if (items.length === 0) return actions;
   const firstMonitor = actions.findIndex((a) => a.priority === 'monitor');
-  if (firstMonitor === -1) return [...actions, item];
-  return [...actions.slice(0, firstMonitor), item, ...actions.slice(firstMonitor)];
+  if (firstMonitor === -1) return [...actions, ...items];
+  return [...actions.slice(0, firstMonitor), ...items, ...actions.slice(firstMonitor)];
 }
 
 // ── Public entry point ───────────────────────────────────────────
@@ -226,17 +263,20 @@ export function buildActions(
   planType?: 'flat' | 'costplus' | 'blended' | 'zero_cost',
 ): ActionItem[] {
   const isBlended = planType === 'blended';
-  const payToAction = category === 5 ? null : buildPayToAction(industry);
+  // NPP-rail injection: 0-3 actions per industry. Cat 5 excluded
+  // (higher-priority cash-flow problems shouldn't share the action
+  // list with payment-rail evaluation).
+  const nppActions = category === 5 ? [] : buildNppRailActions(industry);
 
   switch (category) {
     case 1:
-      return injectBeforeMonitor(buildCat1Actions(psp), payToAction);
+      return injectBeforeMonitor(buildCat1Actions(psp), nppActions);
     case 2:
-      return injectBeforeMonitor(buildCat2Actions(psp, ctx, isBlended), payToAction);
+      return injectBeforeMonitor(buildCat2Actions(psp, ctx, isBlended), nppActions);
     case 3:
-      return injectBeforeMonitor(buildCat3Actions(psp, ctx), payToAction);
+      return injectBeforeMonitor(buildCat3Actions(psp, ctx), nppActions);
     case 4:
-      return injectBeforeMonitor(buildCat4Actions(psp, ctx, isBlended), payToAction);
+      return injectBeforeMonitor(buildCat4Actions(psp, ctx, isBlended), nppActions);
     case 5:
       return buildCat5Actions(psp);
   }

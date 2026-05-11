@@ -197,6 +197,10 @@ export const Analytics = {
     pl_swing?: number;
     volume_tier?: string;
     psp?: string;
+    // Optional discriminator for the specific action when cta_type is
+    // 'action_script' — see NPP_RAIL_ACTIONS_BRIEF.md. Current
+    // values: 'payid_async', 'payto_recurring', 'provider_in_person'.
+    action_id?: string;
   }): void {
     if (!phInitialised) return;
     posthog.capture('cta_clicked', { country: 'AU', ...props });
