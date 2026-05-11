@@ -90,45 +90,63 @@ export default function HomePage() {
       {/* Section 6 — How it works (four questions) */}
       <FeaturesSection />
 
-      {/* Section 7 — Bottom CTA */}
-      <section className="border-b border-rule bg-paper px-5 text-center" style={{ padding: '68px 20px' }}>
-        <p className="text-[10px] font-medium uppercase tracking-[3px] text-ink-faint">
+      {/* Section 7 — Final CTA. Visual climax of the homepage; 52px
+          display serif (36px mobile) with italic emerald accent on
+          "your", larger pill padding than the hero CTA for finality. */}
+      <section
+        className="bg-paper text-center"
+        style={{ padding: 'clamp(56px, 9vw, 80px) clamp(18px, 3vw, 28px)' }}
+      >
+        <p
+          className="font-mono uppercase"
+          style={{
+            fontSize: '11px',
+            fontWeight: 500,
+            letterSpacing: '1.4px',
+            color: 'var(--color-text-secondary)',
+          }}
+        >
           Free · No account · Under five minutes
         </p>
         <h2
-          className="mt-4 font-serif text-ink"
+          className="mx-auto mt-4 font-serif text-ink"
           style={{
-            fontSize: '34px',
+            fontSize: 'clamp(36px, 7vw, 52px)',
             fontWeight: 500,
-            letterSpacing: '-1.2px',
-            lineHeight: '1.1',
+            letterSpacing: '-0.025em',
+            lineHeight: 1.05,
+            maxWidth: '720px',
           }}
         >
-          Get your report now.
+          Get{' '}
+          <em className="italic text-accent" style={{ fontStyle: 'italic' }}>
+            your
+          </em>{' '}
+          report now.
         </h2>
         <p
-          className="mx-auto mt-3 max-w-[420px] text-ink-secondary"
-          style={{ fontSize: '15px', lineHeight: '1.55' }}
+          className="mx-auto mt-4 text-ink-secondary"
+          style={{
+            fontSize: 'clamp(14px, 1.6vw, 15px)',
+            lineHeight: 1.6,
+            maxWidth: '480px',
+          }}
         >
           Find out exactly what October costs your business.
         </p>
-        {/* Bottom CTA — pill shape, matches hero CTA. Offset outline traces
-            the rounded border thanks to modern-browser `outline` support for
-            border-radius. */}
         <Link
           href="/assessment"
           data-cta="bottom"
-          className="mt-7 inline-block bg-accent text-white transition-opacity duration-150 hover:opacity-90 focus-visible:opacity-90"
+          className="mt-8 inline-flex items-center bg-accent text-white transition-opacity duration-150 hover:opacity-90 focus-visible:opacity-90"
           style={{
-            fontSize: '14px',
+            fontSize: '15px',
             fontWeight: 500,
-            padding: '14px 32px',
-            outline: '3px solid #1A6B5A',
-            outlineOffset: '2px',
+            padding: '16px 36px',
             borderRadius: '9999px',
+            gap: '6px',
           }}
         >
-          Get my free report →
+          Start my free report <span aria-hidden>→</span>
         </Link>
       </section>
 

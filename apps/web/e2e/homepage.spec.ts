@@ -29,7 +29,10 @@ test.describe('Homepage', () => {
   test('features section renders four questions', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page.getByText('Four questions. Your report.')).toBeVisible();
+    // M3 homepage redesign: eyebrow shifts from "Four questions. Your report."
+    // to the mono dot-separated form alongside a new section headline.
+    await expect(page.getByText('Four questions · your report')).toBeVisible();
+    await expect(page.getByText(/No statement in front of you/)).toBeVisible();
     await expect(page.getByText(/How much do you process/)).toBeVisible();
     await expect(page.getByText(/one rate, or a breakdown/)).toBeVisible();
     await expect(page.getByText(/add a surcharge/)).toBeVisible();
