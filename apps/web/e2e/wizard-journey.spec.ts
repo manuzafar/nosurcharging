@@ -36,7 +36,7 @@ test.describe('Wizard journey → Category 1', () => {
     await page.getByRole('button', { name: /see my results/i }).click();
 
     // Skip the email gate
-    await page.getByRole('button', { name: /skip and view now/i }).click();
+    await page.getByRole('button', { name: /view my results without insights/i }).click();
 
     await page.waitForURL(/\/results\?id=/, { timeout: 15000 });
 

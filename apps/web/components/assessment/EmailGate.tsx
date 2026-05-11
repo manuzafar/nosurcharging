@@ -1,18 +1,23 @@
 'use client';
 
-// EmailGate — sits between Step 4 and the reveal screen.
-// Captures email + (optional) marketing consent before the merchant sees
-// their results. Pure form component: no async submission, no server
-// call. Email + consent flow up to the parent and into formData; the
-// reveal screen's submitAssessment() call carries them to the server in
-// a single atomic INSERT (D2-A architecture).
+// EmailGate — paper-aesthetic Phase 1 redesign per
+// EMAIL_GATE_REDESIGN_BRIEF.md. Replaces the dark ink-glass modal with a
+// paper card that visually reads as the last step of the assessment.
+// The audience-capture copy ("Stay across the reform") replaces the
+// previous "Your report is ready" / "send it" framing — Phase 1 ships
+// no PDF and no scheduled benchmark email.
 //
-// Spam Act 2003: marketing checkbox is OPT-IN, never pre-checked.
-// Transactional report email is sent regardless of the marketing box —
-// the merchant asked for their results by completing the assessment.
+// LOCKED INVARIANTS (do not regress):
+//   - props contract (category / onContinue / onSkip)
+//   - email regex
+//   - empty submit → onSkip (treated as skip, not error)
+//   - analytics events: emailGateShown / emailCaptured / emailGateSkipped
+//   - Spam Act 2003: marketing checkbox is opt-in, never pre-checked
+//   - EmailGateSkeleton stays exactly as-is
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Mail, ArrowRight, Check, Lock } from 'lucide-react';
 import { Analytics } from '@/lib/analytics';
 import { EmailGateSkeleton } from './EmailGateSkeleton';
 
@@ -20,8 +25,7 @@ import { EmailGateSkeleton } from './EmailGateSkeleton';
 // must contain at least one non-dot, non-whitespace, non-@ character. Catches
 // pathological inputs like `manu@......` that pass the looser pattern via
 // regex backtracking.
-const EMAIL_REGEX =
-  /^[^\s@.]+(\.[^\s@.]+)*@[^\s@.]+(\.[^\s@.]+)+$/;
+const EMAIL_REGEX = /^[^\s@.]+(\.[^\s@.]+)*@[^\s@.]+(\.[^\s@.]+)+$/;
 
 interface EmailGateProps {
   // Category derived at the parent from getCategory(planType, surcharging).
@@ -35,6 +39,7 @@ export function EmailGate({ category, onContinue, onSkip }: EmailGateProps) {
   const [email, setEmail] = useState('');
   const [marketingConsent, setMarketingConsent] = useState(false);
   const [error, setError] = useState<'invalid_email' | null>(null);
+  const [focused, setFocused] = useState(false);
 
   // Fire email_gate_shown once on mount. assessment_id is not yet known
   // (D2-A: row is INSERTed at reveal); the funnel joins on session_id.
@@ -68,49 +73,55 @@ export function EmailGate({ category, onContinue, onSkip }: EmailGateProps) {
     onSkip();
   };
 
-  // Clear the invalid-email error once the user starts typing again.
   const handleEmailChange = (next: string) => {
     setEmail(next);
     if (error) setError(null);
   };
+
+  const inputBorder = error
+    ? '1px solid var(--color-text-danger, #C53030)'
+    : focused
+      ? '1px solid #1A6B5A'
+      : '0.5px solid rgba(26, 20, 9, 0.18)';
 
   return (
     <div
       role="status"
       aria-live="polite"
       className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
-      style={{ background: '#1A1409' }}
     >
-      {/* Blurred results-shaped backdrop — gives the merchant the
-          visual cue that their report is right behind the gate. */}
+      {/* Blurred paper-toned skeleton — same component, unchanged */}
       <EmailGateSkeleton />
 
-      {/* Translucent ink overlay — soft tint so the skeleton's real
-          colours read through, with enough darkening that the foreground
-          card and its dark text stay legible. */}
+      {/* Paper-tinted overlay — visitor sees a faint outline of the
+          results page right behind the modal. Replaces the previous
+          rgba(26,20,9,0.25) ink wash. */}
       <div
         aria-hidden
         className="absolute inset-0"
-        style={{ background: 'rgba(26, 20, 9, 0.25)' }}
+        style={{
+          background: 'rgba(250, 247, 242, 0.78)',
+          backdropFilter: 'blur(6px)',
+          WebkitBackdropFilter: 'blur(6px)',
+        }}
       />
 
+      {/* Paper card modal */}
       <div
         className="relative w-full"
         style={{
           maxWidth: '440px',
           margin: '0 20px',
-          padding: '40px',
-          background: 'rgba(20, 16, 8, 0.85)',
-          border: '0.5px solid rgba(255,255,255,0.10)',
-          borderRadius: '16px',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+          padding: 'clamp(28px, 4vw, 40px) clamp(20px, 3vw, 40px)',
+          background: '#FAF7F2',
+          border: '0.5px solid rgba(26, 20, 9, 0.08)',
+          borderRadius: '12px',
+          boxShadow: '0 20px 40px rgba(26, 20, 9, 0.08)',
         }}
       >
-        {/* Progress row */}
+        {/* Progress row — 4 filled emerald segments + emerald check circle */}
         <div className="flex items-center justify-between" style={{ marginBottom: '24px' }}>
-          <div className="flex gap-1.5 flex-1">
+          <div className="flex flex-1" style={{ gap: '6px' }}>
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
@@ -124,117 +135,131 @@ export function EmailGate({ category, onContinue, onSkip }: EmailGateProps) {
             ))}
           </div>
           <span
-            className="font-mono"
+            aria-hidden
+            className="flex items-center justify-center"
             style={{
-              fontSize: '11px',
-              color: 'rgba(255,255,255,0.45)',
+              width: '22px',
+              height: '22px',
               marginLeft: '12px',
+              borderRadius: '50%',
+              background: '#1A6B5A',
+              color: '#FAF7F2',
+              flexShrink: 0,
             }}
           >
-            04 / 04 ✓
+            <Check size={11} strokeWidth={2.2} />
           </span>
         </div>
 
         {/* Eyebrow pill */}
         <span
-          className="inline-block font-medium uppercase"
+          className="inline-flex items-center font-medium uppercase"
           style={{
-            background: '#1A6B5A',
-            color: '#FFFFFF',
-            fontSize: '10px',
-            letterSpacing: '1.5px',
-            padding: '4px 10px',
-            borderRadius: '20px',
+            gap: '6px',
+            padding: '5px 10px',
+            borderRadius: '999px',
+            background: '#EBF6F3',
+            border: '0.5px solid #72C4B0',
+            color: '#1A6B5A',
+            fontSize: '11px',
+            letterSpacing: '0.06em',
           }}
         >
-          Your report is ready
+          <Mail size={12} strokeWidth={1.8} aria-hidden />
+          Almost there
         </span>
 
-        {/* Heading */}
+        {/* Headline */}
         <h2
+          id="email-gate-heading"
           className="font-serif"
           style={{
-            fontSize: '26px',
-            color: '#FFFFFF',
-            lineHeight: 1.25,
+            fontSize: 'clamp(26px, 3vw, 28px)',
+            color: '#1A1409',
+            lineHeight: 1.2,
+            letterSpacing: '-0.01em',
             marginTop: '16px',
-            fontWeight: 500,
+            fontWeight: 400,
           }}
         >
-          Where should we send it?
+          Stay across the reform.
         </h2>
 
-        {/* Subheading */}
+        {/* Subhead */}
         <p
           style={{
-            fontSize: '13px',
-            color: 'rgba(255,255,255,0.45)',
-            lineHeight: 1.6,
+            fontSize: '14px',
+            color: 'rgba(26, 20, 9, 0.72)',
+            lineHeight: 1.55,
             marginTop: '10px',
           }}
         >
-          Your results are ready. Enter your email to view them and receive the
-          October 2026 merchant benchmark when live.
+          Get practical payments updates — reform changes, cost-reduction
+          tips, and how other businesses are preparing. Roughly monthly.
+          Unsubscribe anytime.
         </p>
 
-        {/* Email input */}
-        <label htmlFor="email-gate-input" className="sr-only">
-          Email address
-        </label>
-        <input
-          id="email-gate-input"
-          type="email"
-          autoComplete="email"
-          inputMode="email"
-          value={email}
-          onChange={(e) => handleEmailChange(e.target.value)}
-          placeholder="your@business.com.au"
-          aria-invalid={error === 'invalid_email'}
-          aria-describedby={error ? 'email-gate-error' : undefined}
-          className="w-full outline-none"
-          style={{
-            marginTop: '20px',
-            minHeight: '44px',
-            padding: '0 14px',
-            background: 'rgba(255,255,255,0.07)',
-            color: '#FFFFFF',
-            border: error
-              ? '1px solid var(--color-text-danger, #C53030)'
-              : '1px solid rgba(255,255,255,0.14)',
-            borderRadius: '10px',
-            fontSize: '14px',
-            transition: 'border 120ms ease',
-          }}
-          onFocus={(e) => {
-            if (!error) e.currentTarget.style.borderColor = '#1A6B5A';
-          }}
-          onBlur={(e) => {
-            if (!error) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)';
-          }}
-        />
-
-        {/* Error message */}
-        {error === 'invalid_email' && (
-          <p
-            id="email-gate-error"
+        {/* Email field with visible uppercase label */}
+        <div style={{ marginTop: '20px' }}>
+          <label
+            htmlFor="email-gate-input"
+            className="block font-medium uppercase"
             style={{
-              fontSize: '12px',
-              color: 'var(--color-text-danger, #E57373)',
-              marginTop: '8px',
+              fontSize: '11px',
+              letterSpacing: '0.06em',
+              color: 'rgba(26, 20, 9, 0.6)',
+              marginBottom: '8px',
             }}
           >
-            Please enter a valid email address
-          </p>
-        )}
+            Email
+          </label>
+          <input
+            id="email-gate-input"
+            type="email"
+            autoComplete="email"
+            inputMode="email"
+            value={email}
+            onChange={(e) => handleEmailChange(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            placeholder="you@yourbusiness.com.au"
+            aria-invalid={error === 'invalid_email'}
+            aria-describedby={error ? 'email-gate-error' : undefined}
+            className="w-full outline-none"
+            style={{
+              minHeight: '46px',
+              padding: '0 14px',
+              background: '#FFFFFF',
+              color: '#1A1409',
+              border: inputBorder,
+              borderRadius: '8px',
+              fontSize: '14px',
+              transition: 'border 120ms ease',
+            }}
+          />
+          {error === 'invalid_email' && (
+            <p
+              id="email-gate-error"
+              style={{
+                fontSize: '12px',
+                color: 'var(--color-text-danger, #C53030)',
+                marginTop: '8px',
+              }}
+            >
+              Please enter a valid email address
+            </p>
+          )}
+        </div>
 
-        {/* Consent checkbox */}
+        {/* Marketing consent — soft emerald-tinted opt-in row */}
         <label
-          className="flex items-start gap-2.5 cursor-pointer"
+          className="flex cursor-pointer items-start"
           style={{
+            gap: '10px',
             marginTop: '16px',
-            background: 'rgba(255,255,255,0.04)',
-            border: '0.5px solid rgba(255,255,255,0.10)',
-            borderRadius: '10px',
+            background: 'rgba(235, 246, 243, 0.5)',
+            border: '0.5px solid rgba(114, 196, 176, 0.4)',
+            borderRadius: '8px',
             padding: '12px',
           }}
         >
@@ -254,79 +279,80 @@ export function EmailGate({ category, onContinue, onSkip }: EmailGateProps) {
           <span
             style={{
               fontSize: '12px',
-              color: 'rgba(255,255,255,0.55)',
-              lineHeight: 1.55,
+              color: 'rgba(26, 20, 9, 0.7)',
+              lineHeight: 1.5,
             }}
           >
-            Send me practical payment insights — reform updates, cost-reduction
-            tips, and how other merchants are preparing. A few times a month.
-            Unsubscribe anytime.
+            Email me practical payments updates — reform changes,
+            cost-reduction tips, and how other businesses are preparing.
           </span>
         </label>
 
-        {/* Primary CTA */}
+        {/* Primary CTA — emerald pill, full-width */}
         <button
           type="button"
           onClick={handleSubmit}
-          className="w-full font-medium cursor-pointer"
+          className="flex w-full items-center justify-center bg-accent font-medium text-white transition-opacity duration-150 hover:opacity-90"
           style={{
             marginTop: '20px',
-            minHeight: '48px',
-            background: '#1A6B5A',
-            color: '#FFFFFF',
+            minHeight: '50px',
+            padding: '0 20px',
             border: 'none',
-            borderRadius: '10px',
+            borderRadius: '9999px',
             fontSize: '14px',
-            transition: 'opacity 120ms ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.opacity = '0.92';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.opacity = '1';
+            gap: '8px',
+            cursor: 'pointer',
           }}
         >
-          See my results →
+          Send me insights &amp; view my results
+          <ArrowRight size={16} strokeWidth={1.8} aria-hidden />
         </button>
 
-        {/* Skip link */}
-        <div className="text-center" style={{ marginTop: '12px' }}>
+        {/* Skip link — equal visual weight, underlined */}
+        <div className="text-center" style={{ marginTop: '14px' }}>
           <button
             type="button"
             onClick={handleSkip}
+            className="cursor-pointer transition-opacity duration-150 hover:opacity-100"
             style={{
               background: 'none',
               border: 'none',
-              padding: 0,
-              fontSize: '12px',
-              color: 'rgba(255,255,255,0.30)',
-              cursor: 'pointer',
+              padding: '8px 0',
+              fontSize: '13px',
+              color: 'rgba(26, 20, 9, 0.7)',
+              textDecoration: 'underline',
+              textUnderlineOffset: '3px',
             }}
           >
-            Or skip and view now →
+            View my results without insights →
           </button>
         </div>
 
-        {/* Footer note */}
+        {/* Footer privacy note */}
         <p
-          className="text-center"
+          className="flex items-center justify-center text-center"
           style={{
-            marginTop: '20px',
+            marginTop: '18px',
+            paddingTop: '16px',
+            gap: '6px',
+            borderTop: '0.5px solid rgba(26, 20, 9, 0.08)',
             fontSize: '11px',
-            color: 'rgba(255,255,255,0.22)',
+            color: 'rgba(26, 20, 9, 0.5)',
             lineHeight: 1.5,
           }}
         >
-          Your email is used to send your report. Insights are only sent with
-          your consent above. Governed by our{' '}
-          <Link
-            href="/privacy"
-            className="underline"
-            style={{ color: 'rgba(255,255,255,0.30)' }}
-          >
-            Privacy policy
-          </Link>
-          .
+          <Lock size={12} strokeWidth={1.6} aria-hidden style={{ flexShrink: 0 }} />
+          <span>
+            Not shared with any payment provider. Read our{' '}
+            <Link
+              href="/privacy"
+              className="underline"
+              style={{ color: '#1A6B5A', textUnderlineOffset: '2px' }}
+            >
+              privacy policy
+            </Link>
+            .
+          </span>
         </p>
       </div>
     </div>
