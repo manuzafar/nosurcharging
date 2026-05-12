@@ -6,11 +6,16 @@ test.describe('Mobile 375px', () => {
   test('homepage renders correctly on mobile', async ({ page }) => {
     await page.goto('/');
 
-    // Hero visible
-    await expect(page.getByText(/RBA Surcharge Ban/)).toBeVisible();
+    // Hero eyebrow (May 2026 hero revision): consolidated pill that
+    // flips between "{N} days until the surcharge ban" and
+    // "The surcharge ban is in effect" automatically.
+    await expect(
+      page.getByText(/(\d+\s+days?\s+until\s+the\s+surcharge\s+ban|The surcharge ban is in effect)/i),
+    ).toBeVisible();
 
-    // CTA button visible
-    await expect(page.getByRole('link', { name: /get my free report/i }).first()).toBeVisible();
+    // Sole hero CTA — the nav CTA was deleted in the revision so the
+    // assertion no longer needs disambiguation.
+    await expect(page.getByRole('link', { name: /start my free report/i }).first()).toBeVisible();
   });
 
   test('assessment flow works on mobile', async ({ page }) => {
