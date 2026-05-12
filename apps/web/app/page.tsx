@@ -32,14 +32,15 @@ export default function HomePage() {
         <HomepageAnalytics />
       </Suspense>
 
-      {/* Navigation — sticky, ink background */}
+      {/* Navigation — sticky, ink background.
+          Per HOMEPAGE_HERO_REVISION_BRIEF (May 2026) the right side
+          is intentionally EMPTY — the nav CTA was removed so it no
+          longer competes with the hero's primary CTA for attention.
+          Logo on the left, dark band, nothing else. */}
       <nav
-        className="sticky top-0 z-20 flex items-center justify-between bg-ink px-5"
+        className="sticky top-0 z-20 flex items-center bg-ink px-5"
         style={{ height: '52px' }}
       >
-        {/* Logo — "surcharging" portion in italic accent-border.
-            The .com.au suffix is hidden below 400px so the logo doesn't
-            collide with the sticky CTA at the 375px audit width. */}
         <Link href="/" className="font-serif font-medium text-white" style={{ fontSize: '16px' }}>
           no
           <span className="italic" style={{ color: '#72C4B0' }}>
@@ -48,23 +49,6 @@ export default function HomePage() {
           <span className="hidden text-white/60 min-[400px]:inline" style={{ fontSize: '13px' }}>
             .com.au
           </span>
-        </Link>
-
-        {/* Single CTA — pill shape (Modern Fintech Hierarchy). The nav CTA
-            is the primary action on this sticky bar, so it shares the same
-            reserved pill shape as AccentButton and the hero CTA below. */}
-        <Link
-          href="/assessment"
-          data-cta="nav"
-          className="bg-accent text-white transition-opacity duration-150 hover:opacity-90"
-          style={{
-            fontSize: '12px',
-            fontWeight: 500,
-            padding: '8px 18px',
-            borderRadius: '9999px',
-          }}
-        >
-          Get my free report →
         </Link>
       </nav>
 
