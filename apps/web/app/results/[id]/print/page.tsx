@@ -68,7 +68,7 @@ export default function PrintResultsPage() {
       <main className="mx-auto max-w-3xl px-5 pt-6">
         <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)' }}>
           This assessment has expired. We delete every assessment within
-          48 hours of submission. Run a new one at /assessment.
+          30 days of submission. Run a new one at /assessment.
         </p>
       </main>
     );

@@ -4,10 +4,13 @@
 // Used by the results page to load data from a URL search param.
 // Service role bypasses RLS (assessments table has SELECT USING(false) for anon).
 //
-// Ruthless Cut M3 — 48h retention. Rows older than `expires_at` are
-// deleted inline (best-effort) and the caller receives an explicit
-// "expired" state. A scheduled cron sweep is deferred per PB-2; until
-// then the on-load path is the only deletion mechanism.
+// 30-day retention (migration 009). Rows older than `expires_at`
+// are deleted inline (best-effort) and the caller receives an
+// explicit "expired" state. Originally 48h when the PDF artifact
+// was the merchant's persistent record; widened to 30 days in
+// May 2026 when the PDF pipeline was removed. A scheduled cron
+// sweep is deferred per PB-2; until then the on-load path is the
+// only deletion mechanism.
 
 import { supabaseAdmin } from '@/lib/supabase/server';
 import type { AssessmentOutputs, ActionItem } from '@nosurcharging/calculations/types';
@@ -26,8 +29,8 @@ export interface StoredAssessment {
   // capture flow even after the PDF email pipeline was removed in
   // May 2026.
   email: string | null;
-  // 48h TTL. After this timestamp the row is deleted on next access.
-  // Always present from migration 009 onwards.
+  // 30-day TTL. After this timestamp the row is deleted on next
+  // access. Always present from migration 009 onwards.
   expires_at: string;
 }
 
