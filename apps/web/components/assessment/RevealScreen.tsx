@@ -8,18 +8,27 @@
 // If action takes >1.1s, hold on reveal until resolved.
 // Error: replace reveal with error, never navigate with incomplete data.
 
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { submitAssessment } from '@/actions/submitAssessment';
 import type { AssessmentFormData, AssessmentResult } from '@/actions/submitAssessment';
-import { trackEvent } from '@/lib/analytics';
+import { Analytics } from '@/lib/analytics';
 
 interface RevealScreenProps {
   formData: AssessmentFormData;
+  // ms-epoch captured when the merchant committed Step 1. Threaded
+  // through so assessment_submission_complete carries an accurate
+  // time_spent_seconds (METRICS_DASHBOARD_BRIEF §1.6).
+  assessmentStartedAt: number;
   onComplete: (result: AssessmentResult) => void;
   onError: (error: string) => void;
 }
 
-export function RevealScreen({ formData, onComplete, onError }: RevealScreenProps) {
+export function RevealScreen({
+  formData,
+  assessmentStartedAt,
+  onComplete,
+  onError,
+}: RevealScreenProps) {
   const [showCategory, setShowCategory] = useState(false);
   const [categoryLabel, setCategoryLabel] = useState('');
 
@@ -41,11 +50,19 @@ export function RevealScreen({ formData, onComplete, onError }: RevealScreenProp
         return;
       }
 
+      const timeSpentSeconds = Math.max(
+        0,
+        Math.round((Date.now() - assessmentStartedAt) / 1000),
+      );
+
       // Handle strategic rate exit; all standard paths (Cat 1-5) flow
       // through the unified results shell.
       if (r.strategicRateExit) {
         setCategoryLabel('Strategic rate — specialist guidance');
-        trackEvent('assessment_submission_complete', { category: 'strategic_rate' });
+        Analytics.assessmentSubmissionComplete({
+          category: 'strategic_rate',
+          time_spent_seconds: timeSpentSeconds,
+        });
       } else {
         const cat = (r.outputs as { category: number })?.category;
         const verdicts: Record<number, string> = {
@@ -56,7 +73,10 @@ export function RevealScreen({ formData, onComplete, onError }: RevealScreenProp
           5: 'Category 5 — your zero-cost plan ends',
         };
         setCategoryLabel(verdicts[cat] ?? '');
-        trackEvent('assessment_submission_complete', { category: String(cat) });
+        Analytics.assessmentSubmissionComplete({
+          category: cat,
+          time_spent_seconds: timeSpentSeconds,
+        });
       }
 
       if (timerDone) {

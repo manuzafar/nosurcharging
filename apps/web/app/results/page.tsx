@@ -52,6 +52,10 @@ import { ResultsTopBar } from '@/components/results/shell/ResultsTopBar';
 
 import { Lightbulb, Calculator } from 'lucide-react';
 
+import {
+  TrackedSection,
+  ResultsViewedAtProvider,
+} from '@/components/results/TrackedSection';
 import { VerdictSection } from '@/components/results/VerdictSection';
 import { ContextParagraph } from '@/components/results/ContextParagraph';
 import { MetricCards } from '@/components/results/MetricCards';
@@ -91,6 +95,11 @@ function ResultsContent() {
   // their data was deleted (the brand promise) and can retake without
   // a silent reroute.
   const [expired, setExpired] = useState(false);
+  // Captured at the moment Analytics.resultsViewed fires. Threaded
+  // down to TrackedSection instances via ResultsViewedAtProvider so
+  // each section_visited event carries the elapsed seconds since
+  // the verdict was shown (METRICS_DASHBOARD_BRIEF §1.1).
+  const [resultsViewedAt, setResultsViewedAt] = useState<number | null>(null);
   // `actions` is seeded once from the initial DB load and is deliberately
   // separate from `outputs`. The slider recalculates outputs without
   // touching actions — keeping them split prevents the action list from
@@ -148,6 +157,8 @@ function ResultsContent() {
         is_mobile:
           typeof window !== 'undefined' ? window.innerWidth < 768 : false,
       });
+      // Stamp the baseline for TrackedSection elapsed-time measurement.
+      setResultsViewedAt(Date.now());
     });
   }, [assessmentId, router]);
 
@@ -248,30 +259,37 @@ function ResultsContent() {
         assessmentId={assessmentId ?? undefined}
       />
 
+      <ResultsViewedAtProvider value={resultsViewedAt ?? Date.now()}>
       <main className="mx-auto max-w-3xl pb-20 min-[501px]:pb-12 pt-6">
         {/* Hero — situation pill, eyebrow, P&L hero number, one-sentence
             verdict. Nothing else competes (per Ruthless Cut brief §2). */}
-        <VerdictSection outputs={outputs} />
+        <TrackedSection sectionId="verdict" category={category}>
+          <VerdictSection outputs={outputs} />
+        </TrackedSection>
 
         {/* Context paragraph — 2–3 sentences in plain English. */}
-        <ContextParagraph category={category} pspName={pspName} />
+        <TrackedSection sectionId="context_paragraph" category={category}>
+          <ContextParagraph category={category} pspName={pspName} />
+        </TrackedSection>
 
         {/* Numbers — 3-mode metric cards. */}
-        <SectionHeader eyebrow="The numbers" />
-        <div className="px-5 min-[501px]:px-8">
-          <MetricCards
-            outputs={outputs}
-            planType={planType}
-            volume={volume}
-          />
-        </div>
+        <TrackedSection sectionId="metric_cards" category={category}>
+          <SectionHeader eyebrow="The numbers" />
+          <div className="px-5 min-[501px]:px-8">
+            <MetricCards
+              outputs={outputs}
+              planType={planType}
+              volume={volume}
+            />
+          </div>
+        </TrackedSection>
 
         {/* Why this is happening — Cat-conditional problem cards.
             ProblemsBlock returns null for Cat 1 (nothing to flag); the
             SectionHeader is suppressed so we don't leave a stub eyebrow
             sitting above empty space. */}
         {category !== 1 && (
-          <>
+          <TrackedSection sectionId="problems_block" category={category}>
             <SectionHeader eyebrow="Why this is happening" />
             <div className="px-5 min-[501px]:px-8">
               <ProblemsBlock
@@ -283,7 +301,7 @@ function ResultsContent() {
                 estimatedMSFRate={outputs.estimatedMSFRate}
               />
             </div>
-          </>
+          </TrackedSection>
         )}
 
         {/* Market benchmark sentence — pins merchant rate, PSP list
@@ -292,24 +310,26 @@ function ResultsContent() {
             current rate to benchmark. Requires resolvedInputs for the
             merchant's reported figures. */}
         {category !== 5 && resolvedInputs && (
-          <>
+          <TrackedSection sectionId="market_benchmark" category={category}>
             <SectionHeader eyebrow="Market reference" />
             <MarketBenchmarkSentence
               comparison={buildBenchmarkComparison(resolvedInputs, outputs, pspName)}
               pspName={pspName}
             />
-          </>
+          </TrackedSection>
         )}
 
         {/* Action plan — vertical numbered timeline. The count meta
             ("X urgent · Y plan · Z monitor") is computed by the helper
             that VerticalActionSteps exports so the page doesn't
             duplicate the priority-counting logic. */}
-        <SectionHeader
-          eyebrow="What to do, in order"
-          meta={actionCountText(actions) || undefined}
-        />
-        <VerticalActionSteps actions={actions} category={category} />
+        <TrackedSection sectionId="actions" category={category}>
+          <SectionHeader
+            eyebrow="What to do, in order"
+            meta={actionCountText(actions) || undefined}
+          />
+          <VerticalActionSteps actions={actions} category={category} />
+        </TrackedSection>
 
         {/* Reform timeline — compact 5-row calendar. */}
         <SectionHeader eyebrow="Reform timeline" />
@@ -320,18 +340,20 @@ function ResultsContent() {
             EscapeScenarioCard internally gate to Cat 2 / 4. */}
         {resolvedInputs && (
           <>
-            <SectionHeader
-              eyebrow="Refine your estimate"
-              meta={<AccuracyMeter pct={accuracy} />}
-            />
-            <RefinementPanel
-              initialResult={outputs}
-              resolutionTrace={resolutionTrace}
-              inputs={resolvedInputs}
-              industry={originalRaw.industry}
-              onRefinedResult={handleRefinedResult}
-              onAccuracyChange={setAccuracy}
-            />
+            <TrackedSection sectionId="refine_panel" category={category}>
+              <SectionHeader
+                eyebrow="Refine your estimate"
+                meta={<AccuracyMeter pct={accuracy} />}
+              />
+              <RefinementPanel
+                initialResult={outputs}
+                resolutionTrace={resolutionTrace}
+                inputs={resolvedInputs}
+                industry={originalRaw.industry}
+                onRefinedResult={handleRefinedResult}
+                onAccuracyChange={setAccuracy}
+              />
+            </TrackedSection>
 
             {(category === 2 || category === 4) && (
               <>
@@ -351,20 +373,22 @@ function ResultsContent() {
                   />
                 </div>
 
-                <SectionHeader
-                  eyebrow="Is there a better option?"
-                  eyebrowIcon={<Lightbulb size={14} aria-hidden />}
-                />
-                <div className="px-5 min-[501px]:px-8">
-                  <EscapeScenarioCard
-                    category={category}
-                    outputs={outputs}
-                    passThrough={passThrough}
-                    originalRaw={originalRaw}
-                    resolutionContext={resolutionContext}
-                    pspName={pspName}
+                <TrackedSection sectionId="escape_scenario" category={category}>
+                  <SectionHeader
+                    eyebrow="Is there a better option?"
+                    eyebrowIcon={<Lightbulb size={14} aria-hidden />}
                   />
-                </div>
+                  <div className="px-5 min-[501px]:px-8">
+                    <EscapeScenarioCard
+                      category={category}
+                      outputs={outputs}
+                      passThrough={passThrough}
+                      originalRaw={originalRaw}
+                      resolutionContext={resolutionContext}
+                      pspName={pspName}
+                    />
+                  </div>
+                </TrackedSection>
               </>
             )}
           </>
@@ -374,28 +398,31 @@ function ResultsContent() {
             SectionHeader sits above the toggle for visual consistency
             with every other editorial section. The toggle inside the
             panel is now a plain inline link, no top hairline of its own. */}
-        <SectionHeader
-          eyebrow="How we calculated this"
-          eyebrowIcon={<Calculator size={14} aria-hidden />}
-        />
-        <div className="px-5 min-[501px]:px-8">
-          <AssumptionsPanel
-            outputs={outputs}
-            passThrough={passThrough}
-            resolutionTrace={resolutionTrace}
-            volume={volume}
-            pspName={pspName}
-            planType={planType === 'blended' ? 'flat' : planType}
-            msfRate={originalRaw.msfRate}
-            surcharging={originalRaw.surcharging}
-            surchargeRate={originalRaw.surchargeRate}
+        <TrackedSection sectionId="assumptions" category={category}>
+          <SectionHeader
+            eyebrow="How we calculated this"
+            eyebrowIcon={<Calculator size={14} aria-hidden />}
           />
-        </div>
+          <div className="px-5 min-[501px]:px-8">
+            <AssumptionsPanel
+              outputs={outputs}
+              passThrough={passThrough}
+              resolutionTrace={resolutionTrace}
+              volume={volume}
+              pspName={pspName}
+              planType={planType === 'blended' ? 'flat' : planType}
+              msfRate={originalRaw.msfRate}
+              surcharging={originalRaw.surcharging}
+              surchargeRate={originalRaw.surchargeRate}
+            />
+          </div>
+        </TrackedSection>
 
         <div className="px-5 min-[501px]:px-8 pt-9">
           <ResultsDisclaimer />
         </div>
       </main>
+      </ResultsViewedAtProvider>
 
       <Footer />
     </div>

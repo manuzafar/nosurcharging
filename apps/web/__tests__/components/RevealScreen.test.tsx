@@ -3,18 +3,21 @@ import { render, screen, act } from '@testing-library/react';
 
 // ── Hoisted mocks ────────────────────────────────────────────────
 
-const { mockSubmitAssessment, mockTrackEvent } = vi.hoisted(() => ({
-  mockSubmitAssessment: vi.fn(),
-  mockTrackEvent: vi.fn(),
-}));
+const { mockSubmitAssessment, mockAssessmentSubmissionComplete } = vi.hoisted(
+  () => ({
+    mockSubmitAssessment: vi.fn(),
+    mockAssessmentSubmissionComplete: vi.fn(),
+  }),
+);
 
 vi.mock('@/actions/submitAssessment', () => ({
   submitAssessment: mockSubmitAssessment,
 }));
 
 vi.mock('@/lib/analytics', () => ({
-  trackEvent: mockTrackEvent,
-  Analytics: {},
+  Analytics: {
+    assessmentSubmissionComplete: mockAssessmentSubmissionComplete,
+  },
 }));
 
 // ── Import after mocks ───────────────────────────────────────────
@@ -66,6 +69,10 @@ const MOCK_SUCCESS_RESULT: AssessmentResult = {
   actions: [],
 };
 
+// Stable ms-epoch passed to every render so RevealScreen can compute
+// a deterministic time_spent_seconds (Date.now() - MOCK_STARTED_AT).
+const MOCK_STARTED_AT = 1_700_000_000_000;
+
 function createDeferred<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>((res) => {
@@ -95,6 +102,7 @@ describe('RevealScreen', () => {
 
     render(
       <RevealScreen
+        assessmentStartedAt={MOCK_STARTED_AT}
         formData={MOCK_FORM_DATA}
         onComplete={onComplete}
         onError={onError}
@@ -114,6 +122,7 @@ describe('RevealScreen', () => {
 
     render(
       <RevealScreen
+        assessmentStartedAt={MOCK_STARTED_AT}
         formData={MOCK_FORM_DATA}
         onComplete={onComplete}
         onError={onError}
@@ -132,6 +141,7 @@ describe('RevealScreen', () => {
 
     render(
       <RevealScreen
+        assessmentStartedAt={MOCK_STARTED_AT}
         formData={MOCK_FORM_DATA}
         onComplete={onComplete}
         onError={onError}
@@ -161,6 +171,7 @@ describe('RevealScreen', () => {
 
     render(
       <RevealScreen
+        assessmentStartedAt={MOCK_STARTED_AT}
         formData={MOCK_FORM_DATA}
         onComplete={onComplete}
         onError={onError}
@@ -191,6 +202,7 @@ describe('RevealScreen', () => {
 
     render(
       <RevealScreen
+        assessmentStartedAt={MOCK_STARTED_AT}
         formData={MOCK_FORM_DATA}
         onComplete={onComplete}
         onError={onError}
@@ -220,6 +232,7 @@ describe('RevealScreen', () => {
 
     render(
       <RevealScreen
+        assessmentStartedAt={MOCK_STARTED_AT}
         formData={MOCK_FORM_DATA}
         onComplete={onComplete}
         onError={onError}
@@ -235,6 +248,7 @@ describe('RevealScreen', () => {
 
     render(
       <RevealScreen
+        assessmentStartedAt={MOCK_STARTED_AT}
         formData={MOCK_FORM_DATA}
         onComplete={onComplete}
         onError={onError}
@@ -272,6 +286,7 @@ describe('RevealScreen', () => {
 
     render(
       <RevealScreen
+        assessmentStartedAt={MOCK_STARTED_AT}
         formData={{ ...MOCK_FORM_DATA, planType: 'zero_cost' }}
         onComplete={onComplete}
         onError={onError}

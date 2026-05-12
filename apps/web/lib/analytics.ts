@@ -19,12 +19,31 @@ export function initPostHog(): void {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
     api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://app.posthog.com',
     capture_pageview: false, // App Router — captured manually in PostHogProvider
-    autocapture: false,      // Privacy: explicit Analytics.* calls only
+    // Phase 1 metrics (May 2026) — autocapture powers heatmaps and
+    // session recording captures user behaviour with all form inputs
+    // masked by default. Per-element masking via the data-ph-mask
+    // attribute on anything that needs additional hiding.
+    autocapture: true,
+    session_recording: {
+      maskAllInputs: true,
+      maskTextSelector: '[data-ph-mask]',
+      recordCrossOriginIframes: false,
+    },
     persistence: 'localStorage+cookie',
     loaded: () => {
       phInitialised = true;
     },
   });
+}
+
+// ── SHA-256 helper for identified-user hashing ────────────────────────────────
+// Hash on the client (Web Crypto API is universal). Never send the
+// raw email to PostHog as the distinctId — only the digest.
+export async function sha256(input: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 // ── Pageview (manual, App Router) ─────────────────────────────────────────────
@@ -110,14 +129,6 @@ export const Analytics = {
     });
   },
 
-  deadEndReached(
-    volume_tier: string,
-    action_taken: 'booked_call' | 'went_back' | 'left_page',
-  ): void {
-    if (!phInitialised) return;
-    posthog.capture('dead_end_reached', { country: 'AU', volume_tier, action_taken });
-  },
-
   // ── Plan-variant events (iteration 2 v5) ───────────────────────────────
   zeroCostRateSelected(props: { mode: string }): void {
     if (!phInitialised) return;
@@ -161,11 +172,6 @@ export const Analytics = {
   }): void {
     if (!phInitialised) return;
     posthog.capture('section_visited', { country: 'AU', ...props });
-  },
-
-  subtabViewed(props: { section: string; tab: string; category: number }): void {
-    if (!phInitialised) return;
-    posthog.capture('subtab_viewed', { country: 'AU', ...props });
   },
 
   // ── Email gate (post-Step-4, pre-reveal) ──────────────────────────────
@@ -257,6 +263,28 @@ export const Analytics = {
   feedbackSubmitted(props: { category: number; rating?: number }): void {
     if (!phInitialised) return;
     posthog.capture('feedback_submitted', { country: 'AU', ...props });
+  },
+
+  // ── Typed methods migrated from legacy trackEvent callers (May 2026) ──
+  // The legacy `trackEvent` wrapper is still exported for ad-hoc
+  // development use, but production callers now route through these
+  // typed methods so the event taxonomy is self-documenting.
+  assessmentSubmissionComplete(props: {
+    category: number | 'strategic_rate';
+    time_spent_seconds?: number;
+  }): void {
+    if (!phInitialised) return;
+    posthog.capture('assessment_submission_complete', { country: 'AU', ...props });
+  },
+
+  expertModeActivated(): void {
+    if (!phInitialised) return;
+    posthog.capture('expert_mode_activated', { country: 'AU' });
+  },
+
+  cardMixEntered(props: { fields_filled: string }): void {
+    if (!phInitialised) return;
+    posthog.capture('card_mix_entered', { country: 'AU', ...props });
   },
 } as const;
 

@@ -18,7 +18,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Mail, ArrowRight, Check, Lock } from 'lucide-react';
-import { Analytics } from '@/lib/analytics';
+import { Analytics, identifyUser, sha256 } from '@/lib/analytics';
 import { EmailGateSkeleton } from './EmailGateSkeleton';
 
 // Stricter than the canonical [^\s@]+@[^\s@]+\.[^\s@]+ pattern: each segment
@@ -48,7 +48,7 @@ export function EmailGate({ category, onContinue, onSkip }: EmailGateProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const trimmed = email.trim().toLowerCase();
 
     // Empty → treat as skip (no error, no validation)
@@ -64,6 +64,18 @@ export function EmailGate({ category, onContinue, onSkip }: EmailGateProps) {
     }
 
     setError(null);
+    // Identify BEFORE the email_captured event so subsequent events
+    // ride on the hashed distinctId rather than the anonymous PostHog
+    // UUID. The raw email is never sent — only its SHA-256 digest.
+    try {
+      const emailHash = await sha256(trimmed);
+      identifyUser(emailHash, { category });
+    } catch (err) {
+      // Hashing failures (very rare; subtle.crypto not available)
+      // must not block the funnel. Log and continue — emailCaptured
+      // still fires anonymously.
+      console.warn('[EmailGate] sha256 failed; continuing anonymous:', err);
+    }
     Analytics.emailCaptured({ marketing_consent: marketingConsent });
     onContinue(trimmed, marketingConsent);
   };
