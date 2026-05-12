@@ -4,17 +4,21 @@ test.describe('Homepage', () => {
   test('hero section renders with CTA', async ({ page }) => {
     await page.goto('/');
 
-    // Post-May 2026 hero rework: eyebrow drops the "RBA " prefix and
-    // matches the dark countdown band's terminology.
-    await expect(page.getByText(/Surcharge ban · 1 October 2026/i)).toBeVisible();
-    // Primary hero CTA copy: "Start my free report →". Nav CTA still
-    // uses the older "Get my free report →" wording, so scope to the
-    // hero copy explicitly.
+    // Hero revision (May 2026, brief v2): consolidated eyebrow pill
+    // that displays a dynamic day count until 1 October 2026 — or
+    // "The surcharge ban is in effect" thereafter. The earlier
+    // "Surcharge ban · 1 October 2026" eyebrow + the separate
+    // "days remaining" text element are both gone.
+    await expect(
+      page.getByText(/(\d+\s+days?\s+until\s+the\s+surcharge\s+ban|The surcharge ban is in effect)/i),
+    ).toBeVisible();
+    // Single hero CTA. The nav-band CTA was deleted in this revision
+    // so the assertion no longer needs to disambiguate.
     await expect(page.getByRole('link', { name: /start my free report/i }).first()).toBeVisible();
-    // Trust row — shortened "Independent" label (was "Independent —
-    // no PSP affiliation"), plus "No account required" still present.
-    await expect(page.getByText('No account required').first()).toBeVisible();
-    await expect(page.getByText('Independent').first()).toBeVisible();
+    // Reassurance line replaces the deleted three-icon trust row.
+    await expect(
+      page.getByText('No sign-up, no account. Five minutes.'),
+    ).toBeVisible();
   });
 
   test('preview scrollytelling section renders', async ({ page }) => {

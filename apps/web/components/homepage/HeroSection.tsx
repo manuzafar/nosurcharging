@@ -14,7 +14,6 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Target, ShieldCheck, UserX } from 'lucide-react';
 
 const RBA_REFORM_DATE = new Date('2026-10-01T00:00:00+10:00').getTime();
 
@@ -38,8 +37,16 @@ const VOLUME_BRACKETS: ReadonlyArray<VolumeBracket> = [
 
 const DEFAULT_BRACKET_INDEX = 2; // $2M
 
+// Computed dynamically per the hero revision brief (May 2026). Uses
+// Math.ceil so a merchant viewing the page on 30 September 2026 sees
+// "1 day until the surcharge ban" rather than zero.
 function daysUntil(target: number): number {
-  return Math.max(0, Math.floor((target - Date.now()) / (1000 * 60 * 60 * 24)));
+  return Math.max(0, Math.ceil((target - Date.now()) / (1000 * 60 * 60 * 24)));
+}
+
+function eyebrowCountdownText(daysRemaining: number): string {
+  if (daysRemaining <= 0) return 'The surcharge ban is in effect';
+  return `${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'} until the surcharge ban`;
 }
 
 function formatImpact(impact: number): string {
@@ -63,57 +70,50 @@ export function HeroSection() {
         className="mx-auto px-5"
         style={{ maxWidth: '880px', padding: 'clamp(40px, 7vw, 64px) clamp(18px, 3vw, 28px)' }}
       >
-        {/* ── Eyebrow row ──────────────────────────────────────── */}
-        <div className="flex flex-wrap items-center" style={{ gap: '12px' }}>
+        {/* ── Eyebrow pill ─────────────────────────────────────────
+            Single consolidated pill (was eyebrow + adjacent
+            countdown text on the previous revision). Day count is
+            recomputed on every render so the headline stays accurate
+            across deploys; flips to the in-effect message on/after
+            1 October 2026 automatically. */}
+        <span
+          className="inline-flex items-center"
+          style={{
+            gap: '8px',
+            padding: '4px 12px',
+            borderRadius: '999px',
+            border: '0.5px solid #72C4B0',
+            background: 'var(--color-background-primary)',
+          }}
+        >
           <span
-            className="inline-flex items-center"
+            aria-hidden
+            className="pulse-soft"
             style={{
-              gap: '8px',
-              padding: '4px 12px',
-              borderRadius: '999px',
-              border: '0.5px solid #72C4B0',
-              background: 'var(--color-background-primary)',
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              background: '#1A6B5A',
+            }}
+          />
+          <span
+            className="font-mono uppercase"
+            style={{
+              fontSize: '10px',
+              fontWeight: 500,
+              letterSpacing: '1.4px',
+              color: '#1A6B5A',
             }}
           >
-            <span
-              aria-hidden
-              className="pulse-soft"
-              style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: '#1A6B5A',
-              }}
-            />
-            <span
-              className="font-mono uppercase"
-              style={{
-                fontSize: '10px',
-                fontWeight: 500,
-                letterSpacing: '1.4px',
-                color: '#1A6B5A',
-              }}
-            >
-              Surcharge ban · 1 October 2026
-            </span>
+            {eyebrowCountdownText(daysRemaining)}
           </span>
-          <span
-            className="font-mono"
-            style={{
-              fontSize: '11px',
-              letterSpacing: '0.4px',
-              color: 'var(--color-text-secondary)',
-            }}
-          >
-            {daysRemaining} days remaining
-          </span>
-        </div>
+        </span>
 
         {/* ── Headline ────────────────────────────────────────── */}
         <h1
           className="mt-7 font-serif text-ink"
           style={{
-            fontSize: 'clamp(36px, 7.5vw, 58px)',
+            fontSize: 'clamp(34px, 7.5vw, 56px)',
             fontWeight: 500,
             letterSpacing: '-0.025em',
             lineHeight: 0.98,
@@ -127,72 +127,66 @@ export function HeroSection() {
           Free. In five minutes.
         </h1>
 
-        {/* ── Subhead ─────────────────────────────────────────── */}
+        {/* ── Subhead ─────────────────────────────────────────────
+            Four short sentences in anaphora — three italic emerald
+            "Your" instances echo the headline. No em-dash. */}
         <p
           className="mt-6 text-ink-secondary"
           style={{
-            fontSize: 'clamp(14px, 1.6vw, 16px)',
-            lineHeight: 1.6,
-            maxWidth: '520px',
+            fontSize: 'clamp(14px, 1.6vw, 17px)',
+            lineHeight: 1.55,
+            maxWidth: '560px',
+            color: 'rgba(26, 20, 9, 0.72)',
           }}
         >
-          Find out what the October ban costs your business — with your
-          payment provider named directly. Personalised P&amp;L impact,
-          negotiation script, and week-by-week action plan.
+          Find out what October&apos;s surcharge ban costs your business.{' '}
+          <em className="italic text-accent" style={{ fontStyle: 'italic' }}>
+            Your
+          </em>{' '}
+          provider named.{' '}
+          <em className="italic text-accent" style={{ fontStyle: 'italic' }}>
+            Your
+          </em>{' '}
+          P&amp;L impact in dollars.{' '}
+          <em className="italic text-accent" style={{ fontStyle: 'italic' }}>
+            Your
+          </em>{' '}
+          week-by-week action plan.
         </p>
 
-        {/* ── Actions row ─────────────────────────────────────── */}
-        <div className="mt-8 flex flex-wrap items-center" style={{ gap: '14px' }}>
-          <Link
-            href="/assessment"
-            data-cta="hero"
-            className="inline-flex items-center bg-accent text-white transition-opacity duration-150 hover:opacity-90 focus-visible:opacity-90"
-            style={{
-              fontSize: '15px',
-              fontWeight: 500,
-              padding: '14px 28px',
-              borderRadius: '9999px',
-              gap: '6px',
-            }}
-          >
-            Start my free report <span aria-hidden>→</span>
-          </Link>
-          <a
-            href="#samples"
-            data-cta="hero-secondary"
-            className="inline-flex items-center text-ink transition-opacity duration-150 hover:opacity-70"
-            style={{
-              fontSize: '14px',
-              fontWeight: 500,
-              gap: '4px',
-            }}
-          >
-            See sample report <span aria-hidden>↓</span>
-          </a>
-        </div>
+        {/* ── Primary CTA ─────────────────────────────────────────
+            Sole CTA. Left-aligned inline-width on desktop;
+            full-width on mobile via the responsive utility classes.
+            The previous secondary "See sample report" link and the
+            three-icon trust row are deleted per the revision brief. */}
+        <Link
+          href="/assessment"
+          data-cta="hero"
+          className="mt-8 inline-flex w-full items-center justify-center bg-accent text-white transition-opacity duration-150 hover:opacity-90 focus-visible:opacity-90 sm:w-auto sm:justify-start"
+          style={{
+            fontSize: '15px',
+            fontWeight: 500,
+            padding: '14px 28px',
+            borderRadius: '9999px',
+            gap: '6px',
+          }}
+        >
+          Start my free report <span aria-hidden>→</span>
+        </Link>
 
-        {/* ── Trust row ───────────────────────────────────────── */}
-        <div className="mt-8 flex flex-wrap items-center" style={{ gap: '18px' }}>
-          {[
-            { icon: Target, label: 'Personalised to your PSP' },
-            { icon: ShieldCheck, label: 'Independent' },
-            { icon: UserX, label: 'No account required' },
-          ].map(({ icon: Icon, label }) => (
-            <span
-              key={label}
-              className="font-mono inline-flex items-center"
-              style={{
-                fontSize: '11px',
-                gap: '6px',
-                color: 'var(--color-text-secondary)',
-                letterSpacing: '0.4px',
-              }}
-            >
-              <Icon size={14} strokeWidth={1.6} aria-hidden />
-              {label}
-            </span>
-          ))}
-        </div>
+        {/* ── Reassurance line ────────────────────────────────────
+            Replaces the deleted three-icon trust signals row.
+            Centred on mobile under the full-width button,
+            left-aligned on desktop matching the CTA. */}
+        <p
+          className="mt-4 italic text-center sm:text-left"
+          style={{
+            fontSize: 'clamp(12px, 1.3vw, 13px)',
+            color: 'rgba(26, 20, 9, 0.55)',
+          }}
+        >
+          No sign-up, no account. Five minutes.
+        </p>
 
         {/* ── Live calculator card ────────────────────────────── */}
         <div
