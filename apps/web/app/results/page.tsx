@@ -9,10 +9,13 @@
 //
 // M1 scope: structural cut only. Visual restyles (VerticalActionSteps
 // hairline, RefinementPanel settings-list, ContextParagraph extraction,
-// ReformTimelineCompact, QuietUpsell) land in M2. The PDF / Save-the-
-// full-report pipeline that landed in M3 was removed in May 2026 when
-// the product shipped as a free MVP — no PDF, no email capture, no
-// 48-hour retention.
+// ReformTimelineCompact) land in M2. The PDF / Save-the-full-report
+// pipeline that landed in M3 and the "Want a second opinion"
+// QuietUpsell that ran alongside it were both removed in May 2026
+// when the product shipped as a free MVP — no PDF, no email capture,
+// no 48-hour retention, no consulting upsell. The QuietUpsell
+// component file + the Calendly webhook + consulting_booked analytics
+// remain on disk so future re-enablement doesn't require a rebuild.
 //
 // Routing:
 //   strategicRateExit → StrategicRateExitPage (no dollar figures)
@@ -64,7 +67,6 @@ import { EscapeScenarioCard } from '@/components/results/EscapeScenarioCard';
 import { MarketBenchmarkSentence } from '@/components/results/MarketBenchmarkSentence';
 import { buildBenchmarkComparison } from '@nosurcharging/calculations/benchmark';
 import { AssumptionsPanel } from '@/components/results/AssumptionsPanel';
-import { QuietUpsell } from '@/components/results/QuietUpsell';
 import { ResultsDisclaimer } from '@/components/results/ResultsDisclaimer';
 
 export default function ResultsPage() {
@@ -385,16 +387,6 @@ function ResultsContent() {
             msfRate={originalRaw.msfRate}
             surcharging={originalRaw.surcharging}
             surchargeRate={originalRaw.surchargeRate}
-          />
-        </div>
-
-        {/* Quiet upsell — single-line $149 link replaces the dark card. */}
-        <div className="pt-7">
-          <QuietUpsell
-            category={category}
-            pspName={pspName}
-            plSwing={outputs.plSwing}
-            volumeTier={getVolumeTier(volume)}
           />
         </div>
 
