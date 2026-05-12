@@ -190,67 +190,108 @@ function buildRaoFramework(args: {
 }
 
 // ── NPP-rail action builders ──────────────────────────────────────
-// NPP_RAIL_ACTIONS_BRIEF.md (May 2026). Three buckets, copy
-// verbatim. Independence preserved — Azupay is only ever named as
-// one provider among several, never recommended alone. Verification
-// friction acknowledged honestly in Bucket 1. No specific
-// cents-per-transaction figures (volume-tiered, provider-specific).
+// NPP_RAIL_ACTIONS_BRIEF_V2.md (May 2026). SUPERSEDES the v1
+// three-bucket shape. Copy verbatim from the brief. Independence
+// preserved — no NPP provider is named anywhere; the generic phrase
+// "an NPP-licensed provider" / "NPP-licensed providers" is used
+// throughout. Maturity caveat acknowledged honestly in Buckets B
+// and C (banking-app handoff conversion impact, qualitative only).
+// No specific cents-per-transaction figures (provider-specific,
+// volume-tiered, not safely publicly stated).
 
-function buildPayIdAsyncAction(): ActionItem {
+function buildPayIdAsyncInvoiceAction(): ActionItem {
   return {
     priority: 'plan',
     timeAnchor: 'BEFORE 1 OCTOBER',
-    text: `Add PayID as a payment option on invoices and online checkout`,
-    script: `Publish your business PayID (ABN, phone, or email tied to your business bank account) on invoices, booking confirmations, and online checkout. Customers paying via PayID send the payment directly from their bank account through the New Payments Platform — settlement is instant and there is no card scheme cost on those transactions. Your business bank account fee for receiving PayID payments is typically zero or a few cents. Verification happens via banking app notification, which works for invoiced or pre-ordered flows where you confirm payment before fulfilment — it does NOT close the loop for in-person queue scenarios (for that, see the merchant-initiated PayTo option below).`,
-    why: `For the portion of customers willing to pay via PayID, your card scheme cost on that revenue drops to zero. No provider integration needed — your business bank account already supports it.`,
-    action_id: 'payid_async',
+    text: `Add PayID to invoices and B2B account statements`,
+    script: `Publish your business PayID (ABN, phone, or email tied to your business bank account) on invoices, booking confirmations, and B2B account statements. Customers paying via PayID send the payment directly from their bank account through the New Payments Platform — settlement is instant and there is no card scheme cost on those transactions. Your business bank account fee for receiving PayID payments is typically zero or a few cents. Verification happens via banking app notifications, which works for invoiced or pre-ordered flows where you confirm payment before fulfilment.`,
+    why: `For the portion of customers willing to pay via PayID, your card scheme cost on that revenue drops to zero. No provider integration needed — your business bank account already supports PayID.`,
+    action_id: 'payid_async_invoice',
   };
 }
 
-function buildPayToRecurringAction(): ActionItem {
+function buildPayIdOnlineCheckoutAction(industry: string): ActionItem {
+  const isRetail = industry === 'retail';
+  const scriptOpener = isRetail
+    ? `If your business has an online checkout: offer "Pay by PayID" alongside cards. `
+    : `Offer "Pay by PayID" alongside cards at online checkout. `;
+  const whyBody = isRetail
+    ? `If your business has an online checkout, this is a no-card-scheme-cost option that runs alongside cards rather than replacing them. Best evaluated against your conversion sensitivity at checkout.`
+    : `For your online flow, this is a no-card-scheme-cost option that runs alongside cards rather than replacing them. Best evaluated against your conversion sensitivity at checkout.`;
   return {
     priority: 'plan',
     timeAnchor: 'BEFORE 1 OCTOBER',
-    text: `Evaluate PayTo for your recurring or subscription customers`,
-    script: `PayTo is the New Payments Platform's authorisation framework for ongoing payments — the customer pre-authorises you to pull payments from their bank account on a schedule. For subscriptions, memberships, recurring B2B billing, or appointment-based businesses with rebooks, this replaces card-on-file billing entirely. Per-transaction pricing is volume-tiered cents rather than percentage of value, which is materially cheaper for higher-value recurring transactions. Providers known to offer merchant-facing PayTo acceptance in Australia include Azupay, Volt, Monoova, Zai, pay.com.au, and Stripe AU — request a quote from one or two to benchmark.`,
-    why: `Recurring card-on-file billing carries the full percentage-of-value cost every time it runs. PayTo's per-transaction structure puts a cap on that cost — particularly valuable as transaction values rise.`,
-    action_id: 'payto_recurring',
+    text: `Offer PayID at online checkout via an NPP-licensed provider`,
+    script: `${scriptOpener}The customer enters their PayID alias; your NPP-licensed provider sends a payment request that the customer approves in their banking app; you receive confirmation via webhook within seconds. Per-transaction pricing is typically a flat cents fee rather than a percentage of value, which is materially cheaper on higher-value transactions. Honest caveat: the customer is handed off to their banking app to approve the request — this step affects conversion versus card-on-file today, and the experience varies by which banking app the customer uses. The rail itself is reliable; the customer-side UX is on a maturity curve.`,
+    why: whyBody,
+    action_id: 'payid_online_checkout',
   };
 }
 
-function buildProviderInPersonAction(): ActionItem {
+function buildPayToMandateAction(industry: string): ActionItem {
+  const isRetail = industry === 'retail';
+  const scriptOpener = isRetail
+    ? `If your business has an online checkout: PayTo is the New Payments Platform's authorisation framework. `
+    : `PayTo is the New Payments Platform's authorisation framework. `;
+  const whyBody = isRetail
+    ? `If your business has an online checkout, this gives you a structurally cheaper rail for returning or recurring customers — once a mandate is in place, subsequent charges are merchant-initiated without further customer involvement.`
+    : `Once a mandate is in place, subsequent charges are merchant-initiated without further customer involvement — the cost structure (flat cents per transaction instead of percentage of value) is structurally cheaper than card scheme rails on your recurring or returning-customer revenue.`;
   return {
     priority: 'plan',
     timeAnchor: 'BEFORE 1 OCTOBER',
-    text: `Evaluate merchant-initiated PayTo for in-person transactions`,
-    script: `For walk-in or queue-based flows, raw PayID has a verification friction problem — you need to confirm inbound payment via your banking app while the next customer waits. Merchant-initiated PayTo solves this: your terminal or POS shows the amount, the customer approves a push notification in their banking app, the terminal confirms settlement. The customer-facing UX is essentially the same as a card transaction, but with per-transaction cents pricing instead of a percentage of value. Providers known to offer this product in Australia as of May 2026 include Azupay and Volt — coverage and POS integration vary, so evaluate against your specific terminal setup.`,
-    why: `For high-volume in-person merchants, this is the NPP-rail offering that actually fits the operational shape of your service. The verification gap that limits raw PayID is closed at the terminal.`,
-    action_id: 'provider_in_person',
+    text: `Evaluate PayTo for returning, recurring, or tokenised customer payments`,
+    script: `${scriptOpener}The customer establishes a mandate once at checkout or signup; after that, you can charge their bank account directly — either one-off (like card-on-file tokenised payments) or on a recurring schedule (like subscription billing). Per-transaction pricing is typically a flat cents fee rather than a percentage of value, which is materially cheaper on higher-value or recurring transactions. Provider integration is required — request a quote from an NPP-licensed provider. Honest caveat: setting up the mandate involves the customer being handed off to their banking app to approve it — this affects conversion versus card-on-file today, and the experience varies by which banking app the customer uses. The rail itself is reliable; the customer-side UX is on a maturity curve.`,
+    why: whyBody,
+    action_id: 'payto_mandate',
   };
 }
 
-// Returns 0-3 NPP rail actions based on the industry's bucket
+function buildCafeLongTailAction(): ActionItem {
+  return {
+    priority: 'monitor',
+    timeAnchor: 'OPTIONAL',
+    text: `Long-tail option: PayID for large in-person transactions`,
+    script: `For occasional large transactions (function deposits, corporate group bills, $200+ orders), publishing your business PayID at the counter saves the card scheme cost on that single transaction. Your staff verifies inbound payment in their banking app before fulfilment — this is not a queue-friendly rail for routine $5 coffees, but it's a viable option for large one-off transactions where the verification overhead is proportionate to the saving.`,
+    why: `Not a primary lever for café flow. Worth offering for the long tail of high-value transactions where the per-transaction saving is material enough to justify the manual verification step.`,
+    action_id: 'payid_cafe_longtail',
+  };
+}
+
+// Returns 0-4 NPP rail actions based on the industry's bucket
 // mapping. Defaults to the `other` bucket configuration when the
-// industry isn't recognised, so the action list never silently drops
-// recommendations for new industries added later.
+// industry isn't recognised. Bucket B and Bucket C helpers receive
+// `industry` so they can emit the retail conditional-copy variant
+// without a separate branch here.
 function buildNppRailActions(industry: string): ActionItem[] {
   const buckets = AU_NPP_RAIL_BUCKETS[industry] ?? AU_NPP_RAIL_BUCKETS.other!;
   const actions: ActionItem[] = [];
-  if (buckets.payIdAsync) actions.push(buildPayIdAsyncAction());
-  if (buckets.payToRecurring) actions.push(buildPayToRecurringAction());
-  if (buckets.providerInPerson) actions.push(buildProviderInPersonAction());
+  if (buckets.payIdAsyncInvoice)   actions.push(buildPayIdAsyncInvoiceAction());
+  if (buckets.payIdOnlineCheckout) actions.push(buildPayIdOnlineCheckoutAction(industry));
+  if (buckets.payToMandate)        actions.push(buildPayToMandateAction(industry));
+  if (buckets.cafeLongTail)        actions.push(buildCafeLongTailAction());
   return actions;
 }
 
-// Splices an array of items into the existing list immediately
-// before the first `monitor`-priority action — keeps the visual
-// ordering as urgent → plan (existing) → plan (NPP) → monitor
-// without a downstream sort.
+// Splits an injected array of NPP actions into plan-tier and
+// monitor-tier items: plan items go BEFORE the first monitor in
+// the existing list; monitor items go AFTER all existing monitors.
+// This preserves the visual ordering required by V2 — the cafe
+// long-tail option (monitor) lands at the bottom of the list,
+// below the existing 30 October MSF publication action.
 function injectBeforeMonitor(actions: ActionItem[], items: ActionItem[]): ActionItem[] {
   if (items.length === 0) return actions;
+  const planNpp = items.filter((a) => a.priority === 'plan');
+  const monitorNpp = items.filter((a) => a.priority === 'monitor');
   const firstMonitor = actions.findIndex((a) => a.priority === 'monitor');
-  if (firstMonitor === -1) return [...actions, ...items];
-  return [...actions.slice(0, firstMonitor), ...items, ...actions.slice(firstMonitor)];
+  if (firstMonitor === -1) {
+    return [...actions, ...planNpp, ...monitorNpp];
+  }
+  return [
+    ...actions.slice(0, firstMonitor),
+    ...planNpp,
+    ...actions.slice(firstMonitor),
+    ...monitorNpp,
+  ];
 }
 
 // ── Public entry point ───────────────────────────────────────────

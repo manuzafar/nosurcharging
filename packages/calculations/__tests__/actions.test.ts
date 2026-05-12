@@ -25,11 +25,11 @@ describe('buildActions', () => {
   describe('Category 1 (cost-plus, not surcharging)', () => {
     const actions = buildActions(1, 'Square', 'retail', CTX);
 
-    // 3 base Cat 1 actions + 1 NPP rail action (retail → Bucket 3
-    // only). NPP buckets per industry are covered in the dedicated
-    // matrix block further down.
-    it('returns 4 actions (3 base + 1 NPP rail for retail)', () => {
-      expect(actions).toHaveLength(4);
+    // 3 base Cat 1 actions + 2 NPP plan actions (retail v2 → B + C,
+    // both retail-conditional). NPP buckets per industry are covered
+    // in the dedicated matrix block further down.
+    it('returns 5 actions (3 base + 2 NPP rail for retail v2)', () => {
+      expect(actions).toHaveLength(5);
     });
 
     it('every action has non-empty text + script + why', () => {
@@ -49,11 +49,11 @@ describe('buildActions', () => {
   describe('Category 2 (flat rate, not surcharging)', () => {
     const actions = buildActions(2, 'Stripe', 'retail', CTX);
 
-    // 3 base Cat 2 actions + 1 NPP rail action (retail → Bucket 3
-    // only) = 4 total. The plan tier now carries 2 items (PSP
-    // itemised quote + NPP provider-in-person).
-    it('returns 4 actions (3 base + 1 NPP rail for retail)', () => {
-      expect(actions).toHaveLength(4);
+    // 3 base Cat 2 actions + 2 NPP rail actions (retail v2 → B + C)
+    // = 5 total. The plan tier now carries 3 items (PSP itemised
+    // quote + NPP Bucket B + NPP Bucket C).
+    it('returns 5 actions (3 base + 2 NPP rail for retail v2)', () => {
+      expect(actions).toHaveLength(5);
     });
 
     it('every action has non-empty text + script + why', () => {
@@ -69,10 +69,10 @@ describe('buildActions', () => {
       expect(actions[0]!.text).toMatch(/Ask Stripe/);
     });
 
-    it('priority distribution: 1 urgent + 2 plan + 1 monitor', () => {
+    it('priority distribution: 1 urgent + 3 plan + 1 monitor', () => {
       const priorities = actions.map((a) => a.priority);
       expect(priorities.filter((p) => p === 'urgent')).toHaveLength(1);
-      expect(priorities.filter((p) => p === 'plan')).toHaveLength(2);
+      expect(priorities.filter((p) => p === 'plan')).toHaveLength(3);
       expect(priorities.filter((p) => p === 'monitor')).toHaveLength(1);
     });
   });
@@ -144,14 +144,14 @@ describe('buildActions', () => {
   });
 
   describe('Category 4 (flat rate, surcharging)', () => {
-    // 'retail' picks up only Bucket 3 (provider-in-person), giving
-    // 4 base Cat 4 actions + 1 NPP injection = 5 total. The original
-    // 4-action shape from ux-spec §3.4 is preserved among the base
-    // actions; NPP injection only adds.
+    // 'retail' picks up Bucket B + Bucket C in v2 (both retail-
+    // conditional), giving 4 base Cat 4 actions + 2 NPP injections =
+    // 6 total. The original 4-action shape from ux-spec §3.4 is
+    // preserved among the base actions; NPP injection only adds.
     const actions = buildActions(4, 'Stripe', 'retail', CTX);
 
-    it('returns 5 actions (4 base + 1 NPP rail for retail)', () => {
-      expect(actions).toHaveLength(5);
+    it('returns 6 actions (4 base + 2 NPP rail for retail v2)', () => {
+      expect(actions).toHaveLength(6);
     });
 
     it('every action has non-empty text + why', () => {
@@ -164,20 +164,22 @@ describe('buildActions', () => {
     it('action 2 carries a framework instead of a script; others have scripts', () => {
       expect(actions[1]!.framework).toBeTruthy();
       expect(actions[1]!.script).toBeFalsy();
-      // Actions 0, 2, 3, 4 should still have scripts (the NPP rail
-      // action at [3] has its own script too).
+      // Actions 0, 2, 3, 4, 5 should still have scripts (the NPP rail
+      // actions at [3] and [4] each carry their own script).
       expect(actions[0]!.script).toBeTruthy();
       expect(actions[2]!.script).toBeTruthy();
       expect(actions[3]!.script).toBeTruthy();
       expect(actions[4]!.script).toBeTruthy();
+      expect(actions[5]!.script).toBeTruthy();
     });
 
-    it('priority order: urgent, urgent, plan (itemised), plan (NPP), monitor', () => {
+    it('priority order: urgent, urgent, plan (itemised), plan (NPP B), plan (NPP C), monitor', () => {
       expect(actions[0]!.priority).toBe('urgent');
       expect(actions[1]!.priority).toBe('urgent');
       expect(actions[2]!.priority).toBe('plan');
       expect(actions[3]!.priority).toBe('plan');
-      expect(actions[4]!.priority).toBe('monitor');
+      expect(actions[4]!.priority).toBe('plan');
+      expect(actions[5]!.priority).toBe('monitor');
     });
 
     it('action 2 title says "respond to" with the shortfall amount', () => {
@@ -325,123 +327,173 @@ describe('buildActions', () => {
     });
   });
 
-  // ── NPP-rail action injection (NPP_RAIL_ACTIONS_BRIEF.md May 2026) ─
-  // SUPERSEDES the M3 single-PayTo block. Three buckets gated per
-  // industry × category. Bucket mapping:
-  //   PayID-async       hospitality, online, ticketing, travel, other
-  //   PayTo-recurring   cafe, hospitality, online, ticketing, travel, other
-  //   Provider-in-person cafe, hospitality, retail
+  // ── NPP-rail action injection v2 (NPP_RAIL_ACTIONS_BRIEF_V2.md) ──
+  // Supersedes the v1 three-bucket block. New bucket structure:
+  //   Bucket A (payid_async_invoice)    — hospitality, travel, other
+  //   Bucket B (payid_online_checkout)  — retail (conditional), online,
+  //                                       ticketing, travel
+  //   Bucket C (payto_mandate)          — retail (conditional), online,
+  //                                       ticketing, travel, other
+  //   Cafe long-tail (monitor tier)     — cafe only
 
-  describe('NPP-rail action injection (per industry buckets)', () => {
+  describe('NPP-rail action injection v2 (per industry buckets)', () => {
     function actionIds(actions: { action_id?: string }[]): string[] {
       return actions.map((a) => a.action_id ?? '').filter(Boolean);
     }
 
-    it('cafe → payto_recurring + provider_in_person (no payid_async)', () => {
-      const ids = actionIds(buildActions(2, 'Stripe', 'cafe', CTX));
-      expect(ids).toContain('payto_recurring');
-      expect(ids).toContain('provider_in_person');
-      expect(ids).not.toContain('payid_async');
+    it('cafe → cafeLongTail only (monitor tier, no plan NPP)', () => {
+      const actions = buildActions(2, 'Stripe', 'cafe', CTX);
+      const ids = actionIds(actions);
+      expect(ids).toEqual(['payid_cafe_longtail']);
+      const longTail = actions.find((a) => a.action_id === 'payid_cafe_longtail');
+      expect(longTail!.priority).toBe('monitor');
     });
 
-    it('hospitality → all three NPP buckets', () => {
+    it('hospitality → payid_async_invoice only', () => {
       const ids = actionIds(buildActions(2, 'Stripe', 'hospitality', CTX));
-      expect(ids).toEqual(
-        expect.arrayContaining(['payid_async', 'payto_recurring', 'provider_in_person']),
-      );
+      expect(ids).toEqual(['payid_async_invoice']);
     });
 
-    it('retail → provider_in_person only', () => {
-      const ids = actionIds(buildActions(2, 'Stripe', 'retail', CTX));
-      expect(ids).toEqual(['provider_in_person']);
+    it('retail → payid_online_checkout + payto_mandate (both retail-conditional)', () => {
+      const actions = buildActions(2, 'Stripe', 'retail', CTX);
+      const ids = actionIds(actions);
+      expect(ids).toEqual(['payid_online_checkout', 'payto_mandate']);
+      // Retail conditional opener must appear in BOTH scripts.
+      for (const id of ids) {
+        const action = actions.find((a) => a.action_id === id)!;
+        expect(action.script).toContain('If your business has an online checkout');
+      }
     });
 
-    it('online → payid_async + payto_recurring (no in-person)', () => {
-      const ids = actionIds(buildActions(2, 'Stripe', 'online', CTX));
-      expect(ids).toContain('payid_async');
-      expect(ids).toContain('payto_recurring');
-      expect(ids).not.toContain('provider_in_person');
+    it('online → payid_online_checkout + payto_mandate (no conditional opener)', () => {
+      const actions = buildActions(2, 'Stripe', 'online', CTX);
+      const ids = actionIds(actions);
+      expect(ids).toEqual(['payid_online_checkout', 'payto_mandate']);
+      // Non-retail variant must NOT carry the retail opener.
+      for (const id of ids) {
+        const action = actions.find((a) => a.action_id === id)!;
+        expect(action.script).not.toContain('If your business has an online checkout');
+      }
     });
 
-    it('ticketing → payid_async + payto_recurring (no in-person)', () => {
+    it('ticketing → payid_online_checkout + payto_mandate', () => {
       const ids = actionIds(buildActions(2, 'Stripe', 'ticketing', CTX));
-      expect(ids).toContain('payid_async');
-      expect(ids).toContain('payto_recurring');
-      expect(ids).not.toContain('provider_in_person');
+      expect(ids).toEqual(['payid_online_checkout', 'payto_mandate']);
     });
 
-    it('travel → payid_async + payto_recurring (no in-person)', () => {
+    it('travel → all three buckets (async invoice + online checkout + PayTo mandate)', () => {
       const ids = actionIds(buildActions(2, 'Stripe', 'travel', CTX));
-      expect(ids).toContain('payid_async');
-      expect(ids).toContain('payto_recurring');
-      expect(ids).not.toContain('provider_in_person');
+      expect(ids).toEqual(['payid_async_invoice', 'payid_online_checkout', 'payto_mandate']);
     });
 
-    it('other → payid_async + payto_recurring (B2B / service businesses)', () => {
+    it('other → payid_async_invoice + payto_mandate (B2B / service shape)', () => {
       const ids = actionIds(buildActions(2, 'Stripe', 'other', CTX));
-      expect(ids).toContain('payid_async');
-      expect(ids).toContain('payto_recurring');
-      expect(ids).not.toContain('provider_in_person');
+      expect(ids).toEqual(['payid_async_invoice', 'payto_mandate']);
     });
 
-    it('Cat 5 receives NO NPP rail actions regardless of industry', () => {
+    it('Cat 5 receives ZERO NPP items regardless of industry (no cafe long-tail either)', () => {
       for (const industry of ['cafe', 'hospitality', 'retail', 'online', 'ticketing', 'travel', 'other']) {
         const ids = actionIds(buildActions(5, 'Square', industry, CTX, 'zero_cost'));
         expect(ids).toEqual([]);
       }
     });
 
-    it('every NPP action lands BEFORE the first monitor-priority action', () => {
-      const actions = buildActions(2, 'Stripe', 'hospitality', CTX);
+    it('Bucket B and C maturity caveat acknowledges the banking-app handoff', () => {
+      const onlineActions = buildActions(2, 'Stripe', 'online', CTX);
+      const bucketB = onlineActions.find((a) => a.action_id === 'payid_online_checkout')!;
+      const bucketC = onlineActions.find((a) => a.action_id === 'payto_mandate')!;
+      // Per brief: each script must contain the honest caveat about
+      // the customer being handed off to their banking app.
+      expect(bucketB.script).toContain('handed off to their banking app');
+      expect(bucketC.script).toContain('handed off to their banking app');
+      // And both reference the maturity curve framing.
+      expect(bucketB.script).toContain('maturity curve');
+      expect(bucketC.script).toContain('maturity curve');
+    });
+
+    it('cafe long-tail option lands at the BOTTOM of the action list (after existing monitors)', () => {
+      const actions = buildActions(2, 'Zeller', 'cafe', CTX);
+      const lastIdx = actions.length - 1;
+      expect(actions[lastIdx]!.action_id).toBe('payid_cafe_longtail');
+      expect(actions[lastIdx]!.priority).toBe('monitor');
+    });
+
+    it('plan-tier NPP actions land BEFORE the first monitor-priority action', () => {
+      const actions = buildActions(2, 'Stripe', 'online', CTX);
       const firstMonitor = actions.findIndex((a) => a.priority === 'monitor');
-      // Negative findIndex would mean no monitor action exists — guard
-      // accordingly so the assertion is meaningful in that case.
-      const nppIndices = actions
-        .map((a, i) => (a.action_id ? i : -1))
+      const planNppIndices = actions
+        .map((a, i) => (a.action_id && a.priority === 'plan' ? i : -1))
         .filter((i) => i >= 0);
-      expect(nppIndices.length).toBeGreaterThan(0);
-      for (const idx of nppIndices) {
+      expect(planNppIndices.length).toBeGreaterThan(0);
+      for (const idx of planNppIndices) {
         if (firstMonitor !== -1) expect(idx).toBeLessThan(firstMonitor);
       }
     });
 
-    it('Bucket 1 copy acknowledges the in-person queue-verification friction', () => {
-      const actions = buildActions(2, 'Stripe', 'online', CTX);
-      const payIdAsync = actions.find((a) => a.action_id === 'payid_async');
-      expect(payIdAsync).toBeDefined();
-      // Per brief: verification friction MUST be acknowledged honestly.
-      expect(payIdAsync!.script).toContain('does NOT close the loop for in-person queue scenarios');
-    });
-
-    it('no provider is named alone (independence preserved)', () => {
-      const actions = buildActions(2, 'Stripe', 'hospitality', CTX);
-      const nppActions = actions.filter((a) => a.action_id);
-      for (const action of nppActions) {
-        const flat = `${action.text} ${action.script ?? ''} ${action.why ?? ''}`;
-        // Bucket 2 + Bucket 3 actions must list multiple providers.
-        if (action.action_id === 'payto_recurring') {
-          // Bucket 2 names six providers.
-          expect(flat).toMatch(/Azupay/);
-          expect(flat).toMatch(/Volt/);
-          expect(flat).toMatch(/Monoova/);
-        }
-        if (action.action_id === 'provider_in_person') {
-          // Bucket 3 names two providers — never just one.
-          expect(flat).toMatch(/Azupay/);
-          expect(flat).toMatch(/Volt/);
+    it('no NPP provider is named anywhere in any v2 action copy', () => {
+      // Every industry × every NPP action — names previously appeared
+      // in v1 must NOT appear in v2.
+      const forbidden = ['Azupay', 'Volt', 'Monoova', 'Zai', 'pay.com.au', 'Stripe AU'];
+      for (const industry of ['cafe', 'hospitality', 'retail', 'online', 'ticketing', 'travel', 'other']) {
+        const actions = buildActions(2, 'Stripe', industry, CTX);
+        const nppActions = actions.filter((a) => a.action_id);
+        for (const action of nppActions) {
+          const flat = `${action.text} ${action.script ?? ''} ${action.why ?? ''}`;
+          for (const name of forbidden) {
+            expect(flat).not.toContain(name);
+          }
         }
       }
     });
 
-    it('no specific cents-per-transaction figure appears in any NPP action', () => {
-      const actions = buildActions(2, 'Stripe', 'hospitality', CTX);
-      const nppActions = actions.filter((a) => a.action_id);
-      for (const action of nppActions) {
+    it('every Bucket B and C action uses the generic "NPP-licensed provider" framing', () => {
+      const actions = buildActions(2, 'Stripe', 'online', CTX);
+      const providerActions = actions.filter(
+        (a) =>
+          a.action_id === 'payid_online_checkout' ||
+          a.action_id === 'payto_mandate',
+      );
+      for (const action of providerActions) {
         const flat = `${action.text} ${action.script ?? ''} ${action.why ?? ''}`;
-        // Pricing is volume-tiered; specific cents figures are banned.
-        // Match a dollar / cent unit immediately following a number.
-        expect(flat).not.toMatch(/\$0?\.\d+\s*(per|cents)/i);
-        expect(flat).not.toMatch(/\b\d+\s*c\b/);
+        expect(flat).toMatch(/NPP-licensed provider/);
+      }
+    });
+
+    it('no specific cents-per-transaction figure appears in any v2 NPP action', () => {
+      for (const industry of ['cafe', 'hospitality', 'retail', 'online', 'ticketing', 'travel', 'other']) {
+        const actions = buildActions(2, 'Stripe', industry, CTX);
+        const nppActions = actions.filter((a) => a.action_id);
+        for (const action of nppActions) {
+          const flat = `${action.text} ${action.script ?? ''} ${action.why ?? ''}`;
+          expect(flat).not.toMatch(/\$0?\.\d+\s*(per|cents)/i);
+          expect(flat).not.toMatch(/\b\d+\s*c\b/);
+        }
+      }
+    });
+
+    it('no specific conversion-impact percentage appears in any v2 NPP action', () => {
+      // The maturity caveat is qualitative. Any specific % uplift /
+      // drop would be false-precision.
+      for (const industry of ['retail', 'online', 'ticketing', 'travel']) {
+        const actions = buildActions(2, 'Stripe', industry, CTX);
+        const nppActions = actions.filter((a) => a.action_id);
+        for (const action of nppActions) {
+          const flat = `${action.text} ${action.script ?? ''} ${action.why ?? ''}`;
+          // Look for a conversion-impact phrasing with a number near it.
+          expect(flat).not.toMatch(/\b\d+\s*%\s*(?:conversion|drop|uplift|increase|decrease)/i);
+          expect(flat).not.toMatch(/conversion[^.]{0,40}\b\d+\s*%/i);
+        }
+      }
+    });
+
+    it('no mention of Amazon (or any specific merchant rollout) appears anywhere', () => {
+      for (const industry of ['cafe', 'hospitality', 'retail', 'online', 'ticketing', 'travel', 'other']) {
+        const actions = buildActions(2, 'Stripe', industry, CTX);
+        const nppActions = actions.filter((a) => a.action_id);
+        for (const action of nppActions) {
+          const flat = `${action.text} ${action.script ?? ''} ${action.why ?? ''}`;
+          expect(flat).not.toMatch(/Amazon/i);
+        }
       }
     });
   });
