@@ -25,6 +25,7 @@
 import type { ActionContext, ActionItem, RaoFramework } from './types';
 import { PSP_PUBLISHED_RATES, type PspPublishedRate } from './constants/psp-rates';
 import { AU_NPP_RAIL_BUCKETS } from './constants/au';
+import { displayPspName } from './pspDisplay';
 
 // ── Formatting helpers ───────────────────────────────────────────
 // Calc layer is i18n-naive — AU formatting only in Phase 1.
@@ -88,21 +89,25 @@ function buildItemisedFallbackAction(
   const caps = pspCapabilities(psp);
   if (!caps) return null;
   if (qualifiesForItemisedQuote(psp, volume)) return null;
+  // Internal capability switching uses the raw psp key; user-visible
+  // copy reads through `pspDisplay` so 'Other' surfaces as
+  // "your payment provider" rather than the literal "Other".
+  const pspDisplay = displayPspName(psp);
   switch (caps.offersItemisedPlan) {
     case 'no':
       return {
         priority: 'plan',
         timeAnchor: 'BEFORE 1 AUGUST 2026',
-        text: `${psp} does not offer itemised pricing — consider a provider that does`,
+        text: `${pspDisplay} does not offer itemised pricing — consider a provider that does`,
         script: `If you want the interchange saving to flow through automatically, you'll need a provider with cost-plus pricing. At your volume, viable options are Tyro (custom pricing from $20K/month), Adyen (typically $500K+/month), or one of the big-four banks (CommBank, NAB, Westpac, ANZ Worldline) at their tier thresholds. Get one quote before October so you know whether switching is worthwhile.`,
-        why: `${psp}'s flat-rate architecture means the interchange saving stays with them, not you. Switching to cost-plus is the structural fix.`,
+        why: `${pspDisplay}'s flat-rate architecture means the interchange saving stays with them, not you. Switching to cost-plus is the structural fix.`,
       };
     case 'gateway_only':
       return {
         priority: 'plan',
         timeAnchor: 'BEFORE 1 AUGUST 2026',
-        text: `Ask ${psp} which acquirer settles your funds, then engage that acquirer directly about cost-plus pricing options`,
-        script: `${psp} is a payment gateway, not the acquirer that sets your effective rate. The acquirer behind your ${psp} account (a bank or processor) is the entity that can offer cost-plus pricing. Ask ${psp} to confirm which acquirer is on your account, then approach that acquirer for an itemised quote.`,
+        text: `Ask ${pspDisplay} which acquirer settles your funds, then engage that acquirer directly about cost-plus pricing options`,
+        script: `${pspDisplay} is a payment gateway, not the acquirer that sets your effective rate. The acquirer behind your ${pspDisplay} account (a bank or processor) is the entity that can offer cost-plus pricing. Ask ${pspDisplay} to confirm which acquirer is on your account, then approach that acquirer for an itemised quote.`,
         why: `Gateway pricing inherits from the underlying acquirer. Talking to the gateway about cost-plus is talking to the wrong party.`,
       };
     case 'volume_gated':
@@ -119,21 +124,22 @@ function buildItemisedFallbackAction(
 // market-reference variant pointing at the published acquirers.
 function buildMsfPublicationAction(psp: string): ActionItem {
   const caps = pspCapabilities(psp);
+  const pspDisplay = displayPspName(psp);
   if (caps?.publishesMsfFromOct2026) {
     return {
       priority: 'monitor',
       timeAnchor: '30 OCTOBER 2026',
       text: `Check the published rate benchmarks on 30 October`,
-      script: `From 30 October, ${psp} and other large acquirers must publish their average merchant service fees. Compare your rate directly against the published market average.`,
-      why: `For the first time, you'll have independent data to see whether your ${psp} rate is in line with the market.`,
+      script: `From 30 October, ${pspDisplay} and other large acquirers must publish their average merchant service fees. Compare your rate directly against the published market average.`,
+      why: `For the first time, you'll have independent data to see whether your ${pspDisplay} rate is in line with the market.`,
     };
   }
   return {
     priority: 'monitor',
     timeAnchor: '30 OCTOBER 2026',
     text: `Check the RBA-published acquirer rate benchmarks`,
-    script: `From 30 October, acquirers processing more than $10 billion in card payments annually must publish their average merchant service fees. ${psp} likely falls below this threshold, but the data from the large bank acquirers (CommBank, NAB, Westpac, ANZ) and Tyro will give you a market reference point to negotiate against.`,
-    why: `For the first time, you'll have independent data to anchor a negotiation — even if ${psp}'s own rates aren't directly published.`,
+    script: `From 30 October, acquirers processing more than $10 billion in card payments annually must publish their average merchant service fees. ${pspDisplay} likely falls below this threshold, but the data from the large bank acquirers (CommBank, NAB, Westpac, ANZ) and Tyro will give you a market reference point to negotiate against.`,
+    why: `For the first time, you'll have independent data to anchor a negotiation — even if ${pspDisplay}'s own rates aren't directly published.`,
   };
 }
 
@@ -153,16 +159,17 @@ function buildRaoFramework(args: {
 }): RaoFramework {
   const { breakEvenPct, shortfall, psp } = args;
   const caps = pspCapabilities(psp);
+  const pspDisplay = displayPspName(psp);
   // Suppress the "PSP's itemised plan may also reduce the base cost"
   // hint when the PSP doesn't offer one — keeps the OPTIMISE lever
   // factually doable for Square / Zeller / eWAY merchants too.
   const itemisedHint =
     caps && (caps.offersItemisedPlan === 'yes' || caps.offersItemisedPlan === 'volume_gated')
-      ? ` ${psp}'s itemised plan may also reduce the base cost before you commit to RECOVER or ABSORB.`
+      ? ` ${pspDisplay}'s itemised plan may also reduce the base cost before you commit to RECOVER or ABSORB.`
       : '';
   return {
     title: 'Recover · Absorb · Optimise — choose your mix',
-    intro: `You have three ways to respond. The right approach depends on your gross margin and business type — two things we don't know from this assessment. ${psp}'s response to the first action may narrow your actual shortfall before you choose.`,
+    intro: `You have three ways to respond. The right approach depends on your gross margin and business type — two things we don't know from this assessment. ${pspDisplay}'s response to the first action may narrow your actual shortfall before you choose.`,
     levers: [
       {
         letter: 'R',
@@ -327,12 +334,13 @@ export function buildActions(
 // Best case — IC saving flows automatically. Just confirm and monitor.
 
 function buildCat1Actions(psp: string): ActionItem[] {
+  const pspDisplay = displayPspName(psp);
   return [
     {
       priority: 'plan',
       timeAnchor: 'BEFORE 1 AUGUST 2026',
-      text: `Confirm with ${psp} that your cost-plus rate will reflect the new interchange caps`,
-      script: `From 1 October, the RBA's new interchange caps take effect — wholesale interchange that ${psp} pays falls. Can you confirm in writing that my cost-plus pricing will pass those new caps through to me automatically, with no rate review required?`,
+      text: `Confirm with ${pspDisplay} that your cost-plus rate will reflect the new interchange caps`,
+      script: `From 1 October, the RBA's new interchange caps take effect — wholesale interchange that ${pspDisplay} pays falls. Can you confirm in writing that my cost-plus pricing will pass those new caps through to me automatically, with no rate review required?`,
       why: `On a cost-plus plan the saving is structural — but written confirmation is the cheapest insurance you'll ever buy.`,
     },
     buildMsfPublicationAction(psp),
@@ -354,12 +362,13 @@ function buildCat2Actions(
   ctx: ActionContext,
   isBlended: boolean = false,
 ): ActionItem[] {
+  const pspDisplay = displayPspName(psp);
   const actions: ActionItem[] = [
     {
       priority: 'urgent',
       timeAnchor: 'BEFORE 1 OCTOBER',
-      text: `Ask ${psp} whether your rate will change after October`,
-      script: `From 1 October, the RBA's new interchange caps take effect — wholesale interchange that ${psp} pays falls. I'd like to understand whether my ${psp} flat rate will be adjusted to reflect that change — and by how much. Can you confirm in writing?`,
+      text: `Ask ${pspDisplay} whether your rate will change after October`,
+      script: `From 1 October, the RBA's new interchange caps take effect — wholesale interchange that ${pspDisplay} pays falls. I'd like to understand whether my ${pspDisplay} flat rate will be adjusted to reflect that change — and by how much. Can you confirm in writing?`,
       why: `Flat rate adjustments aren't automatic. Written confirmation now means you'll know what to expect — and have time to act if needed.`,
     },
   ];
@@ -372,8 +381,8 @@ function buildCat2Actions(
     actions.push({
       priority: 'plan',
       timeAnchor: 'BEFORE 1 AUGUST 2026',
-      text: `Ask ${psp} for a quote on their itemised pricing plan`,
-      script: `Request a quote on ${psp}'s interchange-plus pricing. I'd like to compare it against my current flat rate, with the RBA's October interchange cuts factored in.`,
+      text: `Ask ${pspDisplay} for a quote on their itemised pricing plan`,
+      script: `Request a quote on ${pspDisplay}'s interchange-plus pricing. I'd like to compare it against my current flat rate, with the RBA's October interchange cuts factored in.`,
       why: `On itemised pricing, future cost reductions flow through automatically — no rate review required. August gives you enough lead time to switch cleanly before October.`,
     });
   } else {
@@ -388,7 +397,7 @@ function buildCat2Actions(
       {
         priority: 'plan',
         timeAnchor: 'BEFORE 1 AUGUST 2026',
-        text: `Ask ${psp} for your full card mix breakdown — debit vs credit percentage`,
+        text: `Ask ${pspDisplay} for your full card mix breakdown — debit vs credit percentage`,
         why: `Your blended rate means the savings depend on your actual card mix. Knowing the split improves accuracy.`,
       },
       ...(qualifiesForItemisedQuote(psp, ctx.volume)
@@ -396,7 +405,7 @@ function buildCat2Actions(
             {
               priority: 'plan' as const,
               timeAnchor: 'BEFORE 1 AUGUST 2026',
-              text: `Ask ${psp} for a quote on itemised (cost-plus) pricing`,
+              text: `Ask ${pspDisplay} for a quote on itemised (cost-plus) pricing`,
               why: `Blended pricing obscures the actual interchange cost. Itemised pricing makes future savings flow automatically.`,
             },
           ]
@@ -411,6 +420,7 @@ function buildCat2Actions(
 // Surcharge revenue disappears 1 October. IC saving flows automatically.
 
 function buildCat3Actions(psp: string, ctx: ActionContext): ActionItem[] {
+  const pspDisplay = displayPspName(psp);
   const shortfall = formatCurrency(Math.abs(ctx.plSwing));
   const breakEvenPct = formatBreakEvenPct(ctx.plSwing, ctx.volume);
   // Surcharge rate is suppressed in this script — using it as the
@@ -428,7 +438,7 @@ function buildCat3Actions(psp: string, ctx: ActionContext): ActionItem[] {
         shortfall,
         psp,
       }),
-      why: `The surcharge ban applies from 1 October regardless of your ${psp} plan. This part of your situation is certain.`,
+      why: `The surcharge ban applies from 1 October regardless of your ${pspDisplay} plan. This part of your situation is certain.`,
     },
     {
       priority: 'plan',
@@ -441,7 +451,7 @@ function buildCat3Actions(psp: string, ctx: ActionContext): ActionItem[] {
       priority: 'monitor',
       timeAnchor: '1 OCTOBER 2026',
       text: `Verify surcharging has stopped on the designated networks`,
-      script: `Confirm with ${psp} that surcharging has been disabled on Visa, Mastercard, and eftpos at the terminal level. Amex and BNPL can still be surcharged.`,
+      script: `Confirm with ${pspDisplay} that surcharging has been disabled on Visa, Mastercard, and eftpos at the terminal level. Amex and BNPL can still be surcharged.`,
       why: `Continuing to surcharge a designated network after 1 October breaches scheme rules and your acquirer agreement — exposing you to acquirer chargebacks, terminal disconnection, and potential ACCC action under existing consumer law. Verification is non-negotiable.`,
     },
   ];
@@ -451,6 +461,7 @@ function buildCat3Actions(psp: string, ctx: ActionContext): ActionItem[] {
 // Worst case — both problems. Copy is verbatim from ux-spec §3.4.
 
 function buildCat4Actions(psp: string, ctx: ActionContext, isBlended: boolean = false): ActionItem[] {
+  const pspDisplay = displayPspName(psp);
   const shortfall = formatCurrency(Math.abs(ctx.plSwing));
   const breakEvenPct = formatBreakEvenPct(ctx.plSwing, ctx.volume);
   const volume = formatCurrency(ctx.volume);
@@ -463,8 +474,8 @@ function buildCat4Actions(psp: string, ctx: ActionContext, isBlended: boolean = 
     {
       priority: 'urgent',
       timeAnchor: 'BEFORE 1 OCTOBER',
-      text: `Ask ${psp} whether your rate will change after October`,
-      script: `From 1 October, the RBA's new interchange caps take effect — wholesale interchange that ${psp} pays falls. I'd like to understand whether my ${psp} flat rate will be adjusted to reflect that change — and by how much. Can you confirm in writing?`,
+      text: `Ask ${pspDisplay} whether your rate will change after October`,
+      script: `From 1 October, the RBA's new interchange caps take effect — wholesale interchange that ${pspDisplay} pays falls. I'd like to understand whether my ${pspDisplay} flat rate will be adjusted to reflect that change — and by how much. Can you confirm in writing?`,
       why: `Flat rate adjustments aren't automatic. Written confirmation now means you'll know what to expect — and have time to act if needed.`,
     },
     {
@@ -476,7 +487,7 @@ function buildCat4Actions(psp: string, ctx: ActionContext, isBlended: boolean = 
         shortfall,
         psp,
       }),
-      why: `The surcharge ban applies from 1 October regardless of your ${psp} plan. This part of your situation is certain.`,
+      why: `The surcharge ban applies from 1 October regardless of your ${pspDisplay} plan. This part of your situation is certain.`,
     },
   ];
 
@@ -484,8 +495,8 @@ function buildCat4Actions(psp: string, ctx: ActionContext, isBlended: boolean = 
     actions.push({
       priority: 'plan',
       timeAnchor: 'BEFORE 1 AUGUST 2026',
-      text: `Ask ${psp} for a quote on their itemised pricing plan`,
-      script: `Request a quote on ${psp}'s interchange-plus pricing. At ${volume} annual volume, itemised pricing is typically available — and means future cost reductions flow through automatically.`,
+      text: `Ask ${pspDisplay} for a quote on their itemised pricing plan`,
+      script: `Request a quote on ${pspDisplay}'s interchange-plus pricing. At ${volume} annual volume, itemised pricing is typically available — and means future cost reductions flow through automatically.`,
       why: `August gives you enough lead time to switch plans cleanly before October. After that, the timing risk is too high.`,
     });
   } else {
@@ -500,7 +511,7 @@ function buildCat4Actions(psp: string, ctx: ActionContext, isBlended: boolean = 
       {
         priority: 'plan',
         timeAnchor: 'BEFORE 1 AUGUST 2026',
-        text: `Ask ${psp} for your full card mix breakdown — debit vs credit percentage`,
+        text: `Ask ${pspDisplay} for your full card mix breakdown — debit vs credit percentage`,
         why: `Your blended rate means the savings depend on your actual card mix. Knowing the split improves accuracy.`,
       },
       ...(qualifiesForItemisedQuote(psp, ctx.volume)
@@ -508,7 +519,7 @@ function buildCat4Actions(psp: string, ctx: ActionContext, isBlended: boolean = 
             {
               priority: 'plan' as const,
               timeAnchor: 'BEFORE 1 AUGUST 2026',
-              text: `Ask ${psp} for a quote on itemised (cost-plus) pricing`,
+              text: `Ask ${pspDisplay} for a quote on itemised (cost-plus) pricing`,
               why: `Blended pricing obscures the actual interchange cost. Itemised pricing makes future savings flow automatically.`,
             },
           ]
@@ -523,11 +534,12 @@ function buildCat4Actions(psp: string, ctx: ActionContext, isBlended: boolean = 
 // Plan ends 1 October. Merchant moves from $0 net to flat-rate cost.
 
 function buildCat5Actions(psp: string): ActionItem[] {
+  const pspDisplay = displayPspName(psp);
   return [
     {
       priority: 'urgent',
       timeAnchor: 'THIS WEEK',
-      text: `Call ${psp} and ask what plan you will be transferred to`,
+      text: `Call ${pspDisplay} and ask what plan you will be transferred to`,
       script: `My zero-cost plan is built on the surcharge mechanism. When the surcharge ban takes effect on 1 October 2026, that mechanism ends. What plan will I be transferred to, and at what rate? I need a written quote before October.`,
       why: `Your zero-cost model cannot survive the surcharge ban. You need to know your post-reform rate now to plan cash flow.`,
     },
@@ -543,7 +555,7 @@ function buildCat5Actions(psp: string): ActionItem[] {
       timeAnchor: 'BEFORE 1 AUGUST 2026',
       text: `Get quotes from at least two other payment providers`,
       script: `I am currently on zero-cost EFTPOS. What is your best rate for a merchant switching off that model?`,
-      why: `Use ${psp}'s quote as your benchmark. Competition drives better rates.`,
+      why: `Use ${pspDisplay}'s quote as your benchmark. Competition drives better rates.`,
     },
   ];
 }

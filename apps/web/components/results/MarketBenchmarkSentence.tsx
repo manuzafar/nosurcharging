@@ -14,6 +14,7 @@
 
 import { Scale } from 'lucide-react';
 import type { BenchmarkComparison } from '@nosurcharging/calculations/types';
+import { displayPspName } from '@nosurcharging/calculations';
 
 interface MarketBenchmarkSentenceProps {
   comparison: BenchmarkComparison;
@@ -36,6 +37,7 @@ export function MarketBenchmarkSentence({
   comparison,
   pspName,
 }: MarketBenchmarkSentenceProps) {
+  const displayName = displayPspName(pspName);
   const { merchantRate, pspListRate, postReformFloor, comparison: variant, potentialAnnualSaving } = comparison;
   const merchantMargin = Math.max(0, merchantRate - postReformFloor);
 
@@ -60,7 +62,7 @@ export function MarketBenchmarkSentence({
       >
         {variant === 'above_list' && pspListRate !== null && (
           <>
-            You pay <strong>{formatPct(merchantRate)}</strong>. {pspName}&apos;s
+            You pay <strong>{formatPct(merchantRate)}</strong>. {displayName}&apos;s
             published flat rate for your plan is{' '}
             <strong>{formatPct(pspListRate)}</strong> — you&apos;re{' '}
             <strong>
@@ -76,18 +78,18 @@ export function MarketBenchmarkSentence({
         {variant === 'at_list' && pspListRate !== null && (
           <>
             You pay <strong>{formatPct(merchantRate)}</strong> — in line with{' '}
-            {pspName}&apos;s published flat rate of{' '}
+            {displayName}&apos;s published flat rate of{' '}
             <strong>{formatPct(pspListRate)}</strong>. The post-reform
             wholesale floor for your card mix is approximately{' '}
             <strong>{formatPct(postReformFloor)}</strong>, meaning roughly{' '}
             <strong>{formatPct(merchantMargin)}</strong> of what you pay is{' '}
-            {pspName}&apos;s gross margin on your account.
+            {displayName}&apos;s gross margin on your account.
           </>
         )}
         {variant === 'below_list' && pspListRate !== null && (
           <>
             You pay <strong>{formatPct(merchantRate)}</strong> — already below{' '}
-            {pspName}&apos;s published flat rate of{' '}
+            {displayName}&apos;s published flat rate of{' '}
             <strong>{formatPct(pspListRate)}</strong>. The post-reform
             wholesale floor for your card mix is approximately{' '}
             <strong>{formatPct(postReformFloor)}</strong>; the structural
@@ -96,12 +98,12 @@ export function MarketBenchmarkSentence({
         )}
         {variant === 'no_list_anchor' && (
           <>
-            You pay <strong>{formatPct(merchantRate)}</strong>. {pspName} does
+            You pay <strong>{formatPct(merchantRate)}</strong>. {displayName} does
             not publish a meaningful list rate — bank-acquirer pricing is
             negotiated. The post-reform wholesale floor for your card mix
             is approximately <strong>{formatPct(postReformFloor)}</strong>,
             meaning roughly <strong>{formatPct(merchantMargin)}</strong> of
-            what you pay is {pspName}&apos;s gross margin.
+            what you pay is {displayName}&apos;s gross margin.
           </>
         )}
       </p>

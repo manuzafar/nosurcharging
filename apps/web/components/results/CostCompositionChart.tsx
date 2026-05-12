@@ -20,6 +20,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { displayPspName } from '@nosurcharging/calculations';
 import type { AssessmentOutputs } from '@nosurcharging/calculations/types';
 
 interface CostCompositionChartProps {
@@ -40,6 +41,8 @@ export function CostCompositionChart({
   passThrough,
   pspName,
 }: CostCompositionChartProps) {
+  const displayName = displayPspName(pspName);
+
   // ── Scheme fees invariant ──────────────────────────────────────
   const schemeRounded = Math.round(outputs.todayScheme);
   const schemeOctRounded = Math.round(outputs.oct2026Scheme);
@@ -102,8 +105,8 @@ export function CostCompositionChart({
       : 0;
 
   const insightCopy = isFlatRate
-    ? `This breakdown is estimated — your ${pspName} flat rate bundles all costs into one percentage. Interchange makes up approximately ${interchangePct}% of the total. Scheme fees and ${pspName}'s margin are not regulated by the reform.`
-    : `Interchange is ${interchangePct}% of your ${pspName} bill. The RBA reform only cuts interchange. Scheme fees and ${pspName}'s margin are unchanged.`;
+    ? `This breakdown is estimated — your ${displayName} flat rate bundles all costs into one percentage. Interchange makes up approximately ${interchangePct}% of the total. Scheme fees and ${displayName}'s margin are not regulated by the reform.`
+    : `Interchange is ${interchangePct}% of your ${displayName} bill. The RBA reform only cuts interchange. Scheme fees and ${displayName}'s margin are unchanged.`;
 
   return (
     <section
@@ -120,7 +123,7 @@ export function CostCompositionChart({
           marginBottom: '12px',
         }}
       >
-        What makes up your {pspName} bill
+        What makes up your {displayName} bill
       </p>
 
       {/* Intro */}
@@ -132,7 +135,7 @@ export function CostCompositionChart({
           marginBottom: '14px',
         }}
       >
-        Only interchange changes in October. Scheme fees and {pspName}&apos;s
+        Only interchange changes in October. Scheme fees and {displayName}&apos;s
         margin are unchanged by the reform.
       </p>
 
@@ -160,7 +163,7 @@ export function CostCompositionChart({
         {[
           { colour: COLOURS.interchange, label: 'Interchange (changes Oct)' },
           { colour: COLOURS.scheme, label: 'Scheme fees (unchanged)' },
-          { colour: COLOURS.margin, label: `${pspName} margin (unchanged)` },
+          { colour: COLOURS.margin, label: `${displayName} margin (unchanged)` },
           ...(isFlatRate
             ? [{ colour: COLOURS.other, label: 'Other (flat rate bundle)' }]
             : []),
@@ -293,7 +296,7 @@ export function CostCompositionChart({
               <td>${octScheme.toLocaleString('en-AU')}</td>
             </tr>
             <tr>
-              <th scope="row">{pspName} margin (unchanged)</th>
+              <th scope="row">{displayName} margin (unchanged)</th>
               <td>${todayMargin.toLocaleString('en-AU')}</td>
               <td>${octMargin.toLocaleString('en-AU')}</td>
             </tr>

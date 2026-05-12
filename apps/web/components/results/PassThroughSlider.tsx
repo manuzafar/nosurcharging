@@ -15,6 +15,7 @@ import { useRef, type ReactNode } from 'react';
 import { ArrowDownRight, ArrowUpRight, Calculator } from 'lucide-react';
 import { resolveAssessmentInputs } from '@nosurcharging/calculations/rules/resolver';
 import { calculateMetrics } from '@nosurcharging/calculations/calculations';
+import { displayPspName } from '@nosurcharging/calculations';
 import { Analytics } from '@/lib/analytics';
 import type {
   AssessmentOutputs,
@@ -46,6 +47,7 @@ export function PassThroughSlider({
   onOutputsChange,
 }: PassThroughSliderProps) {
   const sliderUsedTracked = useRef(false);
+  const displayName = displayPspName(pspName);
 
   if (category !== 2 && category !== 4) return null;
 
@@ -88,8 +90,8 @@ export function PassThroughSlider({
           maxWidth: '540px',
         }}
       >
-        Our central scenario assumes ~45% pass-through — the actual figure depends on {pspName}.
-        At 0%, the full {formatDollar(outputs.icSaving)} interchange saving stays with {pspName}.
+        Our central scenario assumes ~45% pass-through — the actual figure depends on {displayName}.
+        At 0%, the full {formatDollar(outputs.icSaving)} interchange saving stays with {displayName}.
         At 100%, it passes through entirely.
       </p>
 
@@ -133,16 +135,16 @@ export function PassThroughSlider({
         onChange={handleChange}
         className="w-full"
         style={{ accentColor: '#1A6B5A' }}
-        aria-label={`Pass-through percentage — how much of the interchange saving is reflected in your ${pspName} rate`}
+        aria-label={`Pass-through percentage — how much of the interchange saving is reflected in your ${displayName} rate`}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={pctValue}
         aria-valuetext={
           pctValue === 0
-            ? `0 percent — none of the saving reflected in your ${pspName} rate`
+            ? `0 percent — none of the saving reflected in your ${displayName} rate`
             : pctValue === 100
-              ? `100 percent — the full saving reflected in your ${pspName} rate`
-              : `${pctValue} percent of the saving reflected in your ${pspName} rate`
+              ? `100 percent — the full saving reflected in your ${displayName} rate`
+              : `${pctValue} percent of the saving reflected in your ${displayName} rate`
         }
       />
 
@@ -169,7 +171,7 @@ export function PassThroughSlider({
       <div style={{ marginTop: '24px' }}>
         <ResultRow
           icon={<ArrowDownRight size={16} aria-hidden />}
-          label={`Cost reduction in your ${pspName} rate`}
+          label={`Cost reduction in your ${displayName} rate`}
           value={`+${formatDollar(reflectedSaving)}/yr`}
           accent="success"
         />

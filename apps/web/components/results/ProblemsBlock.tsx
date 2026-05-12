@@ -16,6 +16,7 @@
 
 import { Ban, Zap } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { displayPspName } from '@nosurcharging/calculations';
 
 interface ProblemsBlockProps {
   category: 1 | 2 | 3 | 4 | 5;
@@ -140,6 +141,8 @@ export function ProblemsBlock({
   // Cat 1 has no problems to flag
   if (category === 1) return null;
 
+  const displayName = displayPspName(pspName);
+
   const showCertain = category === 3 || category === 4;
   const showDepends = category === 2 || category === 4;
   const showZeroCost = category === 5;
@@ -173,8 +176,8 @@ export function ProblemsBlock({
             body={
               <>
                 The RBA is cutting wholesale costs by{' '}
-                {formatCurrency(icSaving)}/year. On {pspName}&apos;s flat
-                rate, whether this reaches you depends on whether {pspName}{' '}
+                {formatCurrency(icSaving)}/year. On {displayName}&apos;s flat
+                rate, whether this reaches you depends on whether {displayName}{' '}
                 reviews your pricing as part of the reform.
               </>
             }
@@ -190,12 +193,12 @@ export function ProblemsBlock({
               <>
                 From 1 October, the surcharge mechanism that covers your card
                 costs becomes illegal on Visa, Mastercard, and eftpos.{' '}
-                {pspName} will likely need to move you to a standard
+                {displayName} will likely need to move you to a standard
                 flat-rate plan, and you&apos;ll pay for card acceptance from
                 your own margin for the first time — approximately{' '}
                 {formatCurrency(octNet ?? 0)}/year at the{' '}
                 {((estimatedMSFRate ?? 0.014) * 100).toFixed(1)}% market
-                estimate. Confirm the transfer plan with {pspName} this week.
+                estimate. Confirm the transfer plan with {displayName} this week.
               </>
             }
           />
