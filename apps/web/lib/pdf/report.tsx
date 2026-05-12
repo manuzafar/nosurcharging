@@ -173,13 +173,11 @@ function Report(props: ReportProps): ReactElement {
         <Footer pageLabel="4" />
       </Page>
 
-      {/* Page 5 — Reform timeline + Assumptions + Quiet upsell */}
+      {/* Page 5 — Reform timeline + Assumptions */}
       <Page size="A4" style={base.page}>
         <Timeline />
         <View style={{ marginTop: SPACING.sectionGap }} />
         <Assumptions {...props} />
-        <View style={{ marginTop: SPACING.sectionGap }} />
-        <QuietUpsell />
         <Footer pageLabel="5" />
       </Page>
     </Document>
@@ -928,29 +926,6 @@ function AssumptionRow({ label, value }: { label: string; value: string }): Reac
   );
 }
 
-// ── Quiet upsell line ──────────────────────────────────────────
-
-function QuietUpsell(): ReactElement {
-  return (
-    <View
-      style={{
-        borderTopWidth: 0.5,
-        borderTopColor: COLORS.rule,
-        borderTopStyle: 'solid',
-        paddingTop: 10,
-      }}
-    >
-      <Text style={{ fontSize: 9, color: COLORS.inkFaint, lineHeight: 1.6 }}>
-        Want your real numbers, not market averages? The{' '}
-        <Text style={{ color: COLORS.accent, fontFamily: 'Helvetica-Bold' }}>
-          Reform Ready Report ($149)
-        </Text>{' '}
-        analyses your statements and builds the negotiation script with your
-        figures. nosurcharging.com.au
-      </Text>
-    </View>
-  );
-}
 
 // ── Footer ─────────────────────────────────────────────────────
 
