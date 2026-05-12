@@ -20,6 +20,7 @@ import { useMemo } from 'react';
 import { resolveAssessmentInputs } from '@nosurcharging/calculations/rules/resolver';
 import { calculateMetrics } from '@nosurcharging/calculations/calculations';
 import { PSP_PUBLISHED_RATES } from '@nosurcharging/calculations/constants/psp-rates';
+import { displayPspName } from '@nosurcharging/calculations';
 import type {
   AssessmentOutputs,
   RawAssessmentData,
@@ -134,6 +135,7 @@ function ItemisedComparison({
   itemisedOctNet: number;
   saving: number;
 }) {
+  const displayName = displayPspName(pspName);
   return (
     <section
       className="py-5"
@@ -147,7 +149,7 @@ function ItemisedComparison({
           marginBottom: '14px',
         }}
       >
-        {pspName} also offers an itemised plan where interchange and scheme
+        {displayName} also offers an itemised plan where interchange and scheme
         fees are shown separately. When the RBA cuts wholesale costs, the
         reduction flows through automatically — it doesn&apos;t depend on a
         rate review.
@@ -176,7 +178,7 @@ function ItemisedComparison({
                 marginBottom: '4px',
               }}
             >
-              Current — {pspName} flat rate
+              Current — {displayName} flat rate
             </p>
             <p
               className="font-mono font-medium"
@@ -267,6 +269,7 @@ function VolumeGatedVariant({
   thresholdAnnual: number | null;
   potentialSaving: number;
 }) {
+  const displayName = displayPspName(pspName);
   const thresholdLabel = thresholdAnnual
     ? `around $${Math.round(thresholdAnnual / 1000).toLocaleString('en-AU')}K+ in annual international card volume`
     : 'custom enterprise volumes';
@@ -283,7 +286,7 @@ function VolumeGatedVariant({
           margin: 0,
         }}
       >
-        {pspName} also offers an itemised (interchange-plus) plan at custom
+        {displayName} also offers an itemised (interchange-plus) plan at custom
         volumes — typically {thresholdLabel}. If your business is at or near
         this scale, switching can save up to{' '}
         <strong className="font-mono" style={{ fontWeight: 500 }}>
@@ -298,6 +301,7 @@ function VolumeGatedVariant({
 // ── Variant: 'no' (Square, Zeller) ────────────────────────────────────
 
 function NoItemisedVariant({ pspName }: { pspName: string }) {
+  const displayName = displayPspName(pspName);
   return (
     <section
       className="py-5"
@@ -311,7 +315,7 @@ function NoItemisedVariant({ pspName }: { pspName: string }) {
           margin: 0,
         }}
       >
-        {pspName} does not offer an itemised (interchange-plus) plan. Your
+        {displayName} does not offer an itemised (interchange-plus) plan. Your
         alternative options are: (a) negotiating a lower flat rate as October
         data emerges, or (b) considering a switch to a provider that offers
         cost-plus pricing — Adyen, Tyro at $20K+/month, or any of the big
@@ -324,6 +328,7 @@ function NoItemisedVariant({ pspName }: { pspName: string }) {
 // ── Variant: 'gateway_only' (eWAY) ────────────────────────────────────
 
 function GatewayOnlyVariant({ pspName }: { pspName: string }) {
+  const displayName = displayPspName(pspName);
   return (
     <section
       className="py-5"
@@ -337,9 +342,9 @@ function GatewayOnlyVariant({ pspName }: { pspName: string }) {
           margin: 0,
         }}
       >
-        {pspName} is a payment gateway. Itemised pricing depends on your
+        {displayName} is a payment gateway. Itemised pricing depends on your
         underlying acquirer (the bank or processor settling your funds). Ask
-        {' '}{pspName} which acquirer is on your account, then engage that
+        {' '}{displayName} which acquirer is on your account, then engage that
         provider directly about cost-plus pricing.
       </p>
     </section>

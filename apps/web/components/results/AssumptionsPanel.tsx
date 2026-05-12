@@ -11,6 +11,7 @@
 import { useState } from 'react';
 import { Calculator, ChevronDown, ChevronUp } from 'lucide-react';
 import { Analytics } from '@/lib/analytics';
+import { displayPspName } from '@nosurcharging/calculations';
 import type { AssessmentOutputs, ResolutionTrace } from '@nosurcharging/calculations/types';
 
 interface AssumptionsPanelProps {
@@ -73,6 +74,7 @@ export function AssumptionsPanel({
   surchargeRate,
 }: AssumptionsPanelProps) {
   const [expanded, setExpanded] = useState(false);
+  const displayName = displayPspName(pspName);
 
   // ── Build formula rows ───────────────────────────────────────
   const isFlatRate = planType === 'flat';
@@ -83,7 +85,7 @@ export function AssumptionsPanel({
     const rate = outputs.estimatedMSFRate ?? 0.014;
     formulaRows.push({
       label: 'What you pay today',
-      formula: `${pspName} surcharge mechanism covers the full cost`,
+      formula: `${displayName} surcharge mechanism covers the full cost`,
       value: formatCurrency(0),
     });
     formulaRows.push({
@@ -94,7 +96,7 @@ export function AssumptionsPanel({
     });
     if (outputs.icSaving > 0) {
       formulaRows.push({
-        label: `Interchange saving (kept by ${pspName} during transition)`,
+        label: `Interchange saving (kept by ${displayName} during transition)`,
         formula: 'computed for transparency — does not flow to you in any scenario',
         value: formatCurrency(outputs.icSaving),
         valueColour: 'var(--color-text-tertiary)',
@@ -211,7 +213,7 @@ export function AssumptionsPanel({
               }}
             >
               The 1.4% rate is a market-average post-reform estimate. Range scenarios
-              run from 1.2% (best) to 1.6% (worst). Get a written quote from {pspName}
+              run from 1.2% (best) to 1.6% (worst). Get a written quote from {displayName}
               before October to lock in your actual rate.
             </p>
           </div>
@@ -222,7 +224,7 @@ export function AssumptionsPanel({
 
   if (isFlatRate) {
     formulaRows.push({
-      label: `What you pay ${pspName} today`,
+      label: `What you pay ${displayName} today`,
       formula: `${formatVolume(volume)} × ${formatPct(msfRate)} flat rate`,
       value: formatCurrency(outputs.annualMSF),
     });
@@ -376,7 +378,7 @@ export function AssumptionsPanel({
           >
             Visa and Mastercard charge a separate network fee (~
             {formatCurrency(outputs.todayScheme)}/year on your volume). Not
-            regulated by the RBA reform. Already included in your {pspName}{' '}
+            regulated by the RBA reform. Already included in your {displayName}{' '}
             {isFlatRate ? 'flat rate today' : 'bill today'}.
           </p>
 

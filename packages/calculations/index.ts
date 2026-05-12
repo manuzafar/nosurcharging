@@ -3,6 +3,7 @@ export { calculateMetrics } from './calculations';
 export { getCategory, CATEGORY_VERDICTS } from './categories';
 export { getCurrentPeriod, getRatesForPeriod } from './periods';
 export { buildActions } from './actions';
+export { displayPspName } from './pspDisplay';
 export { resolveAssessmentInputs } from './rules/resolver';
 export { RULE_SCHEMA } from './rules/schema';
 export { getConstants, getSchemeCardMixDefaults, getAvgTxnValue } from './constants/index';

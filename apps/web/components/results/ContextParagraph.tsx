@@ -10,6 +10,12 @@
 // paragraph against the page background. Mobile font scales with line
 // length so the read stays comfortable on a 375px viewport.
 
+// `displayPspName` substitutes the literal 'Other' fallback with
+// "your payment provider" so the rendered body reads naturally for
+// merchants whose acquirer isn't in the registry. Raw `pspName`
+// stays untouched in props, events, and storage.
+import { displayPspName } from '@nosurcharging/calculations';
+
 interface ContextParagraphProps {
   category: 1 | 2 | 3 | 4 | 5;
   pspName: string;
@@ -35,6 +41,7 @@ function getBody(category: 1 | 2 | 3 | 4 | 5, psp: string): string {
 }
 
 export function ContextParagraph({ category, pspName }: ContextParagraphProps) {
+  const displayName = displayPspName(pspName);
   return (
     <section className="px-5 md:px-8">
       <p
@@ -45,7 +52,7 @@ export function ContextParagraph({ category, pspName }: ContextParagraphProps) {
           maxWidth: '620px',
         }}
       >
-        {getBody(category, pspName)}
+        {getBody(category, displayName)}
       </p>
     </section>
   );

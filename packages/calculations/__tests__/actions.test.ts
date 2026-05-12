@@ -531,4 +531,57 @@ describe('buildActions', () => {
       }
     });
   });
+
+  // PSP_OTHER_DISPLAY_FIX_BRIEF — when the merchant selects 'Other' in
+  // Step 2 the raw 'Other' literal must never appear in user-facing
+  // action text, script, why, or framework copy. It must be rewritten
+  // to "your payment provider" via displayPspName().
+  describe('PSP="Other" display substitution', () => {
+    function flattenActions(
+      actions: ReturnType<typeof buildActions>,
+    ): string {
+      return actions
+        .flatMap((a) => {
+          const parts: string[] = [a.text, a.script ?? '', a.why ?? ''];
+          if (a.framework) {
+            parts.push(a.framework.headline ?? '');
+            for (const lever of a.framework.levers) {
+              parts.push(lever.title ?? '');
+              parts.push(lever.body ?? '');
+              parts.push(lever.pill?.value ?? '');
+            }
+          }
+          return parts;
+        })
+        .join(' ');
+    }
+
+    for (const cat of [1, 2, 3, 4, 5] as const) {
+      describe(`Category ${cat}`, () => {
+        const planType = cat === 5 ? 'zero_cost' : undefined;
+
+        it('no rendered text contains the literal "Other" as a PSP token', () => {
+          const actions = buildActions(cat, 'Other', 'retail', CTX, planType);
+          const flat = flattenActions(actions);
+          // Asserts the standalone token (or punctuated/possessive forms),
+          // not unrelated occurrences inside common words like "other"
+          // ("other words", "another"). Word-boundary + capital O.
+          expect(flat).not.toMatch(/\bOther\b/);
+        });
+
+        it('rewrites the PSP name to "your payment provider"', () => {
+          const actions = buildActions(cat, 'Other', 'retail', CTX, planType);
+          const flat = flattenActions(actions);
+          expect(flat).toContain('your payment provider');
+        });
+
+        it('regression: a known PSP still renders its raw name', () => {
+          const actions = buildActions(cat, 'Stripe', 'retail', CTX, planType);
+          const flat = flattenActions(actions);
+          expect(flat).toContain('Stripe');
+          expect(flat).not.toContain('your payment provider');
+        });
+      });
+    }
+  });
 });
