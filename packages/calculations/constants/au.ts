@@ -98,34 +98,45 @@ export const AU_AVG_TXN_BY_INDUSTRY: Record<string, number> = {
   other: 65,
 };
 
-// ── NPP-rail action buckets per industry (May 2026) ───────────────
-// SUPERSEDES AU_PAYTO_SUITABLE_INDUSTRIES. Per NPP_RAIL_ACTIONS_BRIEF
-// the action list emits ZERO-to-THREE NPP-rail actions per industry,
-// drawn from these three buckets:
-//   1. PayID-async — no provider, async verification (invoicing,
-//      online checkout, bookings).
-//   2. PayTo-recurring — provider required, standing authorisation
-//      (subscriptions, memberships, recurring B2B).
-//   3. Provider-integrated in-person — provider + terminal, closes
-//      the queue-verification gap for walk-in flows.
-// Cat 5 receives no NPP actions regardless of industry.
+// ── NPP-rail action buckets per industry (May 2026, v2) ───────────
+// SUPERSEDES the v1 three-bucket shape (payIdAsync / payToRecurring
+// / providerInPerson). Per NPP_RAIL_ACTIONS_BRIEF_V2.md, the action
+// list now emits up to three plan-tier buckets plus an optional
+// monitor-tier long-tail line for cafés:
+//   A. payIdAsyncInvoice  — Bucket A. No provider. Invoicing + B2B.
+//   B. payIdOnlineCheckout — Bucket B. Provider required. Real-time
+//      online checkout.
+//   C. payToMandate        — Bucket C. Provider required. Mandate-
+//      authorised tokenised or recurring charges.
+//   + cafeLongTail         — Cafe-only, monitor-priority option for
+//      occasional large in-person transactions.
+//
+// Retail's Bucket B and C copy is emitted with a conditional opener
+// ("If your business has an online checkout") so retail merchants
+// who sell exclusively in-person self-skip the action without needing
+// an extra assessment question.
+//
+// Cat 5 receives no NPP actions regardless of industry (including no
+// cafe long-tail line). Unknown industries fall through to the
+// `other` configuration — the safest default for unrecognised shapes.
 //
 // Verified May 2026. Source of truth for actions.ts injection logic.
 
 export interface NppRailBuckets {
-  payIdAsync: boolean;
-  payToRecurring: boolean;
-  providerInPerson: boolean;
+  payIdAsyncInvoice: boolean;
+  payIdOnlineCheckout: boolean;
+  payToMandate: boolean;
+  cafeLongTail: boolean;
 }
 
 export const AU_NPP_RAIL_BUCKETS: Record<string, NppRailBuckets> = {
-  cafe:        { payIdAsync: false, payToRecurring: true,  providerInPerson: true  },
-  hospitality: { payIdAsync: true,  payToRecurring: true,  providerInPerson: true  },
-  retail:      { payIdAsync: false, payToRecurring: false, providerInPerson: true  },
-  online:      { payIdAsync: true,  payToRecurring: true,  providerInPerson: false },
-  ticketing:   { payIdAsync: true,  payToRecurring: true,  providerInPerson: false },
-  travel:      { payIdAsync: true,  payToRecurring: true,  providerInPerson: false },
-  other:       { payIdAsync: true,  payToRecurring: true,  providerInPerson: false },
+  cafe:        { payIdAsyncInvoice: false, payIdOnlineCheckout: false, payToMandate: false, cafeLongTail: true  },
+  hospitality: { payIdAsyncInvoice: true,  payIdOnlineCheckout: false, payToMandate: false, cafeLongTail: false },
+  retail:      { payIdAsyncInvoice: false, payIdOnlineCheckout: true,  payToMandate: true,  cafeLongTail: false },
+  online:      { payIdAsyncInvoice: false, payIdOnlineCheckout: true,  payToMandate: true,  cafeLongTail: false },
+  ticketing:   { payIdAsyncInvoice: false, payIdOnlineCheckout: true,  payToMandate: true,  cafeLongTail: false },
+  travel:      { payIdAsyncInvoice: true,  payIdOnlineCheckout: true,  payToMandate: true,  cafeLongTail: false },
+  other:       { payIdAsyncInvoice: true,  payIdOnlineCheckout: false, payToMandate: true,  cafeLongTail: false },
 };
 
 // ── Debit percentage rates (for "lower of" formula) ──────────────
