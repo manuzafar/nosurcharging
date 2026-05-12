@@ -13,7 +13,9 @@
 // pipeline that landed in M3 and the "Want a second opinion"
 // QuietUpsell that ran alongside it were both removed in May 2026
 // when the product shipped as a free MVP — no PDF, no email capture,
-// no 48-hour retention, no consulting upsell. The QuietUpsell
+// no consulting upsell (retention itself stays, widened to 30 days
+// since the PDF is no longer the merchant's persistent record).
+// The QuietUpsell
 // component file + the Calendly webhook + consulting_booked analytics
 // remain on disk so future re-enablement doesn't require a rebuild.
 //
@@ -84,7 +86,7 @@ function ResultsContent() {
 
   const [assessment, setAssessment] = useState<StoredAssessment | null>(null);
   const [outputs, setOutputs] = useState<AssessmentOutputs | null>(null);
-  // Explicit expired state — Cat 1\u20135 row past its 48h TTL. Shown as a
+  // Explicit expired state — Cat 1\u20135 row past its 30-day TTL. Shown as a
   // dedicated view rather than redirecting, so the merchant understands
   // their data was deleted (the brand promise) and can retake without
   // a silent reroute.
@@ -402,9 +404,10 @@ function ResultsContent() {
 
 // ── Expired view ───────────────────────────────────────────────
 // Renders when getAssessment returns { error: 'expired' } — the
-// assessment row is past its 48h TTL and was deleted on this load.
-// Per the brand promise ("we don't keep your data"), the merchant
-// gets an explicit explanation rather than a silent reroute.
+// assessment row is past its 30-day TTL and was deleted on this
+// load. Per the brand promise ("we don't keep your data for long"),
+// the merchant gets an explicit explanation rather than a silent
+// reroute.
 
 function ExpiredView({ onRetake }: { onRetake: () => void }) {
   return (
@@ -435,7 +438,7 @@ function ExpiredView({ onRetake }: { onRetake: () => void }) {
             marginBottom: '16px',
           }}
         >
-          We delete every assessment within 48 hours of submission.
+          We delete every assessment within 30 days of submission.
         </h1>
         <p
           style={{

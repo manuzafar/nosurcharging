@@ -157,14 +157,15 @@ export default function PrivacyPage() {
 
         <Section title="Data retention">
           <p>
-            Assessment data is deleted from our database within 48 hours of
-            submission. The PDF report we email you at submission (and any
-            on-demand resend) is your own copy to keep — it is the only
-            persistent record of your assessment. We do this on purpose:
-            your figures belong to you, not to us.
+            Assessment data is deleted from our database within 30 days of
+            submission. Your results URL stays viewable inside that
+            window so you can revisit your figures, share them with your
+            accountant or PSP, or come back to act on the action plan.
+            After 30 days the row is removed on next access. We do this
+            on purpose: your figures belong to you, not to us.
           </p>
           <p>
-            If you reload your results page after the 48-hour window has
+            If you reload your results page after the 30-day window has
             passed, the assessment row is deleted on access and you will
             see an &quot;assessment expired&quot; view directing you to
             retake it. Anonymised, non-identifying usage signals (e.g.
@@ -177,7 +178,7 @@ export default function PrivacyPage() {
             permanently deleted — unless you have asked to remain in
             contact, in which case we will seek your consent before
             continuing to contact you. Email retention is independent of
-            the 48-hour assessment retention above.
+            the assessment retention above.
           </p>
           <p>Session identifiers are deleted after 90 days.</p>
         </Section>
