@@ -2,10 +2,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-const { mockEmailGateShown, mockEmailCaptured, mockEmailGateSkipped } = vi.hoisted(() => ({
+const {
+  mockEmailGateShown,
+  mockEmailCaptured,
+  mockEmailGateSkipped,
+  mockIdentifyUser,
+  mockSha256,
+} = vi.hoisted(() => ({
   mockEmailGateShown: vi.fn(),
   mockEmailCaptured: vi.fn(),
   mockEmailGateSkipped: vi.fn(),
+  mockIdentifyUser: vi.fn(),
+  mockSha256: vi.fn(async (input: string) => `hash:${input}`),
 }));
 
 vi.mock('@/lib/analytics', () => ({
@@ -14,6 +22,8 @@ vi.mock('@/lib/analytics', () => ({
     emailCaptured: mockEmailCaptured,
     emailGateSkipped: mockEmailGateSkipped,
   },
+  identifyUser: mockIdentifyUser,
+  sha256: mockSha256,
 }));
 
 import { EmailGate } from '@/components/assessment/EmailGate';

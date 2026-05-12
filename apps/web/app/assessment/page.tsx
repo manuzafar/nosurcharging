@@ -19,7 +19,7 @@ import { Step4Industry } from '@/components/assessment/Step4Industry';
 import { EmailGate } from '@/components/assessment/EmailGate';
 import { RevealScreen } from '@/components/assessment/RevealScreen';
 import { getCategory } from '@nosurcharging/calculations/categories';
-import { trackEvent, Analytics, getVolumeTier } from '@/lib/analytics';
+import { Analytics, getVolumeTier } from '@/lib/analytics';
 import type { MerchantInputOverrides } from '@nosurcharging/calculations/types';
 import type { AssessmentFormData, AssessmentResult } from '@/actions/submitAssessment';
 import { PSP_PUBLISHED_RATES } from '@nosurcharging/calculations/constants/psp-rates';
@@ -248,6 +248,7 @@ export default function AssessmentPage() {
       {phase === 'reveal' && (
         <RevealScreen
           formData={buildFormData()}
+          assessmentStartedAt={startTimeRef.current}
           onComplete={handleRevealComplete}
           onError={handleRevealError}
         />
@@ -398,7 +399,7 @@ export default function AssessmentPage() {
                       input.expertRates.creditPct !== undefined ||
                       input.expertRates.marginPct !== undefined)
                   ) {
-                    trackEvent('Expert mode activated');
+                    Analytics.expertModeActivated();
                     expertModeTracked.current = true;
                   }
 
@@ -408,7 +409,7 @@ export default function AssessmentPage() {
                       (v) => v !== undefined && v !== null && v > 0,
                     ).length;
                     if (filled > 0) {
-                      trackEvent('Card mix entered', { fields_filled: filled });
+                      Analytics.cardMixEntered({ fields_filled: String(filled) });
                       cardMixTracked.current = true;
                     }
                   }

@@ -27,6 +27,7 @@ import type {
   CardMixBreakdown,
 } from '@nosurcharging/calculations/types';
 import { computeAccuracy } from '@/lib/accuracy';
+import { Analytics } from '@/lib/analytics';
 
 // ── Props ───────────────────────────────────────────────────────
 
@@ -266,6 +267,20 @@ export function RefinementPanel({
     onAccuracyChangeRef.current = onAccuracyChange;
   }, [onAccuracyChange]);
 
+  const accuracy = useMemo(
+    () => computeAccuracy(resolutionTrace, edits),
+    [resolutionTrace, edits],
+  );
+
+  // METRICS_DASHBOARD_BRIEF §1.3 — accuracy_refined fires on every
+  // edit commit (after the same 150ms debounce that drives the
+  // headline P&L recompute). Refs store the previous accuracy + P&L
+  // so deltas are computed against the last fired state, not the
+  // immutable initial result.
+  const accuracyBeforeRef = useRef(accuracy);
+  const plSwingBeforeRef = useRef(initialResult.plSwing);
+  const lastEditsKeyRef = useRef('');
+
   // Debounced recalc — pushes a refined result upward so the headline P&L
   // animates smoothly without thrashing on every keystroke.
   useEffect(() => {
@@ -273,14 +288,28 @@ export function RefinementPanel({
       const newInputs = applyEdits(inputs, edits);
       const result = calculateMetrics(newInputs);
       onRefinedResultRef.current(result);
+
+      // Fingerprint of current edits — skips refires from parent
+      // re-renders where `inputs` reference changed but the user's
+      // edit set didn't.
+      const editsKey = Object.entries(edits)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([k, v]) => `${k}=${v}`)
+        .join(',');
+      if (editsKey !== lastEditsKeyRef.current) {
+        Analytics.accuracyRefined({
+          accuracy_before: accuracyBeforeRef.current,
+          accuracy_after: accuracy,
+          fields_filled: Object.keys(edits).sort().join(','),
+          pl_swing_change: Math.round(result.plSwing - plSwingBeforeRef.current),
+        });
+        accuracyBeforeRef.current = accuracy;
+        plSwingBeforeRef.current = result.plSwing;
+        lastEditsKeyRef.current = editsKey;
+      }
     }, 150);
     return () => clearTimeout(timer);
-  }, [edits, inputs]);
-
-  const accuracy = useMemo(
-    () => computeAccuracy(resolutionTrace, edits),
-    [resolutionTrace, edits],
-  );
+  }, [edits, inputs, accuracy]);
 
   // Push accuracy changes up to the page (for TopBar)
   useEffect(() => {
