@@ -131,10 +131,10 @@ export default function PrivacyPage() {
             comes first.
           </p>
           <p>
-            Analytics cookies. We use cookies to understand how visitors use
-            our website at an aggregate level. These cookies do not identify
-            you personally. You can decline analytics cookies through your
-            browser settings or when prompted on the site.
+            <strong>Analytics cookies.</strong> We may gather how visitors
+            interact with our website so we can improve it. We do not capture
+            what you type into form fields. This information is never sold or
+            shared with third parties.
           </p>
         </Section>
 
