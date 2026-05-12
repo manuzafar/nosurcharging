@@ -9,8 +9,10 @@
 //
 // M1 scope: structural cut only. Visual restyles (VerticalActionSteps
 // hairline, RefinementPanel settings-list, ContextParagraph extraction,
-// ArtifactCard, print stylesheet, ReformTimelineCompact, QuietUpsell)
-// land in M2. PDF + 48h retention land in M3.
+// ReformTimelineCompact, QuietUpsell) land in M2. The PDF / Save-the-
+// full-report pipeline that landed in M3 was removed in May 2026 when
+// the product shipped as a free MVP — no PDF, no email capture, no
+// 48-hour retention.
 //
 // Routing:
 //   strategicRateExit → StrategicRateExitPage (no dollar figures)
@@ -62,7 +64,6 @@ import { EscapeScenarioCard } from '@/components/results/EscapeScenarioCard';
 import { MarketBenchmarkSentence } from '@/components/results/MarketBenchmarkSentence';
 import { buildBenchmarkComparison } from '@nosurcharging/calculations/benchmark';
 import { AssumptionsPanel } from '@/components/results/AssumptionsPanel';
-import { ArtifactCard } from '@/components/results/sections/ArtifactCard';
 import { QuietUpsell } from '@/components/results/QuietUpsell';
 import { ResultsDisclaimer } from '@/components/results/ResultsDisclaimer';
 
@@ -386,13 +387,6 @@ function ResultsContent() {
             surchargeRate={originalRaw.surchargeRate}
           />
         </div>
-
-        {/* Save the full report — pre-fills email captured at EmailGate. */}
-        <SectionHeader eyebrow="Save the full report" />
-        <ArtifactCard
-          assessmentId={assessmentId ?? ''}
-          initialEmail={assessment.email}
-        />
 
         {/* Quiet upsell — single-line $149 link replaces the dark card. */}
         <div className="pt-7">

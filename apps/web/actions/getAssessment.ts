@@ -22,8 +22,9 @@ export interface StoredAssessment {
   outputs: AssessmentOutputs & { actions?: ActionItem[] };
   created_at: string;
   // Captured at the email gate (post-Step-4 / pre-reveal). Optional —
-  // null when the merchant skipped. ArtifactCard reads this as the
-  // pre-fill value for the "Email me the PDF" form.
+  // null when the merchant skipped. Kept on the row for the audience-
+  // capture flow even after the PDF email pipeline was removed in
+  // May 2026.
   email: string | null;
   // 48h TTL. After this timestamp the row is deleted on next access.
   // Always present from migration 009 onwards.
