@@ -620,6 +620,35 @@ Coverage requirements:
   packages/calculations:  95% lines, 95% functions, 90% branches
   apps/web/actions:       80% lines, 85% functions, 75% branches
 
+E2E SELECTOR INVARIANT — when renaming user-facing text, also update e2e/
+
+  If a PR changes any aria-label, button copy, or rendered text that
+  Playwright specs use as a selector, the SAME PR must update those
+  specs. Do NOT defer the e2e selector update to a follow-up PR.
+
+  Why: pre-merge `e2e-smoke` runs against the PR branch's own code,
+  so stale specs find the old labels in the old markup and pass on
+  the PR. The breakage only surfaces post-merge when the staging
+  branch has the new markup but inherits stale specs from an
+  unrelated PR's deploy validation step. The result: every
+  subsequent staging deploy fails its post-deploy e2e against live
+  staging until the specs are repaired (see PRs #74, #75 history —
+  three consecutive red deploys before PR #76's selector fix).
+
+  Files to grep when renaming a component's user-facing text:
+    apps/web/e2e/*.spec.ts
+    apps/web/__tests__/components/<ComponentName>.test.tsx
+
+  Common patterns to check:
+    getByRole('radio', { name: ... })
+    getByRole('button', { name: ... })
+    getByText(/.../)
+
+  Bundle the selector update in the same commit as the rename. If
+  the e2e flow changes structurally (e.g. a panel moves behind a
+  new toggle), document the new flow shape in the spec's leading
+  comment so future readers understand the choreography.
+
 Full detail: docs/testing/testing-strategy.md
 
 ---
