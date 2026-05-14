@@ -13,10 +13,10 @@ test.describe('Layman journey → Category 2', () => {
     await page.getByRole('button', { name: '$2M', exact: true }).click();
     await page.getByRole('button', { name: /next/i }).click();
 
-    // Step 2 — select flat rate + PSP
-    await page.getByRole('radio', { name: /a single rate on every transaction/i }).click();
+    // Step 2 — select flat rate + PSP (v2 single-radio-list copy)
+    await page.getByRole('radio', { name: 'Single rate (flat %)' }).click();
     await page.getByRole('radio', { name: 'Stripe' }).click();
-    await page.getByRole('button', { name: /next/i }).click();
+    await page.getByRole('button', { name: 'Continue' }).click();
 
     // Step 3 — not surcharging
     await page.getByRole('button', { name: /No.*customers/i }).click();
@@ -53,9 +53,10 @@ test.describe('Layman journey → Category 2', () => {
     // Step 1's input is click-to-edit; use the $2M preset chip.
     await page.getByRole('button', { name: '$2M', exact: true }).click();
     await page.getByRole('button', { name: /next/i }).click();
-    await page.getByRole('radio', { name: /a single rate on every transaction/i }).click();
+    // Step 2 — v2 single-radio-list copy
+    await page.getByRole('radio', { name: 'Single rate (flat %)' }).click();
     await page.getByRole('radio', { name: 'Square' }).click();
-    await page.getByRole('button', { name: /next/i }).click();
+    await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByRole('button', { name: /No.*customers/i }).click();
     await page.getByRole('button', { name: /next/i }).click();
     await page.getByText('Cafe / Restaurant').click();

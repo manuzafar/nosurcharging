@@ -13,8 +13,16 @@ test.describe('Card mix → confidence badge', () => {
     await page.getByRole('button', { name: '$2M', exact: true }).click();
     await page.getByRole('button', { name: /next/i }).click();
 
-    // Step 2 — open card mix panel
-    await page.getByRole('radio', { name: /list of separate charges/i }).click();
+    // Step 2 — open card mix panel (v2 single-radio-list copy).
+    // CardMixInput and ExpertPanel are now nested inside the
+    // RefineRatesPanel, which is gated on PSP selection and collapsed
+    // by default. Flow order therefore changes: plan → PSP → expand
+    // Refine → open the card-mix / expert-panel toggles.
+    await page.getByRole('radio', { name: 'IC++ (Interchange Plus)' }).click();
+    await page.getByRole('radio', { name: 'Stripe' }).click();
+
+    // Expand the "Refine my rates" container
+    await page.getByRole('button', { name: /Refine my rates/i }).click();
 
     // Open card mix input
     await page.getByText(/know your card mix/i).click();
