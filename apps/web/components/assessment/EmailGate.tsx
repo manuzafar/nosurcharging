@@ -38,7 +38,12 @@ interface EmailGateProps {
 export function EmailGate({ category, onContinue, onSkip }: EmailGateProps) {
   const [email, setEmail] = useState('');
   const [marketingConsent, setMarketingConsent] = useState(false);
-  const [error, setError] = useState<'invalid_email' | null>(null);
+  // 'empty' = primary CTA clicked with no value in the field; user
+  //           almost certainly intended to type one before submitting.
+  // 'invalid_email' = value present but failed the regex.
+  // The explicit skip button bypasses both states; this state is only
+  // ever set from the primary-button submission path.
+  const [error, setError] = useState<'empty' | 'invalid_email' | null>(null);
   const [focused, setFocused] = useState(false);
 
   // Fire email_gate_shown once on mount. assessment_id is not yet known
@@ -51,10 +56,14 @@ export function EmailGate({ category, onContinue, onSkip }: EmailGateProps) {
   const handleSubmit = async () => {
     const trimmed = email.trim().toLowerCase();
 
-    // Empty → treat as skip (no error, no validation)
+    // Empty primary submission is a validation failure, not a skip.
+    // The primary button's copy ("Send me insights & view my results")
+    // promises an email-driven outcome — silently routing to onSkip on
+    // an empty field broke that contract and conflated accidental
+    // empty submits with intentional skips. The explicit skip button
+    // remains the only path that bypasses without email capture.
     if (!trimmed) {
-      Analytics.emailGateSkipped({});
-      onSkip();
+      setError('empty');
       return;
     }
 
@@ -235,7 +244,7 @@ export function EmailGate({ category, onContinue, onSkip }: EmailGateProps) {
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
             placeholder="you@yourbusiness.com.au"
-            aria-invalid={error === 'invalid_email'}
+            aria-invalid={error !== null}
             aria-describedby={error ? 'email-gate-error' : undefined}
             className="w-full outline-none"
             style={{
@@ -249,7 +258,7 @@ export function EmailGate({ category, onContinue, onSkip }: EmailGateProps) {
               transition: 'border 120ms ease',
             }}
           />
-          {error === 'invalid_email' && (
+          {error !== null && (
             <p
               id="email-gate-error"
               style={{
@@ -258,7 +267,9 @@ export function EmailGate({ category, onContinue, onSkip }: EmailGateProps) {
                 marginTop: '8px',
               }}
             >
-              Please enter a valid email address
+              {error === 'empty'
+                ? "Please enter your email, or use the skip link below if you'd rather not."
+                : 'Please enter a valid email address'}
             </p>
           )}
         </div>
