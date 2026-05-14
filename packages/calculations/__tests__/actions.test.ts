@@ -402,13 +402,78 @@ describe('buildActions', () => {
       const onlineActions = buildActions(2, 'Stripe', 'online', CTX);
       const bucketB = onlineActions.find((a) => a.action_id === 'payid_online_checkout')!;
       const bucketC = onlineActions.find((a) => a.action_id === 'payto_mandate')!;
-      // Per brief: each script must contain the honest caveat about
-      // the customer being handed off to their banking app.
-      expect(bucketB.script).toContain('handed off to their banking app');
-      expect(bucketC.script).toContain('handed off to their banking app');
-      // And both reference the maturity curve framing.
+      // Per NPP_SCRIPTS_TIGHTENING_BRIEF the exact phrasing differs
+      // between the two variants — Bucket B uses "handed off to their
+      // banking app", Bucket C uses "the customer approving in their
+      // banking app". Common substring is "banking app" + the
+      // maturity-curve sentence; assert both.
+      expect(bucketB.script).toContain('banking app');
+      expect(bucketC.script).toContain('banking app');
       expect(bucketB.script).toContain('maturity curve');
       expect(bucketC.script).toContain('maturity curve');
+    });
+
+    // ── NPP script tightening (May 2026 brief) ─────────────────
+    // Required-phrase grep on the new copy + forbidden-phrase grep
+    // on the mechanical walkthrough fragments that were removed.
+    // Tests at module level (industry-agnostic) walk every emitting
+    // industry × bucket combination so a regression on any single
+    // variant trips.
+
+    it('payid_async_invoice script contains the new "directly from their bank account" framing', () => {
+      const actions = buildActions(2, 'Stripe', 'hospitality', CTX);
+      const a = actions.find((x) => x.action_id === 'payid_async_invoice')!;
+      expect(a.script).toContain('Customers pay you directly from their bank account');
+    });
+
+    it('payid_online_checkout script contains the "real-time account-to-account" framing in both variants', () => {
+      const retailA = buildActions(2, 'Stripe', 'retail', CTX).find(
+        (x) => x.action_id === 'payid_online_checkout',
+      )!;
+      const onlineA = buildActions(2, 'Stripe', 'online', CTX).find(
+        (x) => x.action_id === 'payid_online_checkout',
+      )!;
+      const required = 'real-time account-to-account payments via the New Payments Platform';
+      expect(retailA.script).toContain(required);
+      expect(onlineA.script).toContain(required);
+    });
+
+    it('payto_mandate script contains the "authorise you once" framing in both variants', () => {
+      const retailC = buildActions(2, 'Stripe', 'retail', CTX).find(
+        (x) => x.action_id === 'payto_mandate',
+      )!;
+      const onlineC = buildActions(2, 'Stripe', 'online', CTX).find(
+        (x) => x.action_id === 'payto_mandate',
+      )!;
+      const required = 'authorise you once to charge their bank account directly';
+      expect(retailC.script).toContain(required);
+      expect(onlineC.script).toContain(required);
+    });
+
+    it('no NPP script contains the word "webhook" (jargon removed)', () => {
+      const industries = ['cafe', 'hospitality', 'retail', 'online', 'ticketing', 'travel', 'other'];
+      for (const industry of industries) {
+        const nppActions = buildActions(2, 'Stripe', industry, CTX).filter(
+          (a) => a.action_id?.startsWith('payid_') || a.action_id === 'payto_mandate',
+        );
+        for (const a of nppActions) {
+          expect(a.script).not.toContain('webhook');
+        }
+      }
+    });
+
+    it('no NPP script walks through the mechanical PayID flow', () => {
+      const industries = ['cafe', 'hospitality', 'retail', 'online', 'ticketing', 'travel', 'other'];
+      for (const industry of industries) {
+        const nppActions = buildActions(2, 'Stripe', industry, CTX).filter(
+          (a) => a.action_id?.startsWith('payid_') || a.action_id === 'payto_mandate',
+        );
+        for (const a of nppActions) {
+          expect(a.script).not.toContain('The customer enters their PayID alias');
+          expect(a.script).not.toContain('sends a payment request that the customer approves');
+          expect(a.script).not.toContain('Verification happens via banking app notifications');
+        }
+      }
     });
 
     it('cafe long-tail option lands at the BOTTOM of the action list (after existing monitors)', () => {
