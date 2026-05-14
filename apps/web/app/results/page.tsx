@@ -50,7 +50,7 @@ import { Footer } from '@/components/homepage/Footer';
 
 import { ResultsTopBar } from '@/components/results/shell/ResultsTopBar';
 
-import { Lightbulb, Calculator } from 'lucide-react';
+import { Lightbulb } from 'lucide-react';
 
 import {
   TrackedSection,
@@ -72,7 +72,6 @@ import { PassThroughSlider } from '@/components/results/PassThroughSlider';
 import { EscapeScenarioCard } from '@/components/results/EscapeScenarioCard';
 import { MarketBenchmarkSentence } from '@/components/results/MarketBenchmarkSentence';
 import { buildBenchmarkComparison } from '@nosurcharging/calculations/benchmark';
-import { AssumptionsPanel } from '@/components/results/AssumptionsPanel';
 import { ResultsDisclaimer } from '@/components/results/ResultsDisclaimer';
 
 export default function ResultsPage() {
@@ -394,29 +393,15 @@ function ResultsContent() {
           </>
         )}
 
-        {/* Assumptions — expand-on-demand. M3 polish: a real
-            SectionHeader sits above the toggle for visual consistency
-            with every other editorial section. The toggle inside the
-            panel is now a plain inline link, no top hairline of its own. */}
-        <TrackedSection sectionId="assumptions" category={category}>
-          <SectionHeader
-            eyebrow="How we calculated this"
-            eyebrowIcon={<Calculator size={14} aria-hidden />}
-          />
-          <div className="px-5 min-[501px]:px-8">
-            <AssumptionsPanel
-              outputs={outputs}
-              passThrough={passThrough}
-              resolutionTrace={resolutionTrace}
-              volume={volume}
-              pspName={pspName}
-              planType={planType === 'blended' ? 'flat' : planType}
-              msfRate={originalRaw.msfRate}
-              surcharging={originalRaw.surcharging}
-              surchargeRate={originalRaw.surchargeRate}
-            />
-          </div>
-        </TrackedSection>
+        {/* "How we calculated this" / AssumptionsPanel was unmounted
+            in May 2026. The full editorial breakdown (formula rows,
+            card mix table, confidence chip, RBA source citation)
+            duplicated what the verdict + metric cards + market
+            benchmark sentence already say, and the resulting
+            cognitive load distracted from the action plan. The
+            AssumptionsPanel component itself is preserved at
+            components/results/AssumptionsPanel.tsx for potential
+            future remount; only the page-level mount is hidden. */}
 
         <div className="px-5 min-[501px]:px-8 pt-9">
           <ResultsDisclaimer />
