@@ -98,7 +98,12 @@ describe('Step4Industry', () => {
     expect(checkedRadios).toHaveLength(1);
   });
 
-  it('renders the AVT signal on every tile from AU_AVG_TXN_BY_INDUSTRY', () => {
+  // Step 4 simplification (May 2026 brief) — the per-tile AVT display
+  // and the post-selection confirmation banner were both removed. The
+  // calc engine still consumes AU_AVG_TXN_BY_INDUSTRY server-side; the
+  // merchant just doesn't see it on this step.
+
+  it('does not render any AVT dollar figure on the tiles', () => {
     render(
       <Step4Industry
         industry={null}
@@ -107,30 +112,16 @@ describe('Step4Industry', () => {
         onBack={onBack}
       />,
     );
-    // Defaults sourced from packages/calculations/constants/au.ts so the
-    // displayed assumption can't drift from the calculation engine.
-    expect(screen.getByText('~$35 avg')).toBeInTheDocument(); // cafe
-    expect(screen.getByText('~$80 avg')).toBeInTheDocument(); // hospitality
-    expect(screen.getByText('~$95 avg')).toBeInTheDocument(); // online
-    expect(screen.getByText('~$120 avg')).toBeInTheDocument(); // ticketing
-    // retail + other both default to 65 — there should be two of them
-    expect(screen.getAllByText('~$65 avg').length).toBeGreaterThanOrEqual(2);
+    const text = document.body.textContent ?? '';
+    // The previous render emitted "~$35 avg", "~$80 avg", etc. The new
+    // tiles strip this entirely — `~$` should not appear anywhere on
+    // the step.
+    expect(text).not.toMatch(/~\$/);
+    expect(text).not.toMatch(/avg/i);
   });
 
-  it('inline info note hidden until a tile is selected', () => {
+  it('does not render the post-selection confirmation banner', () => {
     render(
-      <Step4Industry
-        industry={null}
-        onIndustryChange={onIndustryChange}
-        onNext={onNext}
-        onBack={onBack}
-      />,
-    );
-    expect(screen.queryByText(/as your average transaction value/i)).not.toBeInTheDocument();
-  });
-
-  it('inline info note appears with AVT + industry phrase on selection', () => {
-    const { rerender } = render(
       <Step4Industry
         industry="cafe"
         onIndustryChange={onIndustryChange}
@@ -138,20 +129,37 @@ describe('Step4Industry', () => {
         onBack={onBack}
       />,
     );
-    expect(screen.getByText(/cafés and restaurants/i)).toBeInTheDocument();
-    expect(screen.getByText(/as your average transaction value/i)).toBeInTheDocument();
+    // The banner used these phrases verbatim — none should remain.
+    expect(
+      screen.queryByText(/as your average transaction value/i),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/tune action-list language/i),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/refine the exact figure in your results/i),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/cafés and restaurants/i)).not.toBeInTheDocument();
+  });
 
-    // Switching selection updates the note (no stale state).
-    rerender(
+  it('renders the new single-sentence subhead', () => {
+    render(
       <Step4Industry
-        industry="ticketing"
+        industry={null}
         onIndustryChange={onIndustryChange}
         onNext={onNext}
         onBack={onBack}
       />,
     );
-    expect(screen.getByText(/ticketing and events/i)).toBeInTheDocument();
-    expect(screen.queryByText(/cafés and restaurants/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Tuning to your industry sharpens your estimate and your action plan/,
+      ),
+    ).toBeInTheDocument();
+    // Old subhead's first sentence — superseded.
+    expect(
+      screen.queryByText(/Each industry has different transaction patterns/),
+    ).not.toBeInTheDocument();
   });
 
   it('See my results button disabled when no industry selected', () => {
