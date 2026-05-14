@@ -21,9 +21,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import {
-  Clock,
-  ListOrdered,
-  UserX,
   Percent,
   MessageCircle,
   ShieldCheck,
@@ -36,7 +33,7 @@ const DISCLAIMER_TEXT =
   'I understand that this assessment provides illustrative estimates only. It is not financial advice. Figures are based on the information I provide. I should seek independent advice from a qualified professional before making business decisions.';
 const DISCLAIMER_VERSION = 'v1.1';
 
-type LucideIcon = typeof Clock;
+type LucideIcon = typeof Percent;
 
 interface CommitmentItem {
   title: string;
@@ -65,12 +62,6 @@ const COMMITMENTS: CommitmentItem[] = [
     body: 'Talk to your accountant before making changes to your pricing or payment setup.',
     icon: Stethoscope,
   },
-];
-
-const META_ITEMS: { label: string; icon: LucideIcon }[] = [
-  { label: '5 minutes', icon: Clock },
-  { label: '4 questions', icon: ListOrdered },
-  { label: 'No account required', icon: UserX },
 ];
 
 interface DisclaimerConsentProps {
@@ -145,41 +136,19 @@ export function DisclaimerConsent({ onAccept }: DisclaimerConsentProps) {
         doesn&apos;t do.
       </p>
 
-      {/* Meta row — 3 items separated by small dots, wraps naturally */}
-      <div
-        className="mt-5 flex flex-wrap items-center"
-        style={{ rowGap: '8px' }}
+      {/* Reassurance line — single italic statement matching the homepage
+          hero. Replaces a three-item icon row (5 minutes · 4 questions ·
+          No account required) that wrapped awkwardly at narrow widths and
+          left "No account required" orphaned on a second line. */}
+      <p
+        className="mt-5 italic"
+        style={{
+          fontSize: 'clamp(12px, 1.3vw, 13px)',
+          color: 'rgba(26, 20, 9, 0.55)',
+        }}
       >
-        {META_ITEMS.map((item, i) => (
-          <span key={item.label} className="flex items-center">
-            {i > 0 && (
-              <span
-                aria-hidden
-                style={{
-                  display: 'inline-block',
-                  width: '3px',
-                  height: '3px',
-                  margin: '0 12px',
-                  borderRadius: '999px',
-                  background: 'var(--color-border-secondary)',
-                }}
-              />
-            )}
-            <span
-              className="font-mono inline-flex items-center"
-              style={{
-                fontSize: '12px',
-                gap: '6px',
-                color: 'var(--color-text-secondary)',
-                letterSpacing: '0.4px',
-              }}
-            >
-              <item.icon size={14} strokeWidth={1.6} aria-hidden />
-              {item.label}
-            </span>
-          </span>
-        ))}
-      </div>
+        No sign-up, no account. Five minutes.
+      </p>
 
       {/* ── Commitments section ───────────────────────────────── */}
       <p
