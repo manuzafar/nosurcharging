@@ -109,46 +109,62 @@ export function HeroSection() {
           </span>
         </span>
 
-        {/* ── Headline ────────────────────────────────────────── */}
+        {/* ── Headline ──────────────────────────────────────────
+            Direct statement of what the tool answers — single
+            declarative sentence. The italic-emerald "Your" accent
+            lives in the subhead's three-Your anaphora; the headline
+            stays plain ink #1A1409 so the typographic colour shift
+            between the two surfaces lands harder.
+
+            Type spec (May 2026 revision):
+              DM Serif Display, weight 400, letter-spacing −0.025em.
+              clamp scales between ~30px mobile and ~52px desktop.
+              line-height 1.05 — looser than the old 0.98 because
+              the sentence now wraps to 3–5 lines and tighter would
+              cause ascenders/descenders to touch. */}
         <h1
           className="mt-7 font-serif text-ink"
           style={{
-            fontSize: 'clamp(34px, 7.5vw, 56px)',
-            fontWeight: 500,
+            fontSize: 'clamp(30px, 6vw, 52px)',
+            fontWeight: 400,
             letterSpacing: '-0.025em',
-            lineHeight: 0.98,
+            lineHeight: 1.05,
           }}
         >
-          <em className="italic text-accent" style={{ fontStyle: 'italic' }}>
-            Your
-          </em>{' '}
-          payments report.
-          <br />
-          Free. In five minutes.
+          Find out what October&apos;s surcharge ban costs your business.
         </h1>
 
         {/* ── Subhead ─────────────────────────────────────────────
-            Four short sentences in anaphora — three italic emerald
-            "Your" instances echo the headline. No em-dash. */}
+            Three short sentences in anaphora — italic emerald
+            "Your" repeats three times. No em-dash. DM Sans,
+            17px desktop / 14px mobile, weight 400. */}
         <p
-          className="mt-6 text-ink-secondary"
+          className="mt-6 font-sans text-ink-secondary"
           style={{
             fontSize: 'clamp(14px, 1.6vw, 17px)',
             lineHeight: 1.55,
-            maxWidth: '560px',
+            maxWidth: '620px',
             color: 'rgba(26, 20, 9, 0.72)',
           }}
         >
-          Find out what October&apos;s surcharge ban costs your business.{' '}
-          <em className="italic text-accent" style={{ fontStyle: 'italic' }}>
+          <em
+            className="italic text-accent"
+            style={{ fontStyle: 'italic', fontWeight: 400 }}
+          >
             Your
           </em>{' '}
           provider named.{' '}
-          <em className="italic text-accent" style={{ fontStyle: 'italic' }}>
+          <em
+            className="italic text-accent"
+            style={{ fontStyle: 'italic', fontWeight: 400 }}
+          >
             Your
           </em>{' '}
           P&amp;L impact in dollars.{' '}
-          <em className="italic text-accent" style={{ fontStyle: 'italic' }}>
+          <em
+            className="italic text-accent"
+            style={{ fontStyle: 'italic', fontWeight: 400 }}
+          >
             Your
           </em>{' '}
           week-by-week action plan.

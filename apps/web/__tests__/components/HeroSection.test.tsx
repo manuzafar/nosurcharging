@@ -19,53 +19,55 @@ describe('HeroSection', () => {
     expect(text).not.toMatch(/\d+\s+days remaining/i);
   });
 
-  it('renders italic emerald "Your" in the headline', () => {
+  it('headline reads as a direct, plain-ink statement (no italic accent)', () => {
     render(<HeroSection />);
-    // Multiple "Your" instances — the headline + three subhead
-    // anaphora references. `getAllByText` returns them all; check
-    // that the FIRST is the headline (an <em>).
-    const yours = screen.getAllByText('Your');
-    expect(yours.length).toBeGreaterThanOrEqual(4);
-    const headlineYour = yours[0]!;
-    expect(headlineYour.tagName).toBe('EM');
-    expect(headlineYour.className).toContain('italic');
-    expect(headlineYour.className).toContain('text-accent');
+    // Post-May-2026 hero copy: the italic-emerald "Your" treatment
+    // now lives only in the subhead's three-Your anaphora. The
+    // headline itself is a single declarative sentence in plain
+    // serif; it contains the lowercase "your business" but NO <em>
+    // wrapper around it.
+    const headline = screen.getByRole('heading', { level: 1 });
+    expect(headline.textContent).toBe(
+      "Find out what October's surcharge ban costs your business.",
+    );
+    // No <em> children inside the headline — the accent moved to
+    // the subhead.
+    expect(headline.querySelector('em')).toBeNull();
   });
 
-  it('renders the headline copy verbatim', () => {
+  it('subhead carries exactly three italic emerald "Your" instances', () => {
     render(<HeroSection />);
-    expect(document.body.textContent).toContain('payments report.');
-    expect(document.body.textContent).toContain('Free. In five minutes.');
-  });
-
-  it('subhead carries three additional italic emerald "Your" instances', () => {
-    render(<HeroSection />);
-    // 1 headline + 3 subhead = 4 total "Your" instances. Every
-    // subhead instance must also be styled italic emerald.
+    // Post-May-2026: three-Your anaphora lives entirely in the
+    // subhead. Each instance must be wrapped in <em> with italic +
+    // text-accent classes.
     const yours = screen.getAllByText('Your');
-    expect(yours).toHaveLength(4);
-    for (const el of yours.slice(1)) {
+    expect(yours).toHaveLength(3);
+    for (const el of yours) {
       expect(el.tagName).toBe('EM');
       expect(el.className).toContain('italic');
       expect(el.className).toContain('text-accent');
     }
   });
 
-  it('subhead opens with "Find out what October\'s surcharge ban costs your business."', () => {
+  it('subhead contains the three-Your anaphora copy verbatim', () => {
     render(<HeroSection />);
-    expect(document.body.textContent).toContain(
-      "Find out what October's surcharge ban costs your business.",
-    );
+    const text = document.body.textContent ?? '';
+    expect(text).toContain('Your provider named.');
+    expect(text).toContain('Your P&L impact in dollars.');
+    expect(text).toContain('Your week-by-week action plan.');
   });
 
-  it('subhead has no em-dash (banned in v2)', () => {
+  it('hero copy has no em-dash', () => {
     render(<HeroSection />);
-    // Scope to the subhead paragraph specifically — the calculator
-    // footer copy below it preserves a legitimate em-dash use that
-    // the revision brief doesn't touch.
-    const subhead = screen.getByText(
-      /^Find out what October's surcharge ban costs your business/,
-    );
+    // Scope to the headline + subhead — the calculator footer copy
+    // below preserves a legitimate em-dash use that the revision
+    // brief doesn't touch. The subhead text is split across <em> +
+    // text nodes inside a <p>, so we walk up from the first "Your"
+    // <em> to its parent paragraph to assert the aggregated text.
+    const headline = screen.getByRole('heading', { level: 1 });
+    const firstYour = screen.getAllByText('Your')[0]!;
+    const subhead = firstYour.closest('p')!;
+    expect(headline.textContent ?? '').not.toContain('—');
     expect(subhead.textContent ?? '').not.toContain('—');
   });
 
