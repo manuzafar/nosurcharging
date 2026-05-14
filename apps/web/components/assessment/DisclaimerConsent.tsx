@@ -157,19 +157,35 @@ export function DisclaimerConsent({ onAccept }: DisclaimerConsentProps) {
           fontSize: '11px',
           letterSpacing: '1.54px',
           color: 'var(--color-text-secondary)',
-          marginTop: '40px',
-          marginBottom: '20px',
+          marginTop: '32px',
+          marginBottom: '16px',
         }}
       >
         Our commitments
       </p>
 
+      {/* Each commitment lives in its own 0.5px-bordered box so the
+          column reads as a sequence of contained sections rather than
+          free-floating text. Tighter gaps than the previous 36/24
+          grid (14px desktop / 8px mobile via the responsive
+          gap utility) — the mobile rhythm reads as a grouped list,
+          not four loose banners. Padding shrinks 14 → 12 on mobile
+          to keep the page from growing taller. */}
       <div
-        className="grid grid-cols-1 sm:grid-cols-2"
-        style={{ columnGap: '36px', rowGap: '24px' }}
+        className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3.5"
       >
         {COMMITMENTS.map((item) => (
-          <div key={item.title} className="flex items-start" style={{ gap: '12px' }}>
+          <div
+            key={item.title}
+            className="flex items-start"
+            style={{
+              gap: '12px',
+              padding: 'clamp(12px, 1.4vw, 14px) clamp(14px, 1.6vw, 16px)',
+              border: '0.5px solid rgba(26, 20, 9, 0.10)',
+              borderRadius: '10px',
+              background: 'transparent',
+            }}
+          >
             <span
               aria-hidden
               className="flex shrink-0 items-center justify-center"
