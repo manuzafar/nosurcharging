@@ -211,7 +211,7 @@ function buildPayIdAsyncInvoiceAction(): ActionItem {
     priority: 'plan',
     timeAnchor: 'BEFORE 1 OCTOBER',
     text: `Add PayID to invoices and B2B account statements`,
-    script: `Publish your business PayID (ABN, phone, or email tied to your business bank account) on invoices, booking confirmations, and B2B account statements. Customers paying via PayID send the payment directly from their bank account through the New Payments Platform — settlement is instant and there is no card scheme cost on those transactions. Your business bank account fee for receiving PayID payments is typically zero or a few cents. Verification happens via banking app notifications, which works for invoiced or pre-ordered flows where you confirm payment before fulfilment.`,
+    script: `Publish your business PayID on invoices, booking confirmations, and B2B account statements. Customers pay you directly from their bank account — no card scheme cost on those transactions, settlement is instant. Your business bank account fee is typically zero or a few cents. Works for invoiced or pre-ordered flows where you can confirm payment before fulfilment.`,
     why: `For the portion of customers willing to pay via PayID, your card scheme cost on that revenue drops to zero. No provider integration needed — your business bank account already supports PayID.`,
     action_id: 'payid_async_invoice',
   };
@@ -219,9 +219,15 @@ function buildPayIdAsyncInvoiceAction(): ActionItem {
 
 function buildPayIdOnlineCheckoutAction(industry: string): ActionItem {
   const isRetail = industry === 'retail';
+  // Opener differs by industry — retail conditional vs direct.
+  // Body is identical across both variants. Per
+  // NPP_SCRIPTS_TIGHTENING_BRIEF (May 2026) the mechanical step-by-
+  // step walkthrough of the payment flow was removed. The merchant
+  // doesn't need to know the plumbing — only what it is, what it
+  // costs, and what the trade-off is.
   const scriptOpener = isRetail
-    ? `If your business has an online checkout: offer "Pay by PayID" alongside cards. `
-    : `Offer "Pay by PayID" alongside cards at online checkout. `;
+    ? `If your business has an online checkout, offer "Pay by PayID" alongside cards`
+    : `Offer "Pay by PayID" alongside cards at online checkout`;
   const whyBody = isRetail
     ? `If your business has an online checkout, this is a no-card-scheme-cost option that runs alongside cards rather than replacing them. Best evaluated against your conversion sensitivity at checkout.`
     : `For your online flow, this is a no-card-scheme-cost option that runs alongside cards rather than replacing them. Best evaluated against your conversion sensitivity at checkout.`;
@@ -229,7 +235,7 @@ function buildPayIdOnlineCheckoutAction(industry: string): ActionItem {
     priority: 'plan',
     timeAnchor: 'BEFORE 1 OCTOBER',
     text: `Offer PayID at online checkout via an NPP-licensed provider`,
-    script: `${scriptOpener}The customer enters their PayID alias; your NPP-licensed provider sends a payment request that the customer approves in their banking app; you receive confirmation via webhook within seconds. Per-transaction pricing is typically a flat cents fee rather than a percentage of value, which is materially cheaper on higher-value transactions. Honest caveat: the customer is handed off to their banking app to approve the request — this step affects conversion versus card-on-file today, and the experience varies by which banking app the customer uses. The rail itself is reliable; the customer-side UX is on a maturity curve.`,
+    script: `${scriptOpener} — real-time account-to-account payments via the New Payments Platform. Per-transaction pricing is typically a flat cents fee rather than a percentage of value, materially cheaper on higher-value transactions. Provider integration is required — request a quote from an NPP-licensed provider. Honest caveat: the customer is handed off to their banking app to approve the payment, which affects conversion versus card-on-file today. The rail is reliable; the customer-side UX is on a maturity curve.`,
     why: whyBody,
     action_id: 'payid_online_checkout',
   };
@@ -237,9 +243,13 @@ function buildPayIdOnlineCheckoutAction(industry: string): ActionItem {
 
 function buildPayToMandateAction(industry: string): ActionItem {
   const isRetail = industry === 'retail';
+  // Opener differs by industry; body identical. The PayTo mechanism
+  // walkthrough (customer establishes mandate / then merchant
+  // charges directly) collapsed into a single direct sentence per
+  // NPP_SCRIPTS_TIGHTENING_BRIEF (May 2026).
   const scriptOpener = isRetail
-    ? `If your business has an online checkout: PayTo is the New Payments Platform's authorisation framework. `
-    : `PayTo is the New Payments Platform's authorisation framework. `;
+    ? `If your business has an online checkout, PayTo lets customers authorise you once to charge their bank account directly`
+    : `PayTo lets customers authorise you once to charge their bank account directly`;
   const whyBody = isRetail
     ? `If your business has an online checkout, this gives you a structurally cheaper rail for returning or recurring customers — once a mandate is in place, subsequent charges are merchant-initiated without further customer involvement.`
     : `Once a mandate is in place, subsequent charges are merchant-initiated without further customer involvement — the cost structure (flat cents per transaction instead of percentage of value) is structurally cheaper than card scheme rails on your recurring or returning-customer revenue.`;
@@ -247,7 +257,7 @@ function buildPayToMandateAction(industry: string): ActionItem {
     priority: 'plan',
     timeAnchor: 'BEFORE 1 OCTOBER',
     text: `Evaluate PayTo for returning, recurring, or tokenised customer payments`,
-    script: `${scriptOpener}The customer establishes a mandate once at checkout or signup; after that, you can charge their bank account directly — either one-off (like card-on-file tokenised payments) or on a recurring schedule (like subscription billing). Per-transaction pricing is typically a flat cents fee rather than a percentage of value, which is materially cheaper on higher-value or recurring transactions. Provider integration is required — request a quote from an NPP-licensed provider. Honest caveat: setting up the mandate involves the customer being handed off to their banking app to approve it — this affects conversion versus card-on-file today, and the experience varies by which banking app the customer uses. The rail itself is reliable; the customer-side UX is on a maturity curve.`,
+    script: `${scriptOpener} — either one-off (like card-on-file) or on a recurring schedule. Per-transaction pricing is typically a flat cents fee rather than a percentage of value, materially cheaper on higher-value or recurring transactions. Provider integration is required — request a quote from an NPP-licensed provider. Honest caveat: the mandate setup involves the customer approving in their banking app, which affects conversion versus card-on-file today. The rail is reliable; the customer-side UX is on a maturity curve.`,
     why: whyBody,
     action_id: 'payto_mandate',
   };
