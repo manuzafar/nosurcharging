@@ -3,7 +3,13 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Step2PlanType } from '@/components/assessment/Step2PlanType';
 
-describe('Step2PlanType', () => {
+// Step 2 v2 (May 2026) — single radio list of six equal-weight plan-type
+// cards. Tests assert the new structure: aria-labels match the brief's
+// verbatim titles, no hairline dividers, chips on cards 1+2 only, PSP grid
+// in the new 3-col-desktop order, "Refine my rates" panel gated on PSP
+// selection.
+
+describe('Step2PlanType (v2)', () => {
   const onPlanTypeChange = vi.fn();
   const onPspChange = vi.fn();
   const onMerchantInputChange = vi.fn();
@@ -36,152 +42,235 @@ describe('Step2PlanType', () => {
     vi.clearAllMocks();
   });
 
-  it('both plan type tiles render', () => {
+  // ── Structure ──────────────────────────────────────────────────────
+
+  it('renders all six plan-type radio cards in the brief order', () => {
     render(<Step2PlanType {...defaultProps} />);
-    expect(screen.getByRole('radio', { name: /a single rate on every transaction/i })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /list of separate charges/i })).toBeInTheDocument();
-  });
-
-  it('clicking flat rate tile selects it (aria-checked=true)', async () => {
-    const { rerender } = render(<Step2PlanType {...defaultProps} />);
-    const flatTile = screen.getByRole('radio', { name: /a single rate on every transaction/i });
-
-    await user.click(flatTile);
-    expect(onPlanTypeChange).toHaveBeenCalledWith('flat', false);
-
-    // Rerender with flat selected to verify aria-checked
-    rerender(<Step2PlanType {...defaultProps} planType="flat" />);
-    expect(screen.getByRole('radio', { name: /a single rate on every transaction/i })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    );
-    expect(screen.getByRole('radio', { name: /list of separate charges/i })).toHaveAttribute(
-      'aria-checked',
-      'false',
-    );
-  });
-
-  it('clicking cost-plus deselects flat and selects cost-plus', async () => {
-    const { rerender } = render(<Step2PlanType {...defaultProps} planType="flat" />);
-
-    await user.click(screen.getByRole('radio', { name: /list of separate charges/i }));
-    expect(onPlanTypeChange).toHaveBeenCalledWith('costplus', false);
-
-    rerender(<Step2PlanType {...defaultProps} planType="costplus" />);
-    expect(screen.getByRole('radio', { name: /list of separate charges/i })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    );
-    expect(screen.getByRole('radio', { name: /a single rate on every transaction/i })).toHaveAttribute(
-      'aria-checked',
-      'false',
-    );
-  });
-
-  it('expert toggle hidden by default, shown when clicked', async () => {
-    render(<Step2PlanType {...defaultProps} />);
-    // Expert toggle link is visible
-    const toggle = screen.getByRole('button', { name: /payment wizard/i });
-    expect(toggle).toBeInTheDocument();
-
-    // Expert panel is collapsed — toggle shows "Enter your exact rates"
-    expect(screen.queryByText(/use smart defaults instead/i)).not.toBeInTheDocument();
-
-    // Click expands it — button text changes to "Use smart defaults instead"
-    await user.click(toggle);
-    expect(screen.getByText(/use smart defaults instead/i)).toBeInTheDocument();
-  });
-
-  it('PSP pill selection works', async () => {
-    render(<Step2PlanType {...defaultProps} />);
-
-    // PSP pills are a radiogroup — query by role=radio
-    const stripePill = screen.getByRole('radio', { name: 'Stripe' });
-    await user.click(stripePill);
-    expect(onPspChange).toHaveBeenCalledWith('Stripe');
-  });
-
-  it('all 10 PSP options render', () => {
-    render(<Step2PlanType {...defaultProps} />);
-    const psps = ['Stripe', 'Square', 'Tyro', 'CommBank', 'ANZ', 'Westpac', 'Zeller', 'eWAY', 'Adyen', 'Other'];
-    for (const psp of psps) {
-      expect(screen.getByRole('radio', { name: psp })).toBeInTheDocument();
+    const titles = [
+      'Single rate (flat %)',
+      'Not sure',
+      'IC++ (Interchange Plus)',
+      'Blended',
+      'Zero-cost EFTPOS',
+      'Strategic / custom',
+    ];
+    for (const title of titles) {
+      expect(screen.getByRole('radio', { name: title })).toBeInTheDocument();
     }
   });
 
-  it('Next button disabled until BOTH plan type AND PSP selected', async () => {
-    const { rerender } = render(<Step2PlanType {...defaultProps} />);
-
-    // Neither selected
-    expect(screen.getByRole('button', { name: /next/i })).toBeDisabled();
-
-    // Only plan type
-    rerender(<Step2PlanType {...defaultProps} planType="flat" />);
-    expect(screen.getByRole('button', { name: /next/i })).toBeDisabled();
-
-    // Only PSP
-    rerender(<Step2PlanType {...defaultProps} psp="Stripe" />);
-    expect(screen.getByRole('button', { name: /next/i })).toBeDisabled();
-
-    // Both selected
-    rerender(<Step2PlanType {...defaultProps} planType="flat" psp="Stripe" />);
-    expect(screen.getByRole('button', { name: /next/i })).toBeEnabled();
-  });
-
-  it('mock bill content uses structure bars (no rate figures)', () => {
+  it('headline + subhead use the new verbatim copy', () => {
     render(<Step2PlanType {...defaultProps} />);
-    // Flat rate tile — structure labels, no percentages
-    expect(screen.getByText(/merchant service fee/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/total charged/i).length).toBeGreaterThanOrEqual(1);
-    // Cost-plus tile (tier 2, abbreviated) — structure labels
-    expect(screen.getByText(/processing costs/i)).toBeInTheDocument();
-    expect(screen.getByText(/provider margin/i)).toBeInTheDocument();
-    // No specific rate figures anywhere
-    const allText = document.body.textContent ?? '';
-    expect(allText).not.toContain('1.40%');
-    expect(allText).not.toContain('$1,400');
-    expect(allText).not.toContain('$312');
-    expect(allText).not.toContain('$280');
-    expect(allText).not.toContain('$88');
-    expect(allText).not.toContain('$95');
+    expect(
+      screen.getByRole('heading', { name: /how do you pay for card acceptance/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /This helps us estimate your current cost structure and project the impact/,
+      ),
+    ).toBeInTheDocument();
   });
 
-  it('tier 1 chip badges render — "Most common" + "Smart defaults"', () => {
+  it('uses the new section labels "Pricing model" and "Payment provider"', () => {
     render(<Step2PlanType {...defaultProps} />);
-    // Exact match — "most common" also appears in the "I'm not sure" body
-    // ("most common assumptions") so an unscoped regex matches twice.
-    expect(screen.getByText('Most common')).toBeInTheDocument();
-    expect(screen.getByText('Smart defaults')).toBeInTheDocument();
+    expect(screen.getByText('Pricing model')).toBeInTheDocument();
+    expect(screen.getByText('Payment provider')).toBeInTheDocument();
+    // Old labels must not reappear
+    expect(screen.queryByText(/Your plan type/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Who processes your payments\?/i)).not.toBeInTheDocument();
   });
 
-  it('selecting "I\'m not sure" hides optional refinements but keeps PSP selector visible', async () => {
-    const { rerender } = render(<Step2PlanType {...defaultProps} />);
+  it('renders no hairline dividers inside the plan-type question', () => {
+    render(<Step2PlanType {...defaultProps} />);
+    const text = document.body.textContent ?? '';
+    // The v1 dividers carried these labels; both are now forbidden.
+    expect(text).not.toMatch(/If you recognise one of these/i);
+    expect(text).not.toMatch(/(^|\s)Or(\s|$)/);
+  });
 
-    // Refinements visible by default
-    expect(screen.getByRole('button', { name: /payment wizard/i })).toBeInTheDocument();
+  // ── Chips ──────────────────────────────────────────────────────────
 
-    // Click "I'm not sure"
-    await user.click(screen.getByRole('radio', { name: /not sure how I pay/i }));
+  it('renders "Most common" chip on the Flat card only', () => {
+    render(<Step2PlanType {...defaultProps} />);
+    const chips = screen.getAllByText('Most common');
+    expect(chips).toHaveLength(1);
+    // Chip must live inside the Flat radio card
+    const flatCard = screen.getByRole('radio', { name: 'Single rate (flat %)' });
+    expect(flatCard.textContent).toContain('Most common');
+  });
+
+  it('renders "Smart defaults" chip on the Not-sure card only', () => {
+    render(<Step2PlanType {...defaultProps} />);
+    const chips = screen.getAllByText('Smart defaults');
+    expect(chips).toHaveLength(1);
+    const notSureCard = screen.getByRole('radio', { name: 'Not sure' });
+    expect(notSureCard.textContent).toContain('Smart defaults');
+  });
+
+  // ── Selection behaviour ────────────────────────────────────────────
+
+  it('clicking the Flat card fires onPlanTypeChange("flat", false)', async () => {
+    render(<Step2PlanType {...defaultProps} />);
+    await user.click(screen.getByRole('radio', { name: 'Single rate (flat %)' }));
+    expect(onPlanTypeChange).toHaveBeenCalledWith('flat', false);
+  });
+
+  it('clicking the Not-sure card fires onPlanTypeChange("flat", true)', async () => {
+    render(<Step2PlanType {...defaultProps} />);
+    await user.click(screen.getByRole('radio', { name: 'Not sure' }));
     expect(onPlanTypeChange).toHaveBeenCalledWith('flat', true);
-
-    // Rerender with planType='flat' (parent stores it that way for the unknown cohort)
-    rerender(<Step2PlanType {...defaultProps} planType="flat" />);
-
-    // PSP selector still visible
-    expect(screen.getByRole('radio', { name: 'Stripe' })).toBeInTheDocument();
-    // Refinements (Payment wizard toggle inside ExpertPanel) gone
-    expect(screen.queryByRole('button', { name: /payment wizard/i })).not.toBeInTheDocument();
   });
 
-  it('strategic-rate tile fires onStrategicRateSelected on Next', async () => {
-    const onStrategicRateSelected = vi.fn();
-    render(<Step2PlanType {...defaultProps} onStrategicRateSelected={onStrategicRateSelected} />);
+  it('clicking IC++ fires onPlanTypeChange("costplus", false)', async () => {
+    render(<Step2PlanType {...defaultProps} />);
+    await user.click(screen.getByRole('radio', { name: 'IC++ (Interchange Plus)' }));
+    expect(onPlanTypeChange).toHaveBeenCalledWith('costplus', false);
+  });
 
-    await user.click(screen.getByRole('radio', { name: /custom rate I negotiated/i }));
-    // Strategic selection enables Next without requiring a PSP
-    const nextBtn = screen.getByRole('button', { name: /next/i });
-    expect(nextBtn).toBeEnabled();
-    await user.click(nextBtn);
+  it('clicking Blended fires onPlanTypeChange("blended", false)', async () => {
+    render(<Step2PlanType {...defaultProps} />);
+    await user.click(screen.getByRole('radio', { name: 'Blended' }));
+    expect(onPlanTypeChange).toHaveBeenCalledWith('blended', false);
+  });
+
+  it('clicking Zero-cost EFTPOS fires onPlanTypeChange("zero_cost", false)', async () => {
+    render(<Step2PlanType {...defaultProps} />);
+    await user.click(screen.getByRole('radio', { name: 'Zero-cost EFTPOS' }));
+    expect(onPlanTypeChange).toHaveBeenCalledWith('zero_cost', false);
+  });
+
+  it('selected card carries aria-checked=true; others stay false', () => {
+    render(<Step2PlanType {...defaultProps} planType="costplus" />);
+    expect(
+      screen.getByRole('radio', { name: 'IC++ (Interchange Plus)' }),
+    ).toHaveAttribute('aria-checked', 'true');
+    expect(
+      screen.getByRole('radio', { name: 'Single rate (flat %)' }),
+    ).toHaveAttribute('aria-checked', 'false');
+    expect(
+      screen.getByRole('radio', { name: 'Strategic / custom' }),
+    ).toHaveAttribute('aria-checked', 'false');
+  });
+
+  // ── PSP grid ───────────────────────────────────────────────────────
+
+  it('renders all 10 PSP options including the renamed display labels', () => {
+    render(<Step2PlanType {...defaultProps} />);
+    const namedPsps = ['Stripe', 'Square', 'Tyro', 'Zeller', 'Adyen', 'eWAY', 'CommBank', 'Westpac'];
+    for (const psp of namedPsps) {
+      expect(screen.getByRole('radio', { name: psp })).toBeInTheDocument();
+    }
+    expect(
+      screen.getByRole('radio', { name: 'ANZ Worldline' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('radio', { name: 'Other / Not listed' }),
+    ).toBeInTheDocument();
+  });
+
+  it('clicking a PSP fires onPspChange with the underlying key, not the display label', async () => {
+    render(<Step2PlanType {...defaultProps} />);
+    await user.click(screen.getByRole('radio', { name: 'ANZ Worldline' }));
+    // Key stays 'ANZ' — display label is purely render-time
+    expect(onPspChange).toHaveBeenCalledWith('ANZ');
+
+    await user.click(screen.getByRole('radio', { name: 'Other / Not listed' }));
+    expect(onPspChange).toHaveBeenCalledWith('Other');
+  });
+
+  // ── Refine my rates panel gating ───────────────────────────────────
+
+  it('Refine my rates panel is NOT rendered until a PSP is selected', () => {
+    render(<Step2PlanType {...defaultProps} planType="flat" />);
+    expect(
+      screen.queryByText(/Refine my rates/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it('Refine my rates panel renders once a PSP is selected', () => {
+    render(<Step2PlanType {...defaultProps} planType="flat" psp="Stripe" />);
+    expect(screen.getByText(/Refine my rates/i)).toBeInTheDocument();
+  });
+
+  it('Refine my rates panel is collapsed by default — body fields hidden', () => {
+    render(<Step2PlanType {...defaultProps} planType="flat" psp="Stripe" />);
+    // Header visible; auto-shown flat-rate input not yet in the DOM
+    expect(screen.getByText(/Refine my rates/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Your Stripe rate/i)).not.toBeInTheDocument();
+  });
+
+  it('clicking the Refine header expands the panel and reveals flat-rate input', async () => {
+    render(<Step2PlanType {...defaultProps} planType="flat" psp="Stripe" />);
+    await user.click(screen.getByRole('button', { name: /Refine my rates/i }));
+    expect(screen.getByText(/Your Stripe rate/i)).toBeInTheDocument();
+  });
+
+  it('Refine panel subtitle changes when Not-sure was selected', async () => {
+    // The "Not sure" cohort stores planType='flat' + isUnknown=true. The
+    // panel is rendered, but the subtitle text changes and the flat-rate
+    // input is suppressed.
+    render(<Step2PlanType {...defaultProps} planType="flat" psp="Stripe" />);
+    // First click Not sure so isUnknown becomes true
+    await user.click(screen.getByRole('radio', { name: 'Not sure' }));
+    // The component derives isUnknown locally — re-render not needed
+    expect(
+      screen.getByText(/You picked 'Not sure'/),
+    ).toBeInTheDocument();
+  });
+
+  // ── Continue gating ────────────────────────────────────────────────
+
+  it('Continue is disabled until BOTH plan type AND PSP are selected', () => {
+    const { rerender } = render(<Step2PlanType {...defaultProps} />);
+    expect(screen.getByRole('button', { name: /continue/i })).toBeDisabled();
+
+    rerender(<Step2PlanType {...defaultProps} planType="flat" />);
+    expect(screen.getByRole('button', { name: /continue/i })).toBeDisabled();
+
+    rerender(<Step2PlanType {...defaultProps} psp="Stripe" />);
+    expect(screen.getByRole('button', { name: /continue/i })).toBeDisabled();
+
+    rerender(<Step2PlanType {...defaultProps} planType="flat" psp="Stripe" />);
+    expect(screen.getByRole('button', { name: /continue/i })).toBeEnabled();
+  });
+
+  it('Continue copy is "Continue" not the legacy "Next"', () => {
+    render(<Step2PlanType {...defaultProps} planType="flat" psp="Stripe" />);
+    expect(
+      screen.getByRole('button', { name: 'Continue' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Next' }),
+    ).not.toBeInTheDocument();
+  });
+
+  // ── Strategic-rate path ────────────────────────────────────────────
+
+  it('selecting Strategic / custom enables Continue without a PSP', async () => {
+    const onStrategicRateSelected = vi.fn();
+    render(
+      <Step2PlanType
+        {...defaultProps}
+        onStrategicRateSelected={onStrategicRateSelected}
+      />,
+    );
+
+    await user.click(screen.getByRole('radio', { name: 'Strategic / custom' }));
+    const continueBtn = screen.getByRole('button', { name: /continue/i });
+    expect(continueBtn).toBeEnabled();
+    await user.click(continueBtn);
     expect(onStrategicRateSelected).toHaveBeenCalled();
+  });
+
+  // ── Forbidden phrases (regression guards) ──────────────────────────
+
+  it('does not render forbidden v1 phrases', () => {
+    render(<Step2PlanType {...defaultProps} />);
+    const text = document.body.textContent ?? '';
+    expect(text).not.toMatch(/Pick the description that sounds most like your situation/i);
+    expect(text).not.toMatch(/Your plan type/i);
+    expect(text).not.toMatch(/Who processes your payments\?/i);
+    expect(text).not.toMatch(/If you recognise one of these/i);
+    expect(text).not.toMatch(/Payment wizard\?/i);
   });
 });
