@@ -30,10 +30,10 @@ test.describe('Mobile 375px', () => {
     await page.getByRole('button', { name: '$500K', exact: true }).click();
     await page.getByRole('button', { name: /next/i }).click();
 
-    // Step 2 — plan cards should be single column
-    await page.getByRole('radio', { name: /a single rate on every transaction/i }).click();
+    // Step 2 — plan cards should be single column (v2 single-radio-list copy)
+    await page.getByRole('radio', { name: 'Single rate (flat %)' }).click();
     await page.getByRole('radio', { name: 'Tyro' }).click();
-    await page.getByRole('button', { name: /next/i }).click();
+    await page.getByRole('button', { name: 'Continue' }).click();
 
     // Step 3
     await page.getByRole('button', { name: /No.*customers/i }).click();

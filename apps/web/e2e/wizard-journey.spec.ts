@@ -14,18 +14,25 @@ test.describe('Wizard journey → Category 1', () => {
     await page.getByRole('button', { name: '$5M', exact: true }).click();
     await page.getByRole('button', { name: /next/i }).click();
 
-    // Step 2 — cost-plus + expert rates
-    await page.getByRole('radio', { name: /list of separate charges/i }).click();
+    // Step 2 — cost-plus + expert rates (v2 single-radio-list copy).
+    // ExpertPanel is now nested inside the RefineRatesPanel, which is
+    // gated on PSP selection and collapsed by default. Flow order
+    // therefore changes: plan → PSP → expand Refine → expand Payment
+    // wizard → fill rate.
+    await page.getByRole('radio', { name: 'IC++ (Interchange Plus)' }).click();
+    await page.getByRole('radio', { name: 'ANZ Worldline' }).click();
 
-    // Open expert panel
+    // Expand the "Refine my rates" container
+    await page.getByRole('button', { name: /Refine my rates/i }).click();
+
+    // Open expert panel inside Refine
     await page.getByText(/payment wizard/i).click();
 
     // Fill expert rates
     const debitInput = page.getByPlaceholder('9');
     await debitInput.fill('8');
 
-    await page.getByRole('radio', { name: 'ANZ' }).click();
-    await page.getByRole('button', { name: /next/i }).click();
+    await page.getByRole('button', { name: 'Continue' }).click();
 
     // Step 3 — not surcharging
     await page.getByRole('button', { name: /No.*customers/i }).click();

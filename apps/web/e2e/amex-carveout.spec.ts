@@ -22,10 +22,10 @@ test.describe('Amex carve-out — regulatory note (May 2026 always-on)', () => {
     await page.getByRole('button', { name: '$1M', exact: true }).click();
     await page.getByRole('button', { name: /next/i }).click();
 
-    // Step 2 — flat rate + Stripe
-    await page.getByRole('radio', { name: /a single rate on every transaction/i }).click();
+    // Step 2 — flat rate + Stripe (v2 single-radio-list copy)
+    await page.getByRole('radio', { name: 'Single rate (flat %)' }).click();
     await page.getByRole('radio', { name: 'Stripe' }).click();
-    await page.getByRole('button', { name: /next/i }).click();
+    await page.getByRole('button', { name: 'Continue' }).click();
 
     // Step 3 — Yes surcharging. Yes pre-selects all four networks.
     await page.getByRole('button', { name: /Yes.*surcharge/i }).click();
