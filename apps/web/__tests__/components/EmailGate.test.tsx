@@ -154,11 +154,46 @@ describe('EmailGate', () => {
       expect(onContinue).toHaveBeenCalledWith(good.toLowerCase(), false);
     });
 
-    it('does NOT show error when email is empty (skip path)', async () => {
+    it('clicking primary with empty email shows the empty-email error and does NOT skip', async () => {
+      // Defect fix (May 2026): the primary CTA promises an
+      // email-driven outcome ("Send me insights & view my results"),
+      // so an empty submission must surface a validation error
+      // rather than silently routing to onSkip. The explicit skip
+      // button below remains the only path that bypasses without
+      // capturing an email.
       render(<EmailGate category={2} onContinue={onContinue} onSkip={onSkip} />);
       await user.click(primaryButton());
-      expect(screen.queryByText(/please enter a valid email/i)).not.toBeInTheDocument();
+      expect(
+        screen.getByText(/please enter your email/i),
+      ).toBeInTheDocument();
+      expect(onSkip).not.toHaveBeenCalled();
+      expect(onContinue).not.toHaveBeenCalled();
+    });
+
+    it('typing clears the empty-email error inline', async () => {
+      render(<EmailGate category={2} onContinue={onContinue} onSkip={onSkip} />);
+      await user.click(primaryButton());
+      expect(
+        screen.getByText(/please enter your email/i),
+      ).toBeInTheDocument();
+      await user.type(emailInput(), 'm');
+      expect(
+        screen.queryByText(/please enter your email/i),
+      ).not.toBeInTheDocument();
+    });
+
+    it('explicit skip button still bypasses with an empty email (regression)', async () => {
+      render(<EmailGate category={2} onContinue={onContinue} onSkip={onSkip} />);
+      await user.click(skipButton());
       expect(onSkip).toHaveBeenCalledTimes(1);
+      expect(onContinue).not.toHaveBeenCalled();
+      // No error should appear — skip is an explicit, valid path.
+      expect(
+        screen.queryByText(/please enter your email/i),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(/please enter a valid email/i),
+      ).not.toBeInTheDocument();
     });
 
     it('clears error when user types after error shown', async () => {
@@ -188,12 +223,11 @@ describe('EmailGate', () => {
       expect(onContinue).not.toHaveBeenCalled();
     });
 
-    it('calls onSkip when CTA clicked with empty email', async () => {
-      render(<EmailGate category={2} onContinue={onContinue} onSkip={onSkip} />);
-      await user.click(primaryButton());
-      expect(onSkip).toHaveBeenCalledTimes(1);
-      expect(onContinue).not.toHaveBeenCalled();
-    });
+    // Defect fix (May 2026): the primary CTA no longer routes empty
+    // submissions to onSkip — that scenario now shows a validation
+    // error. Coverage for empty-submit → error lives in the
+    // validation block above; coverage for the explicit-skip path
+    // remains here.
 
     it('calls onContinue(email, true) on valid email + consent ticked', async () => {
       render(<EmailGate category={2} onContinue={onContinue} onSkip={onSkip} />);
@@ -259,10 +293,14 @@ describe('EmailGate', () => {
       expect(mockEmailGateSkipped).toHaveBeenCalled();
     });
 
-    it('fires email_gate_skipped on continue-with-empty-email', async () => {
+    it('does NOT fire email_gate_skipped on empty primary submission (validation error path)', async () => {
+      // The empty-primary-submit path is no longer a skip — it's a
+      // validation failure. emailGateSkipped must fire only from the
+      // explicit secondary-button path so the funnel can distinguish
+      // intentional skips from accidental empty submits.
       render(<EmailGate category={2} onContinue={onContinue} onSkip={onSkip} />);
       await user.click(primaryButton());
-      expect(mockEmailGateSkipped).toHaveBeenCalled();
+      expect(mockEmailGateSkipped).not.toHaveBeenCalled();
       expect(mockEmailCaptured).not.toHaveBeenCalled();
     });
   });
