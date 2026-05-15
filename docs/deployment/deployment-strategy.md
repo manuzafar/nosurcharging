@@ -422,6 +422,12 @@ An automated migration that runs in CI against production is one typo away from 
 
 ## 6. The Deployment Pipeline — Visualised
 
+**For the current, detailed pipeline picture (PR-time gates, post-deploy
+validation, per-environment service mapping, rollback paths), see
+[cicd-pipeline.md](./cicd-pipeline.md).** That document is the operational
+mirror; the diagram below is the original April 2026 sketch and is kept for
+historical reference.
+
 ```
 Developer writes code on feature branch
           │
