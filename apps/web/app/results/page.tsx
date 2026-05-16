@@ -251,12 +251,7 @@ function ResultsContent() {
 
   return (
     <div className="min-h-screen bg-paper">
-      <ResultsTopBar
-        category={category}
-        plSwing={outputs.plSwing}
-        volume={volume}
-        assessmentId={assessmentId ?? undefined}
-      />
+      <ResultsTopBar />
 
       <ResultsViewedAtProvider value={resultsViewedAt ?? Date.now()}>
       <main className="mx-auto max-w-3xl pb-20 min-[501px]:pb-12 pt-6">
@@ -349,6 +344,9 @@ function ResultsContent() {
                 resolutionTrace={resolutionTrace}
                 inputs={resolvedInputs}
                 industry={originalRaw.industry}
+                category={category}
+                volume={volume}
+                assessmentId={assessmentId ?? undefined}
                 onRefinedResult={handleRefinedResult}
                 onAccuracyChange={setAccuracy}
               />
