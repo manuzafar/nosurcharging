@@ -45,14 +45,26 @@ export function ResultsTopBar() {
         </span>
       </Link>
 
-      {/* RIGHT — restart link. Label shortens on the narrowest viewports
-          (below 400px) to "New report →" so the band never wraps. */}
+      {/* RIGHT — restart link as a tonal pill. Matches the site's
+          "rounded-full = action" convention (see ui/AccentButton.tsx)
+          without competing with the wordmark's italic emerald — a full
+          emerald-filled pill 30px from the wordmark would create two
+          accent elements fighting for attention. The subtle white wash
+          reads as a button (pill shape, visible affordance) while
+          keeping the restart appropriately low-weight: the merchant is
+          on the results page to read, not restart.
+
+          Label shortens on the narrowest viewports (below 400px) to
+          "New report →" so the band never wraps. */}
       <Link
         href="/assessment"
-        className="inline-flex items-center shrink-0 hover:!text-white transition-colors duration-150"
+        className="inline-flex items-center shrink-0 rounded-full transition-colors duration-150 hover:bg-white/15"
         style={{
-          color: 'rgba(255,255,255,0.7)',
+          background: 'rgba(255, 255, 255, 0.08)',
+          color: 'rgba(255, 255, 255, 0.90)',
           fontSize: '13px',
+          fontWeight: 500,
+          padding: '6px 14px',
           gap: '6px',
         }}
       >
