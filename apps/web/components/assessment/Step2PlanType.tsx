@@ -93,7 +93,7 @@ const PLAN_OPTIONS: ReadonlyArray<PlanOption> = [
   {
     key: 'zero_cost',
     title: 'Zero-cost EFTPOS',
-    subtitle: 'Free EFTPOS, surcharge on credit',
+    subtitle: 'Your customer pays a surcharge, you pay nothing',
   },
   {
     key: 'strategic_rate',
