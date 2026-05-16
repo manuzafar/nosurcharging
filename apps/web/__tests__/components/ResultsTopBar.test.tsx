@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { ResultsTopBar } from '@/components/results/shell/ResultsTopBar';
 
 // Mock next/link
@@ -9,87 +9,69 @@ vi.mock('next/link', () => ({
   ),
 }));
 
-// Mock FeedbackModal to avoid portal issues in test
-vi.mock('@/components/results/FeedbackModal', () => ({
-  FeedbackModal: ({ open, onClose }: { open: boolean; onClose: () => void }) =>
-    open ? <div data-testid="feedback-modal"><button onClick={onClose}>Close</button></div> : null,
-}));
-
-// Mock analytics
-vi.mock('@/lib/analytics', () => ({
-  Analytics: {
-    resultLooksOff: vi.fn(),
-    ctaClicked: vi.fn(),
-  },
-}));
-
-const defaultProps = {
-  category: 1 as const,
-  plSwing: 1700,
-  volume: 500_000,
-  assessmentId: 'test-123',
-};
+// Post-RESULTS_HEADER_REDESIGN_BRIEF (May 2026): the header is stripped to
+// two elements — brand wordmark + "Start a new report →" link. Every
+// other element (Situation chip, plSwing display, "Result looks off?"
+// button) was removed or relocated. The component now takes zero props.
 
 describe('ResultsTopBar', () => {
   it('renders the branded logo linking to home', () => {
-    render(<ResultsTopBar {...defaultProps} />);
-    // Logo splits "no" / "surcharging" / ".com.au" into spans — assert
-    // by anchor href and the italic accent portion.
+    render(<ResultsTopBar />);
     const link = screen.getByRole('link', { name: /surcharging/i });
     expect(link).toHaveAttribute('href', '/');
     expect(screen.getByText('surcharging')).toBeInTheDocument();
     expect(screen.getByText('.com.au')).toBeInTheDocument();
   });
 
-  it('renders the situation pill', () => {
-    render(<ResultsTopBar {...defaultProps} category={2} plSwing={765} />);
-    expect(screen.getByText('Situation 2')).toBeInTheDocument();
+  it('renders the "Start a new report" restart link to /assessment', () => {
+    render(<ResultsTopBar />);
+    // The label has both a wide-viewport version ("Start a new report")
+    // and a narrow-viewport short version ("New report") in the DOM; CSS
+    // controls which is visible. Asserting the link's href covers both.
+    const link = screen.getByRole('link', { name: /new report/i });
+    expect(link).toHaveAttribute('href', '/assessment');
   });
 
-  it('shows positive P&L in emerald colour at 15px monospace 700', () => {
-    render(<ResultsTopBar {...defaultProps} />);
-    const plEl = screen.getByText('+$1,700');
-    expect(plEl).toBeInTheDocument();
-    expect(plEl).toHaveStyle({ color: '#1A6B5A', fontSize: '15px', fontWeight: 700 });
-  });
-
-  it('shows negative P&L in coral/red colour', () => {
-    render(<ResultsTopBar {...defaultProps} category={3} plSwing={-99500} />);
-    const plEl = screen.getByText('−$99,500');
-    expect(plEl).toBeInTheDocument();
-    expect(plEl).toHaveStyle({ color: '#E57373' });
-  });
-
-  it('does not render the legacy accuracy indicator (M2 moved it to RefinementPanel)', () => {
-    render(<ResultsTopBar {...defaultProps} />);
-    expect(screen.queryByText(/Accuracy/i)).not.toBeInTheDocument();
-  });
-
-  it('renders the "Result looks off?" feedback link', () => {
-    render(<ResultsTopBar {...defaultProps} />);
-    expect(screen.getByText('Result looks off?')).toBeInTheDocument();
-  });
-
-  it('opens feedback modal when "Result looks off?" is clicked', () => {
-    render(<ResultsTopBar {...defaultProps} />);
-    expect(screen.queryByTestId('feedback-modal')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByText('Result looks off?'));
-    expect(screen.getByTestId('feedback-modal')).toBeInTheDocument();
-  });
-
-  it('does not render the legacy "Save result" button (M1 removed)', () => {
-    render(<ResultsTopBar {...defaultProps} />);
-    expect(screen.queryByRole('button', { name: 'Save result' })).not.toBeInTheDocument();
-  });
-
-  it('does not render the legacy "Get help" CTA (M1 removed)', () => {
-    render(<ResultsTopBar {...defaultProps} />);
-    expect(screen.queryByRole('link', { name: 'Get help' })).not.toBeInTheDocument();
+  it('renders only TWO links — brand + restart. No other interactive elements', () => {
+    render(<ResultsTopBar />);
+    const links = screen.getAllByRole('link');
+    expect(links).toHaveLength(2);
+    expect(screen.queryAllByRole('button')).toHaveLength(0);
   });
 
   it('header uses dark ink background and 56px height', () => {
-    const { container } = render(<ResultsTopBar {...defaultProps} />);
+    const { container } = render(<ResultsTopBar />);
     const header = container.querySelector('header')!;
     expect(header).toHaveStyle({ background: '#1A1409', height: '56px' });
+  });
+
+  // Regression guards — these elements MUST stay gone after the May 2026
+  // header decongestion. Re-introducing any of them is a brief regression.
+
+  it('does not render the legacy Situation chip', () => {
+    render(<ResultsTopBar />);
+    expect(screen.queryByText(/Situation \d/)).not.toBeInTheDocument();
+  });
+
+  it('does not render any dollar value in the header', () => {
+    render(<ResultsTopBar />);
+    // Both signed-dollar forms (+$X, −$X) and plain $X must be absent.
+    const text = document.body.textContent ?? '';
+    expect(text).not.toMatch(/[+−]?\$\d/);
+  });
+
+  it('does not render the legacy "Result looks off?" button', () => {
+    render(<ResultsTopBar />);
+    expect(screen.queryByText(/Result looks off/i)).not.toBeInTheDocument();
+  });
+
+  it('does not render the legacy "Save result" button', () => {
+    render(<ResultsTopBar />);
+    expect(screen.queryByRole('button', { name: 'Save result' })).not.toBeInTheDocument();
+  });
+
+  it('does not render the legacy "Get help" CTA', () => {
+    render(<ResultsTopBar />);
+    expect(screen.queryByRole('link', { name: 'Get help' })).not.toBeInTheDocument();
   });
 });

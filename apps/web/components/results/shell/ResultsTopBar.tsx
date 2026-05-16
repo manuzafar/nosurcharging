@@ -1,139 +1,77 @@
 'use client';
 
-// Unified dark sticky header for the results page. Per the Ruthless Cut
-// (M1), the right-side CTAs ("Save result" + "Get help") are gone — the
-// PDF artifact handoff (M2) and the quiet $149 upsell at the bottom of
-// the page replace them. MobileBottomBar was deleted with the sidebar.
+// Results page sticky header — stripped to a minimal two-element band per
+// RESULTS_HEADER_REDESIGN_BRIEF (May 2026).
 //
-// Remaining structure: branded logo (left) · situation pill + P&L +
-// accuracy indicator + "Result looks off?" link (centre).
+// LEFT:  brand wordmark (no surcharging.com.au), unchanged
+// RIGHT: "Start a new report →" link routing to /assessment
+//
+// Removed in this revision:
+//   - Situation chip ("Situation 4") — internal jargon, sub-readability size.
+//   - plSwing dollar display — relocated to RefinementPanel.tsx where the
+//     merchant is actively editing inputs and needs co-located feedback.
+//   - "Result looks off?" button — relocated to RefinementPanel.tsx where
+//     it sits adjacent to the refinement controls (the natural moment for
+//     the merchant to question the result is after they've tried to refine
+//     it).
+//
+// FeedbackModal is no longer mounted here; the relocated trigger inside
+// RefinementPanel mounts its own copy.
 
-import { useState } from 'react';
 import Link from 'next/link';
-import { SITUATION_PILLS } from '@/components/results/VerdictSection';
-import { FeedbackModal } from '@/components/results/FeedbackModal';
-import { Analytics } from '@/lib/analytics';
+import { ArrowRight } from 'lucide-react';
 
-interface ResultsTopBarProps {
-  category: 1 | 2 | 3 | 4 | 5;
-  plSwing: number;
-  volume: number;
-  assessmentId?: string;
-}
-
-function formatSignedDollar(value: number): string {
-  if (value === 0) return '$0';
-  return (value > 0 ? '+' : '−') + '$' + Math.abs(Math.round(value)).toLocaleString('en-AU');
-}
-
-export function ResultsTopBar({
-  category,
-  plSwing,
-  volume,
-  assessmentId,
-}: ResultsTopBarProps) {
-  const pillStyle = SITUATION_PILLS[category];
-  const isPositive = plSwing >= 0;
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
-
+export function ResultsTopBar() {
   return (
-    <>
-      <header
-        className="sticky top-0 z-20 flex items-center gap-4 px-5"
-        style={{ background: '#1A1409', height: '56px' }}
+    <header
+      className="sticky top-0 z-20 flex items-center justify-between gap-4 px-5 min-[501px]:px-7"
+      style={{ background: '#1A1409', height: '56px' }}
+    >
+      {/* LEFT — branded logo, identical to homepage nav */}
+      <Link
+        href="/"
+        className="font-serif font-medium text-white shrink-0"
+        style={{ fontSize: '16px' }}
       >
-        {/* LEFT — branded logo, identical to homepage nav */}
-        <Link
-          href="/"
-          className="font-serif font-medium text-white shrink-0"
-          style={{ fontSize: '16px' }}
+        no
+        <span className="italic" style={{ color: '#72C4B0' }}>
+          surcharging
+        </span>
+        <span
+          className="hidden text-white/60 min-[400px]:inline"
+          style={{ fontSize: '13px' }}
         >
-          no
-          <span className="italic" style={{ color: '#72C4B0' }}>
-            surcharging
-          </span>
-          <span
-            className="hidden text-white/60 min-[400px]:inline"
-            style={{ fontSize: '13px' }}
-          >
-            .com.au
-          </span>
-        </Link>
+          .com.au
+        </span>
+      </Link>
 
-        {/* CENTRE — result context */}
-        <div className="flex items-center" style={{ gap: '10px' }}>
-          {/* Vertical separator */}
-          <div
-            aria-hidden
-            style={{
-              width: '1px',
-              height: '20px',
-              background: 'rgba(255,255,255,0.15)',
-              marginRight: '2px',
-            }}
-          />
+      {/* RIGHT — restart link as a tonal pill. Matches the site's
+          "rounded-full = action" convention (see ui/AccentButton.tsx)
+          without competing with the wordmark's italic emerald — a full
+          emerald-filled pill 30px from the wordmark would create two
+          accent elements fighting for attention. The subtle white wash
+          reads as a button (pill shape, visible affordance) while
+          keeping the restart appropriately low-weight: the merchant is
+          on the results page to read, not restart.
 
-          {/* Situation pill */}
-          <span
-            className="font-bold uppercase shrink-0"
-            style={{
-              ...pillStyle,
-              fontSize: '9px',
-              fontWeight: 700,
-              letterSpacing: '0.5px',
-              padding: '3px 8px',
-              borderRadius: '4px',
-            }}
-          >
-            Situation {category}
-          </span>
-
-          {/* P&L figure */}
-          <span
-            className="font-mono shrink-0"
-            style={{
-              fontSize: '15px',
-              fontWeight: 700,
-              color: isPositive ? '#1A6B5A' : '#E57373',
-            }}
-          >
-            {formatSignedDollar(plSwing)}
-          </span>
-
-          {/* Result looks off? — hidden on mobile.
-              The accuracy indicator that lived here moved into the
-              RefinementPanel header in M2. The analytics event still
-              records accuracy_pct as 0 from this surface; the in-page
-              feedback flow captures the live accuracy separately. */}
-          <button
-            type="button"
-            onClick={() => {
-              Analytics.resultLooksOff({ category, accuracy_pct: 0 });
-              setFeedbackOpen(true);
-            }}
-            className="hidden md:inline cursor-pointer hover:!text-white/60 hover:underline shrink-0"
-            style={{
-              fontSize: '11px',
-              color: 'rgba(255,255,255,0.35)',
-              background: 'none',
-              border: 'none',
-              padding: 0,
-              textUnderlineOffset: '2px',
-            }}
-          >
-            Result looks off?
-          </button>
-        </div>
-
-      </header>
-
-      <FeedbackModal
-        open={feedbackOpen}
-        onClose={() => setFeedbackOpen(false)}
-        category={category}
-        volume={volume}
-        assessmentId={assessmentId}
-      />
-    </>
+          Label shortens on the narrowest viewports (below 400px) to
+          "New report →" so the band never wraps. */}
+      <Link
+        href="/assessment"
+        className="inline-flex items-center shrink-0 rounded-full transition-colors duration-150 hover:bg-white/15"
+        style={{
+          background: 'rgba(255, 255, 255, 0.08)',
+          color: 'rgba(255, 255, 255, 0.90)',
+          fontSize: '13px',
+          fontWeight: 500,
+          padding: '6px 14px',
+          gap: '6px',
+        }}
+      >
+        <span className="hidden min-[400px]:inline">Start a new report</span>
+        <span className="inline min-[400px]:hidden">New report</span>
+        <ArrowRight size={14} aria-hidden />
+      </Link>
+    </header>
   );
 }

@@ -28,14 +28,22 @@ import type {
 } from '@nosurcharging/calculations/types';
 import { computeAccuracy } from '@/lib/accuracy';
 import { Analytics } from '@/lib/analytics';
+import { FeedbackModal } from '@/components/results/FeedbackModal';
 
 // ── Props ───────────────────────────────────────────────────────
+//
+// `category`, `volume`, `assessmentId` were added in May 2026 when the
+// "Result looks off?" trigger + FeedbackModal mount relocated here from
+// ResultsTopBar. Per RESULTS_HEADER_REDESIGN_BRIEF.
 
 interface RefinementPanelProps {
   initialResult: AssessmentOutputs;
   resolutionTrace: ResolutionTrace;
   inputs: ResolvedAssessmentInputs;
   industry: string;
+  category: 1 | 2 | 3 | 4 | 5;
+  volume: number;
+  assessmentId?: string;
   onRefinedResult: (result: AssessmentOutputs) => void;
   onAccuracyChange?: (accuracy: number) => void;
 }
@@ -254,6 +262,9 @@ export function RefinementPanel({
   resolutionTrace,
   inputs,
   industry,
+  category,
+  volume,
+  assessmentId,
   onRefinedResult,
   onAccuracyChange,
 }: RefinementPanelProps) {
@@ -266,6 +277,18 @@ export function RefinementPanel({
   useEffect(() => {
     onAccuracyChangeRef.current = onAccuracyChange;
   }, [onAccuracyChange]);
+
+  // Live plSwing seeded from initialResult, updated on every debounced
+  // recalc below. Local state because the brief's "Your impact" block
+  // needs the latest value inline with the refinement inputs — relying
+  // on prop propagation would require a roundtrip through the parent
+  // and add lag to the 350ms pulse animation.
+  const [livePlSwing, setLivePlSwing] = useState<number>(initialResult.plSwing);
+  const [pulsing, setPulsing] = useState(false);
+
+  // FeedbackModal trigger, relocated from ResultsTopBar in May 2026.
+  // Modal itself unchanged; only the open/close state lives here now.
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   const accuracy = useMemo(
     () => computeAccuracy(resolutionTrace, edits),
@@ -282,12 +305,14 @@ export function RefinementPanel({
   const lastEditsKeyRef = useRef('');
 
   // Debounced recalc — pushes a refined result upward so the headline P&L
-  // animates smoothly without thrashing on every keystroke.
+  // animates smoothly without thrashing on every keystroke. Also sets
+  // the local `livePlSwing` that the "Your impact" block displays.
   useEffect(() => {
     const timer = setTimeout(() => {
       const newInputs = applyEdits(inputs, edits);
       const result = calculateMetrics(newInputs);
       onRefinedResultRef.current(result);
+      setLivePlSwing(result.plSwing);
 
       // Fingerprint of current edits — skips refires from parent
       // re-renders where `inputs` reference changed but the user's
@@ -310,6 +335,19 @@ export function RefinementPanel({
     }, 150);
     return () => clearTimeout(timer);
   }, [edits, inputs, accuracy]);
+
+  // Pulse animation on the impact block whenever livePlSwing changes.
+  // Triggers a brief scale + colour transition (300-400ms) so the
+  // merchant gets unmissable visual feedback that their refinement
+  // moved the number.
+  const prevPlSwingRef = useRef(livePlSwing);
+  useEffect(() => {
+    if (prevPlSwingRef.current === livePlSwing) return;
+    prevPlSwingRef.current = livePlSwing;
+    setPulsing(true);
+    const t = setTimeout(() => setPulsing(false), 400);
+    return () => clearTimeout(t);
+  }, [livePlSwing]);
 
   // Push accuracy changes up to the page (for TopBar)
   useEffect(() => {
@@ -384,6 +422,16 @@ export function RefinementPanel({
     ? ({ label: 'Your input', variant: 'your_input' } as SourceBadge)
     : ({ label: 'Not set', variant: 'not_set' } as SourceBadge);
 
+  // Signed-dollar formatter for the impact block. Matches the
+  // ResultsTopBar formatter that used to render this value: zero is "$0"
+  // (no sign), positive prefixes "+$", negative prefixes "−$" (real
+  // minus sign U+2212, not hyphen — preserves alignment with the
+  // verdict section's hero number).
+  const formatSignedDollar = (v: number): string => {
+    if (v === 0) return '$0';
+    return (v > 0 ? '+' : '−') + '$' + Math.abs(Math.round(v)).toLocaleString('en-AU');
+  };
+
   // ── Helpers to update edits ───────────────────────────────────
   const updateEdit = <K extends EditKey>(key: K, value: EditState[K]) => {
     setEdits((prev) => ({ ...prev, [key]: value }));
@@ -413,6 +461,112 @@ export function RefinementPanel({
       >
         Fill in what you know — the estimate sharpens as you go.
       </p>
+
+      {/* ── "Your impact" block — live plSwing with pulse on update.
+          Relocated from the dark sticky header per
+          RESULTS_HEADER_REDESIGN_BRIEF (May 2026). Co-located with the
+          refinement inputs so the merchant sees their changes move
+          the number. */}
+      <div
+        data-testid="your-impact"
+        className="flex items-center justify-between"
+        style={{
+          gap: '16px',
+          padding: 'clamp(14px, 1.6vw, 18px) 0',
+          borderTop: '0.5px solid rgba(26, 20, 9, 0.12)',
+          borderBottom: '0.5px solid rgba(26, 20, 9, 0.12)',
+          margin: '4px 0 6px 0',
+        }}
+      >
+        <div className="flex flex-col" style={{ gap: '4px', minWidth: 0 }}>
+          <span
+            className="inline-flex items-center font-medium uppercase"
+            style={{
+              fontSize: '10px',
+              letterSpacing: '0.12em',
+              color: 'rgba(26, 20, 9, 0.5)',
+              gap: '8px',
+            }}
+          >
+            Your impact
+            {/* "NEW" tag — first-month attention. Sunset 2026-06-16:
+                remove this span (and the surrounding inline-flex) once
+                the new placement is established. */}
+            <span
+              className="font-mono uppercase"
+              style={{
+                fontSize: '9px',
+                letterSpacing: '0.04em',
+                padding: '2px 6px',
+                borderRadius: '4px',
+                background: '#EBF6F3',
+                color: '#1A6B5A',
+              }}
+            >
+              New
+            </span>
+          </span>
+          <span
+            className="italic"
+            style={{
+              fontSize: '12px',
+              lineHeight: 1.4,
+              color: 'rgba(26, 20, 9, 0.55)',
+            }}
+          >
+            Updates live as you refine inputs below
+          </span>
+        </div>
+        <span
+          data-testid="your-impact-value"
+          className="font-mono shrink-0"
+          style={{
+            fontSize: 'clamp(22px, 3.5vw, 32px)',
+            fontWeight: 500,
+            letterSpacing: '-0.015em',
+            color: pulsing
+              ? '#1A1409'
+              : livePlSwing < 0
+                ? '#A32D2D'
+                : '#1A6B5A',
+            transform: pulsing ? 'scale(1.04)' : 'scale(1)',
+            transformOrigin: 'right center',
+            transition: 'color 350ms ease, transform 350ms ease',
+            display: 'inline-block',
+          }}
+        >
+          {formatSignedDollar(livePlSwing)}
+        </span>
+      </div>
+
+      {/* "Result looks off?" — relocated from header, right-aligned
+          above the field list. Triggers the existing FeedbackModal +
+          fires Analytics.resultLooksOff with the same shape the header
+          version used. */}
+      <div
+        className="flex"
+        style={{ justifyContent: 'flex-end', padding: '6px 0 14px 0' }}
+      >
+        <button
+          type="button"
+          onClick={() => {
+            Analytics.resultLooksOff({ category, accuracy_pct: accuracy });
+            setFeedbackOpen(true);
+          }}
+          className="cursor-pointer hover:!text-ink"
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: '4px 0',
+            fontSize: '13px',
+            color: 'rgba(26, 20, 9, 0.65)',
+            textDecoration: 'underline',
+            textUnderlineOffset: '2px',
+          }}
+        >
+          Result looks off? →
+        </button>
+      </div>
 
       {/* ── Field 1: Average transaction value ───────────────── */}
       <FieldCard
@@ -619,6 +773,14 @@ export function RefinementPanel({
       <p className="mt-4 text-micro" style={{ color: 'var(--color-text-tertiary)' }}>
         Your edits update this page only. We never share or store what you type here.
       </p>
+
+      <FeedbackModal
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+        category={category}
+        volume={volume}
+        assessmentId={assessmentId}
+      />
     </section>
   );
 }
